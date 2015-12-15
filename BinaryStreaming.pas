@@ -11,7 +11,7 @@
 
   ©František Milt 2015-11-05
 
-  Version 1.0 beta (needs extensive testing)
+  Version 1.0.1 beta (needs testing)
 
 ===============================================================================}
 unit BinaryStreaming;
@@ -328,6 +328,8 @@ type
     Function GetCurrentPosition: UInt64; virtual; abstract;
     procedure SetCurrentPosition(NewPosition: UInt64); virtual; abstract;
     Function GetDistance: Int64; virtual;
+    Function WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize; virtual; abstract;
+    Function ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize; virtual; abstract;
   public
     procedure Initialize; virtual;
     procedure MoveToStart; virtual;
@@ -338,57 +340,57 @@ type
     Function AddBookmark(Position: UInt64): Integer; overload; virtual;
     Function RemoveBookmark(Position: UInt64; RemoveAll: Boolean = True): Integer; virtual;
     procedure DeleteBookmark(Index: Integer); virtual;
-    Function WriteBool(Value: ByteBool; Advance: Boolean = True): TMemSize; virtual; abstract;
-    Function WriteInt8(Value: Int8; Advance: Boolean = True): TMemSize; virtual; abstract;
-    Function WriteUInt8(Value: UInt8; Advance: Boolean = True): TMemSize; virtual; abstract;
-    Function WriteInt16(Value: Int16; Advance: Boolean = True): TMemSize; virtual; abstract;
-    Function WriteUInt16(Value: UInt16; Advance: Boolean = True): TMemSize; virtual; abstract;
-    Function WriteInt32(Value: Int32; Advance: Boolean = True): TMemSize; virtual; abstract;
-    Function WriteUInt32(Value: UInt32; Advance: Boolean = True): TMemSize; virtual; abstract;
-    Function WriteInt64(Value: Int64; Advance: Boolean = True): TMemSize; virtual; abstract;
-    Function WriteUInt64(Value: UInt64; Advance: Boolean = True): TMemSize; virtual; abstract;
-    Function WriteFloat32(Value: Float32; Advance: Boolean = True): TMemSize; virtual; abstract;
-    Function WriteFloat64(Value: Float64; Advance: Boolean = True): TMemSize; virtual; abstract;
-    Function WriteAnsiString(const Value: AnsiString; Advance: Boolean = True): TMemSize; virtual; abstract;
-    Function WriteUnicodeString(const Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual; abstract;
-    Function WriteWideString(const Value: WideString; Advance: Boolean = True): TMemSize; virtual; abstract;
-    Function WriteUTF8String(const Value: UTF8String; Advance: Boolean = True): TMemSize; virtual; abstract;
-    Function WriteString(const Value: String; Advance: Boolean = True): TMemSize; virtual; abstract;
-    Function WriteBuffer(const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; virtual; abstract;
-    Function FillBytes(Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize; virtual; abstract;
-    Function ReadBool(out Value: ByteBool; Advance: Boolean = True): TMemSize; overload; virtual; abstract;
-    Function ReadBool(Advance: Boolean = True): ByteBool; overload; virtual; abstract;
-    Function ReadInt8(out Value: Int8; Advance: Boolean = True): TMemSize; overload; virtual; abstract;
-    Function ReadInt8(Advance: Boolean = True): Int8; overload; virtual; abstract;
-    Function ReadUInt8(out Value: UInt8; Advance: Boolean = True): TMemSize; overload; virtual; abstract;
-    Function ReadUInt8(Advance: Boolean = True): UInt8; overload; virtual; abstract;
-    Function ReadInt16(out Value: Int16; Advance: Boolean = True): TMemSize; overload; virtual; abstract;
-    Function ReadInt16(Advance: Boolean = True): Int16; overload; virtual; abstract;
-    Function ReadUInt16(out Value: UInt16; Advance: Boolean = True): TMemSize; overload; virtual; abstract;
-    Function ReadUInt16(Advance: Boolean = True): UInt16; overload; virtual; abstract;
-    Function ReadInt32(out Value: Int32; Advance: Boolean = True): TMemSize; overload; virtual; abstract;
-    Function ReadInt32(Advance: Boolean = True): Int32; overload; virtual; abstract;
-    Function ReadUInt32(out Value: UInt32; Advance: Boolean = True): TMemSize; overload; virtual; abstract;
-    Function ReadUInt32(Advance: Boolean = True): UInt32; overload; virtual; abstract;
-    Function ReadInt64(out Value: Int64; Advance: Boolean = True): TMemSize; overload; virtual; abstract;
-    Function ReadInt64(Advance: Boolean = True): Int64; overload; virtual; abstract;
-    Function ReadUInt64(out Value: UInt64; Advance: Boolean = True): TMemSize; overload; virtual; abstract;
-    Function ReadUInt64(Advance: Boolean = True): UInt64; overload; virtual; abstract;
-    Function ReadFloat32(out Value: Float32; Advance: Boolean = True): TMemSize; overload; virtual; abstract;
-    Function ReadFloat32(Advance: Boolean = True): Float32; overload; virtual; abstract;
-    Function ReadFloat64(out Value: Float64; Advance: Boolean = True): TMemSize; overload; virtual; abstract;
-    Function ReadFloat64(Advance: Boolean = True): Float64; overload; virtual; abstract;
-    Function ReadAnsiString(out Value: AnsiString; Advance: Boolean = True): TMemSize; overload; virtual; abstract;
-    Function ReadAnsiString(Advance: Boolean = True): AnsiString; overload; virtual; abstract;
-    Function ReadUnicodeString(out Value: UnicodeString; Advance: Boolean = True): TMemSize; overload; virtual; abstract;
-    Function ReadUnicodeString(Advance: Boolean = True): UnicodeString; overload; virtual; abstract;
-    Function ReadWideString(out Value: WideString; Advance: Boolean = True): TMemSize; overload; virtual; abstract;
-    Function ReadWideString(Advance: Boolean = True): WideString; overload; virtual; abstract;
-    Function ReadUTF8String(out Value: UTF8String; Advance: Boolean = True): TMemSize; overload; virtual; abstract;
-    Function ReadUTF8String(Advance: Boolean = True): UTF8String; overload; virtual; abstract;
-    Function ReadString(out Value: String; Advance: Boolean = True): TMemSize; overload; virtual; abstract;
-    Function ReadString(Advance: Boolean = True): String; overload; virtual; abstract;    
-    Function ReadBuffer(var Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; overload; virtual; abstract;
+    Function WriteBool(Value: ByteBool; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteInt8(Value: Int8; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteUInt8(Value: UInt8; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteInt16(Value: Int16; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteUInt16(Value: UInt16; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteInt32(Value: Int32; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteUInt32(Value: UInt32; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteInt64(Value: Int64; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteUInt64(Value: UInt64; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteFloat32(Value: Float32; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteFloat64(Value: Float64; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteAnsiString(const Value: AnsiString; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteUnicodeString(const Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteWideString(const Value: WideString; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteUTF8String(const Value: UTF8String; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteString(const Value: String; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteBuffer(const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; virtual;
+    Function FillBytes(Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadBool(out Value: ByteBool; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadBool(Advance: Boolean = True): ByteBool; overload; virtual;
+    Function ReadInt8(out Value: Int8; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadInt8(Advance: Boolean = True): Int8; overload; virtual;
+    Function ReadUInt8(out Value: UInt8; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadUInt8(Advance: Boolean = True): UInt8; overload; virtual;
+    Function ReadInt16(out Value: Int16; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadInt16(Advance: Boolean = True): Int16; overload; virtual;
+    Function ReadUInt16(out Value: UInt16; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadUInt16(Advance: Boolean = True): UInt16; overload; virtual;
+    Function ReadInt32(out Value: Int32; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadInt32(Advance: Boolean = True): Int32; overload; virtual;
+    Function ReadUInt32(out Value: UInt32; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadUInt32(Advance: Boolean = True): UInt32; overload; virtual;
+    Function ReadInt64(out Value: Int64; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadInt64(Advance: Boolean = True): Int64; overload; virtual;
+    Function ReadUInt64(out Value: UInt64; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadUInt64(Advance: Boolean = True): UInt64; overload; virtual;
+    Function ReadFloat32(out Value: Float32; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadFloat32(Advance: Boolean = True): Float32; overload; virtual;
+    Function ReadFloat64(out Value: Float64; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadFloat64(Advance: Boolean = True): Float64; overload; virtual;
+    Function ReadAnsiString(out Value: AnsiString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadAnsiString(Advance: Boolean = True): AnsiString; overload; virtual;
+    Function ReadUnicodeString(out Value: UnicodeString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadUnicodeString(Advance: Boolean = True): UnicodeString; overload; virtual;
+    Function ReadWideString(out Value: WideString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadWideString(Advance: Boolean = True): WideString; overload; virtual;
+    Function ReadUTF8String(out Value: UTF8String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadUTF8String(Advance: Boolean = True): UTF8String; overload; virtual;
+    Function ReadString(out Value: String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadString(Advance: Boolean = True): String; overload; virtual;    
+    Function ReadBuffer(var Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; overload; virtual;
     property Bookmarks[Index: Integer]: UInt64 read GetBookmark write SetBookmark;
     property BookmarkCount: Integer read GetBookmarkCount;
     property CurrentPosition: UInt64 read GetCurrentPosition write SetCurrentPosition;
@@ -411,6 +413,8 @@ type
     procedure SetBookmark(Index: Integer; Value: UInt64); override;
     Function GetCurrentPosition: UInt64; override;
     procedure SetCurrentPosition(NewPosition: UInt64); override;
+    Function WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize; override;
+    Function ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize; override;
   public
     constructor Create(Memory: Pointer); overload;
     constructor Create(Size: PtrUInt); overload;
@@ -420,57 +424,6 @@ type
     Function IndexOfBookmark(Position: UInt64): Integer; override;
     Function AddBookmark(Position: UInt64): Integer; override;
     Function RemoveBookmark(Position: UInt64; RemoveAll: Boolean = True): Integer; override;
-    Function WriteBool(Value: ByteBool; Advance: Boolean = True): TMemSize; override;
-    Function WriteInt8(Value: Int8; Advance: Boolean = True): TMemSize; override;
-    Function WriteUInt8(Value: UInt8; Advance: Boolean = True): TMemSize; override;
-    Function WriteInt16(Value: Int16; Advance: Boolean = True): TMemSize; override;
-    Function WriteUInt16(Value: UInt16; Advance: Boolean = True): TMemSize; override;
-    Function WriteInt32(Value: Int32; Advance: Boolean = True): TMemSize; override;
-    Function WriteUInt32(Value: UInt32; Advance: Boolean = True): TMemSize; override;
-    Function WriteInt64(Value: Int64; Advance: Boolean = True): TMemSize; override;
-    Function WriteUInt64(Value: UInt64; Advance: Boolean = True): TMemSize; override;
-    Function WriteFloat32(Value: Float32; Advance: Boolean = True): TMemSize; override;
-    Function WriteFloat64(Value: Float64; Advance: Boolean = True): TMemSize; override;
-    Function WriteAnsiString(const Value: AnsiString; Advance: Boolean = True): TMemSize; override;
-    Function WriteUnicodeString(const Value: UnicodeString; Advance: Boolean = True): TMemSize; override;
-    Function WriteWideString(const Value: WideString; Advance: Boolean = True): TMemSize; override;
-    Function WriteUTF8String(const Value: UTF8String; Advance: Boolean = True): TMemSize; override;
-    Function WriteString(const Value: String; Advance: Boolean = True): TMemSize; override;
-    Function WriteBuffer(const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; override;
-    Function FillBytes(Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize; override;
-    Function ReadBool(out Value: ByteBool; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadBool(Advance: Boolean = True): ByteBool; overload; override;
-    Function ReadInt8(out Value: Int8; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadInt8(Advance: Boolean = True): Int8; overload; override;
-    Function ReadUInt8(out Value: UInt8; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadUInt8(Advance: Boolean = True): UInt8; overload; override;
-    Function ReadInt16(out Value: Int16; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadInt16(Advance: Boolean = True): Int16; overload; override;
-    Function ReadUInt16(out Value: UInt16; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadUInt16(Advance: Boolean = True): UInt16; overload; override;
-    Function ReadInt32(out Value: Int32; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadInt32(Advance: Boolean = True): Int32; overload; override;
-    Function ReadUInt32(out Value: UInt32; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadUInt32(Advance: Boolean = True): UInt32; overload; override;
-    Function ReadInt64(out Value: Int64; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadInt64(Advance: Boolean = True): Int64; overload; override;
-    Function ReadUInt64(out Value: UInt64; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadUInt64(Advance: Boolean = True): UInt64; overload; override;
-    Function ReadFloat32(out Value: Float32; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadFloat32(Advance: Boolean = True): Float32; overload; override;
-    Function ReadFloat64(out Value: Float64; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadFloat64(Advance: Boolean = True): Float64; overload; override;
-    Function ReadAnsiString(out Value: AnsiString; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadAnsiString(Advance: Boolean = True): AnsiString; overload; override;
-    Function ReadUnicodeString(out Value: UnicodeString; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadUnicodeString(Advance: Boolean = True): UnicodeString; overload; override;
-    Function ReadWideString(out Value: WideString; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadWideString(Advance: Boolean = True): WideString; overload; override;
-    Function ReadUTF8String(out Value: UTF8String; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadUTF8String(Advance: Boolean = True): UTF8String; overload; override;
-    Function ReadString(out Value: String; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadString(Advance: Boolean = True): String; overload; override;    
-    Function ReadBuffer(var Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; overload; override;
     property OwnsPointer: Boolean read fOwnsPointer;
     property PtrSize: PtrUInt read fPtrSize;
   end;
@@ -485,60 +438,11 @@ type
   protected
     Function GetCurrentPosition: UInt64; override;
     procedure SetCurrentPosition(NewPosition: UInt64); override;
+    Function WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize; override;
+    Function ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize; override;
   public
     constructor Create(Target: TStream);
     procedure Initialize(Target: TStream); reintroduce; virtual;
-    Function WriteBool(Value: ByteBool; Advance: Boolean = True): TMemSize; override;
-    Function WriteInt8(Value: Int8; Advance: Boolean = True): TMemSize; override;
-    Function WriteUInt8(Value: UInt8; Advance: Boolean = True): TMemSize; override;
-    Function WriteInt16(Value: Int16; Advance: Boolean = True): TMemSize; override;
-    Function WriteUInt16(Value: UInt16; Advance: Boolean = True): TMemSize; override;
-    Function WriteInt32(Value: Int32; Advance: Boolean = True): TMemSize; override;
-    Function WriteUInt32(Value: UInt32; Advance: Boolean = True): TMemSize; override;
-    Function WriteInt64(Value: Int64; Advance: Boolean = True): TMemSize; override;
-    Function WriteUInt64(Value: UInt64; Advance: Boolean = True): TMemSize; override;
-    Function WriteFloat32(Value: Float32; Advance: Boolean = True): TMemSize; override;
-    Function WriteFloat64(Value: Float64; Advance: Boolean = True): TMemSize; override;
-    Function WriteAnsiString(const Value: AnsiString; Advance: Boolean = True): TMemSize; override;
-    Function WriteUnicodeString(const Value: UnicodeString; Advance: Boolean = True): TMemSize; override;
-    Function WriteWideString(const Value: WideString; Advance: Boolean = True): TMemSize; override;
-    Function WriteUTF8String(const Value: UTF8String; Advance: Boolean = True): TMemSize; override;
-    Function WriteString(const Value: String; Advance: Boolean = True): TMemSize; override;
-    Function WriteBuffer(const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; override;
-    Function FillBytes(Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize; override;
-    Function ReadBool(out Value: ByteBool; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadBool(Advance: Boolean = True): ByteBool; overload; override;
-    Function ReadInt8(out Value: Int8; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadInt8(Advance: Boolean = True): Int8; overload; override;
-    Function ReadUInt8(out Value: UInt8; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadUInt8(Advance: Boolean = True): UInt8; overload; override;
-    Function ReadInt16(out Value: Int16; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadInt16(Advance: Boolean = True): Int16; overload; override;
-    Function ReadUInt16(out Value: UInt16; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadUInt16(Advance: Boolean = True): UInt16; overload; override;
-    Function ReadInt32(out Value: Int32; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadInt32(Advance: Boolean = True): Int32; overload; override;
-    Function ReadUInt32(out Value: UInt32; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadUInt32(Advance: Boolean = True): UInt32; overload; override;
-    Function ReadInt64(out Value: Int64; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadInt64(Advance: Boolean = True): Int64; overload; override;
-    Function ReadUInt64(out Value: UInt64; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadUInt64(Advance: Boolean = True): UInt64; overload; override;
-    Function ReadFloat32(out Value: Float32; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadFloat32(Advance: Boolean = True): Float32; overload; override;
-    Function ReadFloat64(out Value: Float64; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadFloat64(Advance: Boolean = True): Float64; overload; override;
-    Function ReadAnsiString(out Value: AnsiString; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadAnsiString(Advance: Boolean = True): AnsiString; overload; override;
-    Function ReadUnicodeString(out Value: UnicodeString; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadUnicodeString(Advance: Boolean = True): UnicodeString; overload; override;
-    Function ReadWideString(out Value: WideString; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadWideString(Advance: Boolean = True): WideString; overload; override;
-    Function ReadUTF8String(out Value: UTF8String; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadUTF8String(Advance: Boolean = True): UTF8String; overload; override;
-    Function ReadString(out Value: String; Advance: Boolean = True): TMemSize; overload; override;
-    Function ReadString(Advance: Boolean = True): String; overload; override;    
-    Function ReadBuffer(var Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; overload; override;
     property Target: TStream read fTarget;
   end;
 
@@ -547,6 +451,14 @@ implementation
 
 uses
   SysUtils;
+  
+const
+  PARAM_ANSISTRING    = -1;
+  PARAM_UNICODESTRING = -2;
+  PARAM_WIDESTRING    = -3;
+  PARAM_UTF8STRING    = -4;
+  PARAM_STRING        = -5;
+  PARAM_FILLBYTES     = -6;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -2250,6 +2162,361 @@ If (Index >= Low(fBookmarks)) and (Index <= High(fBookmarks)) then
 else raise Exception.CreateFmt('TCustomStreamer.DeleteBookmark: Index (%d) out of bounds.',[Index]);
 end;
 
+//==============================================================================
+
+Function TCustomStreamer.WriteBool(Value: ByteBool; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(@Value,Advance,SizeOf(Value));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteInt8(Value: Int8; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(@Value,Advance,SizeOf(Value));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteUInt8(Value: UInt8; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(@Value,Advance,SizeOf(Value));
+end;
+ 
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteInt16(Value: Int16; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(@Value,Advance,SizeOf(Value));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteUInt16(Value: UInt16; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(@Value,Advance,SizeOf(Value));
+end;
+
+Function TCustomStreamer.WriteInt32(Value: Int32; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(@Value,Advance,SizeOf(Value));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteUInt32(Value: UInt32; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(@Value,Advance,SizeOf(Value));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteInt64(Value: Int64; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(@Value,Advance,SizeOf(Value));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteUInt64(Value: UInt64; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(@Value,Advance,SizeOf(Value));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteFloat32(Value: Float32; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(@Value,Advance,SizeOf(Value));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteFloat64(Value: Float64; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(@Value,Advance,SizeOf(Value));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteAnsiString(const Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(@Value,Advance,0,PARAM_ANSISTRING);
+end;
+ 
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteUnicodeString(const Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(@Value,Advance,0,PARAM_UNICODESTRING);
+end;
+  
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteWideString(const Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(@Value,Advance,0,PARAM_WIDESTRING);
+end;
+  
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteUTF8String(const Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(@Value,Advance,0,PARAM_UTF8STRING);
+end;
+  
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteString(const Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(@Value,Advance,0,PARAM_STRING);
+end;
+  
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteBuffer(const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(@Buffer,Advance,Size);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.FillBytes(Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(@Value,Advance,Count,PARAM_FILLBYTES);
+end;
+
+//==============================================================================
+
+Function TCustomStreamer.ReadBool(out Value: ByteBool; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(@Value,Advance,SizeOf(Value));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadBool(Advance: Boolean = True): ByteBool;
+begin
+ReadValue(@Result,Advance,SizeOf(Result));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadInt8(out Value: Int8; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(@Value,Advance,SizeOf(Value));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadInt8(Advance: Boolean = True): Int8;
+begin
+ReadValue(@Result,Advance,SizeOf(Result));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadUInt8(out Value: UInt8; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(@Value,Advance,SizeOf(Value));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadUInt8(Advance: Boolean = True): UInt8;
+begin
+ReadValue(@Result,Advance,SizeOf(Result));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadInt16(out Value: Int16; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(@Value,Advance,SizeOf(Value));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadInt16(Advance: Boolean = True): Int16;
+begin
+ReadValue(@Result,Advance,SizeOf(Result));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadUInt16(out Value: UInt16; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(@Value,Advance,SizeOf(Value));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadUInt16(Advance: Boolean = True): UInt16;
+begin
+ReadValue(@Result,Advance,SizeOf(Result));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadInt32(out Value: Int32; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(@Value,Advance,SizeOf(Value));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadInt32(Advance: Boolean = True): Int32;
+begin
+ReadValue(@Result,Advance,SizeOf(Result));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadUInt32(out Value: UInt32; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(@Value,Advance,SizeOf(Value));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadUInt32(Advance: Boolean = True): UInt32;
+begin
+ReadValue(@Result,Advance,SizeOf(Result));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadInt64(out Value: Int64; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(@Value,Advance,SizeOf(Value));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadInt64(Advance: Boolean = True): Int64;
+begin
+ReadValue(@Result,Advance,SizeOf(Result));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadUInt64(out Value: UInt64; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(@Value,Advance,SizeOf(Value));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadUInt64(Advance: Boolean = True): UInt64;
+begin
+ReadValue(@Result,Advance,SizeOf(Result));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadFloat32(out Value: Float32; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(@Value,Advance,SizeOf(Value));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadFloat32(Advance: Boolean = True): Float32;
+begin
+ReadValue(@Result,Advance,SizeOf(Result));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadFloat64(out Value: Float64; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(@Value,Advance,SizeOf(Value));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadFloat64(Advance: Boolean = True): Float64;
+begin
+ReadValue(@Result,Advance,SizeOf(Result));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadAnsiString(out Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(@Value,Advance,0,PARAM_ANSISTRING);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadAnsiString(Advance: Boolean = True): AnsiString;
+begin
+ReadValue(@Result,Advance,0,PARAM_ANSISTRING);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadUnicodeString(out Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(@Value,Advance,0,PARAM_UNICODESTRING);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadUnicodeString(Advance: Boolean = True): UnicodeString;
+begin
+ReadValue(@Result,Advance,0,PARAM_UNICODESTRING);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadWideString(out Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(@Value,Advance,0,PARAM_WIDESTRING);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadWideString(Advance: Boolean = True): WideString;
+begin
+ReadValue(@Result,Advance,0,PARAM_WIDESTRING);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadUTF8String(out Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(@Value,Advance,0,PARAM_UTF8STRING);
+end;
+ 
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadUTF8String(Advance: Boolean = True): UTF8String;
+begin
+ReadValue(@Result,Advance,0,PARAM_UTF8STRING);
+end;
+ 
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadString(out Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(@Value,Advance,0,PARAM_STRING);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadString(Advance: Boolean = True): String;
+begin
+ReadValue(@Result,Advance,0,PARAM_STRING);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadBuffer(var Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(@Buffer,Advance,Size);
+end;
+
 {==============================================================================}
 {                                TMemoryStreamer                               }
 {==============================================================================}
@@ -2275,6 +2542,51 @@ end;
 procedure TMemoryStreamer.SetCurrentPosition(NewPosition: UInt64);
 begin
 fCurrentPtr := {%H-}Pointer(NewPosition);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize;
+begin
+case Param of
+  PARAM_ANSISTRING:     Result := Ptr_WriteAnsiString(fCurrentPtr,AnsiString(Value^),Advance);
+  PARAM_UNICODESTRING:  Result := Ptr_WriteUnicodeString(fCurrentPtr,UnicodeString(Value^),Advance);
+  PARAM_WIDESTRING:     Result := Ptr_WriteWideString(fCurrentPtr,WideString(Value^),Advance);
+  PARAM_UTF8STRING:     Result := Ptr_WriteUTF8String(fCurrentPtr,UTF8String(Value^),Advance);
+  PARAM_STRING:         Result := Ptr_WriteString(fCurrentPtr,String(Value^),Advance);
+  PARAM_FILLBYTES:      Result := Ptr_FillBytes(fCurrentPtr,Size,UInt8(Value^),Advance);
+else
+  case Size of
+    1:  Result := Ptr_WriteUInt8(fCurrentPtr,UInt8(Value^),Advance);
+    2:  Result := Ptr_WriteUInt16(fCurrentPtr,UInt16(Value^),Advance);
+    4:  Result := Ptr_WriteUInt32(fCurrentPtr,UInt32(Value^),Advance);
+    8:  Result := Ptr_WriteUInt64(fCurrentPtr,UInt64(Value^),Advance);
+  else
+    Result := Ptr_WriteBuffer(fCurrentPtr,Value^,Size,Advance);
+  end;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize;
+begin
+case Param of
+  PARAM_ANSISTRING:     Result := Ptr_ReadAnsiString(fCurrentPtr,AnsiString(Value^),Advance);
+  PARAM_UNICODESTRING:  Result := Ptr_ReadUnicodeString(fCurrentPtr,UnicodeString(Value^),Advance);
+  PARAM_WIDESTRING:     Result := Ptr_ReadWideString(fCurrentPtr,WideString(Value^),Advance);
+  PARAM_UTF8STRING:     Result := Ptr_ReadUTF8String(fCurrentPtr,UTF8String(Value^),Advance);
+  PARAM_STRING:         Result := Ptr_ReadString(fCurrentPtr,String(Value^),Advance);
+else
+  case Size of
+    1:  Result := Ptr_ReadUInt8(fCurrentPtr,UInt8(Value^),Advance);
+    2:  Result := Ptr_ReadUInt16(fCurrentPtr,UInt16(Value^),Advance);
+    4:  Result := Ptr_ReadUInt32(fCurrentPtr,UInt32(Value^),Advance);
+    8:  Result := Ptr_ReadUInt64(fCurrentPtr,UInt64(Value^),Advance);
+  else
+    Result := Ptr_ReadBuffer(fCurrentPtr,Value^,Size,Advance);
+  end;
+end;
 end;
 
 {------------------------------------------------------------------------------}
@@ -2349,362 +2661,6 @@ begin
 Result := inherited RemoveBookmark(PtrUInt(Position),RemoveAll);
 end;
 
-//==============================================================================
-
-Function TMemoryStreamer.WriteBool(Value: ByteBool; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_WriteBool(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.WriteInt8(Value: Int8; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_WriteInt8(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.WriteUInt8(Value: UInt8; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_WriteUInt8(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.WriteInt16(Value: Int16; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_WriteInt16(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.WriteUInt16(Value: UInt16; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_WriteUInt16(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.WriteInt32(Value: Int32; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_WriteInt32(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.WriteUInt32(Value: UInt32; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_WriteUInt32(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.WriteInt64(Value: Int64; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_WriteInt64(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.WriteUInt64(Value: UInt64; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_WriteUInt64(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.WriteFloat32(Value: Float32; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_WriteFloat32(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.WriteFloat64(Value: Float64; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_WriteFloat64(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.WriteAnsiString(const Value: AnsiString; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_WriteAnsiString(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.WriteUnicodeString(const Value: UnicodeString; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_WriteUnicodeString(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.WriteWideString(const Value: WideString; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_WriteWideString(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.WriteUTF8String(const Value: UTF8String; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_WriteUTF8String(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.WriteString(const Value: String; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_WriteString(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.WriteBuffer(const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_WriteBuffer(fCurrentPtr,Buffer,Size,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.FillBytes(Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_FillBytes(fCurrentPtr,Count,Value,Advance);
-end;
-
-//==============================================================================
-
-Function TMemoryStreamer.ReadBool(out Value: ByteBool; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_ReadBool(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadBool(Advance: Boolean = True): ByteBool;
-begin
-Result := Ptr_ReadBool(fCurrentPtr,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadInt8(out Value: Int8; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_ReadInt8(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadInt8(Advance: Boolean = True): Int8;
-begin
-Result := Ptr_ReadInt8(fCurrentPtr,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadUInt8(out Value: UInt8; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_ReadUInt8(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadUInt8(Advance: Boolean = True): UInt8;
-begin
-Result := Ptr_ReadUInt8(fCurrentPtr,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadInt16(out Value: Int16; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_ReadInt16(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadInt16(Advance: Boolean = True): Int16;
-begin
-Result := Ptr_ReadInt16(fCurrentPtr,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadUInt16(out Value: UInt16; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_ReadUInt16(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadUInt16(Advance: Boolean = True): UInt16;
-begin
-Result := Ptr_ReadUInt16(fCurrentPtr,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadInt32(out Value: Int32; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_ReadInt32(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadInt32(Advance: Boolean = True): Int32;
-begin
-Result := Ptr_ReadInt32(fCurrentPtr,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadUInt32(out Value: UInt32; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_ReadUInt32(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadUInt32(Advance: Boolean = True): UInt32;
-begin
-Result := Ptr_ReadUInt32(fCurrentPtr,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadInt64(out Value: Int64; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_ReadInt64(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadInt64(Advance: Boolean = True): Int64;
-begin
-Result := Ptr_ReadInt64(fCurrentPtr,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadUInt64(out Value: UInt64; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_ReadUInt64(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadUInt64(Advance: Boolean = True): UInt64;
-begin
-Result := Ptr_ReadUInt64(fCurrentPtr,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadFloat32(out Value: Float32; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_ReadFloat32(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadFloat32(Advance: Boolean = True): Float32;
-begin
-Result := Ptr_ReadFloat32(fCurrentPtr,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadFloat64(out Value: Float64; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_ReadFloat64(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadFloat64(Advance: Boolean = True): Float64;
-begin
-Result := Ptr_ReadFloat64(fCurrentPtr,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadAnsiString(out Value: AnsiString; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_ReadAnsiString(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadAnsiString(Advance: Boolean = True): AnsiString;
-begin
-Result := Ptr_ReadAnsiString(fCurrentPtr,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadUnicodeString(out Value: UnicodeString; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_ReadUnicodeString(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadUnicodeString(Advance: Boolean = True): UnicodeString;
-begin
-Result := Ptr_ReadUnicodeString(fCurrentPtr,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadWideString(out Value: WideString; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_ReadWideString(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadWideString(Advance: Boolean = True): WideString;
-begin
-Result := Ptr_ReadWideString(fCurrentPtr,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadUTF8String(out Value: UTF8String; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_ReadUTF8String(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadUTF8String(Advance: Boolean = True): UTF8String;
-begin
-Result := Ptr_ReadUTF8String(fCurrentPtr,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadString(out Value: String; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_ReadString(fCurrentPtr,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadString(Advance: Boolean = True): String;
-begin
-Result := Ptr_ReadString(fCurrentPtr,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.ReadBuffer(var Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
-begin
-Result := Ptr_ReadBuffer(fCurrentPtr,Buffer,Size,Advance);
-end;
 
 {==============================================================================}
 {                                TStreamStreamer                               }
@@ -2726,6 +2682,51 @@ begin
 fTarget.Position := NewPosition;
 end;
 
+//------------------------------------------------------------------------------
+
+Function TStreamStreamer.WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize;
+begin
+case Param of
+  PARAM_ANSISTRING:     Result := Stream_WriteAnsiString(fTarget,AnsiString(Value^),Advance);
+  PARAM_UNICODESTRING:  Result := Stream_WriteUnicodeString(fTarget,UnicodeString(Value^),Advance);
+  PARAM_WIDESTRING:     Result := Stream_WriteWideString(fTarget,WideString(Value^),Advance);
+  PARAM_UTF8STRING:     Result := Stream_WriteUTF8String(fTarget,UTF8String(Value^),Advance);
+  PARAM_STRING:         Result := Stream_WriteString(fTarget,String(Value^),Advance);
+  PARAM_FILLBYTES:      Result := Stream_FillBytes(fTarget,Size,UInt8(Value^),Advance);
+else
+  case Size of
+    1:  Result := Stream_WriteUInt8(fTarget,UInt8(Value^),Advance);
+    2:  Result := Stream_WriteUInt16(fTarget,UInt16(Value^),Advance);
+    4:  Result := Stream_WriteUInt32(fTarget,UInt32(Value^),Advance);
+    8:  Result := Stream_WriteUInt64(fTarget,UInt64(Value^),Advance);
+  else
+    Result := Stream_WriteBuffer(fTarget,Value^,Size,Advance);
+  end;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TStreamStreamer.ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize;
+begin
+case Param of
+  PARAM_ANSISTRING:     Result := Stream_ReadAnsiString(fTarget,AnsiString(Value^),Advance);
+  PARAM_UNICODESTRING:  Result := Stream_ReadUnicodeString(fTarget,UnicodeString(Value^),Advance);
+  PARAM_WIDESTRING:     Result := Stream_ReadWideString(fTarget,WideString(Value^),Advance);
+  PARAM_UTF8STRING:     Result := Stream_ReadUTF8String(fTarget,UTF8String(Value^),Advance);
+  PARAM_STRING:         Result := Stream_ReadString(fTarget,String(Value^),Advance);
+else
+  case Size of
+    1:  Result := Stream_ReadUInt8(fTarget,UInt8(Value^),Advance);
+    2:  Result := Stream_ReadUInt16(fTarget,UInt16(Value^),Advance);
+    4:  Result := Stream_ReadUInt32(fTarget,UInt32(Value^),Advance);
+    8:  Result := Stream_ReadUInt64(fTarget,UInt64(Value^),Advance);
+  else
+    Result := Stream_ReadBuffer(fTarget,Value^,Size,Advance);
+  end;
+end;
+end;
+
 {------------------------------------------------------------------------------}
 {   TStreamStreamer - public methods                                           }
 {------------------------------------------------------------------------------}
@@ -2743,363 +2744,6 @@ begin
 inherited Initialize;
 fTarget := Target;
 fStartPosition := Target.Position;
-end;
-
-//==============================================================================
-
-Function TStreamStreamer.WriteBool(Value: ByteBool; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_WriteBool(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.WriteInt8(Value: Int8; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_WriteInt8(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.WriteUInt8(Value: UInt8; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_WriteUInt8(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.WriteInt16(Value: Int16; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_WriteInt16(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.WriteUInt16(Value: UInt16; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_WriteUInt16(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.WriteInt32(Value: Int32; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_WriteInt32(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.WriteUInt32(Value: UInt32; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_WriteUInt32(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.WriteInt64(Value: Int64; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_WriteInt64(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.WriteUInt64(Value: UInt64; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_WriteUInt64(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.WriteFloat32(Value: Float32; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_WriteFloat32(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.WriteFloat64(Value: Float64; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_WriteFloat64(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.WriteAnsiString(const Value: AnsiString; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_WriteAnsiString(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.WriteUnicodeString(const Value: UnicodeString; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_WriteUnicodeString(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.WriteWideString(const Value: WideString; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_WriteWideString(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.WriteUTF8String(const Value: UTF8String; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_WriteUTF8String(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.WriteString(const Value: String; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_WriteString(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.WriteBuffer(const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_WriteBuffer(fTarget,Buffer,Size,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.FillBytes(Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_FillBytes(fTarget,Count,Value,Advance);
-end;
-
-//==============================================================================
-
-Function TStreamStreamer.ReadBool(out Value: ByteBool; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_ReadBool(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadBool(Advance: Boolean = True): ByteBool;
-begin
-Result := Stream_ReadBool(fTarget,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadInt8(out Value: Int8; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_ReadInt8(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadInt8(Advance: Boolean = True): Int8;
-begin
-Result := Stream_ReadInt8(fTarget,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadUInt8(out Value: UInt8; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_ReadUInt8(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadUInt8(Advance: Boolean = True): UInt8;
-begin
-Result := Stream_ReadUInt8(fTarget,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadInt16(out Value: Int16; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_ReadInt16(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadInt16(Advance: Boolean = True): Int16;
-begin
-Result := Stream_ReadInt16(fTarget,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadUInt16(out Value: UInt16; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_ReadUInt16(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadUInt16(Advance: Boolean = True): UInt16;
-begin
-Result := Stream_ReadUInt16(fTarget,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadInt32(out Value: Int32; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_ReadInt32(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadInt32(Advance: Boolean = True): Int32;
-begin
-Result := Stream_ReadInt32(fTarget,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadUInt32(out Value: UInt32; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_ReadUInt32(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadUInt32(Advance: Boolean = True): UInt32;
-begin
-Result := Stream_ReadUInt32(fTarget,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadInt64(out Value: Int64; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_ReadInt64(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadInt64(Advance: Boolean = True): Int64;
-begin
-Result := Stream_ReadInt64(fTarget,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadUInt64(out Value: UInt64; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_ReadUInt64(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadUInt64(Advance: Boolean = True): UInt64;
-begin
-Result := Stream_ReadUInt64(fTarget,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadFloat32(out Value: Float32; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_ReadFloat32(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadFloat32(Advance: Boolean = True): Float32;
-begin
-Result := Stream_ReadFloat32(fTarget,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadFloat64(out Value: Float64; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_ReadFloat64(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadFloat64(Advance: Boolean = True): Float64;
-begin
-Result := Stream_ReadFloat64(fTarget,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadAnsiString(out Value: AnsiString; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_ReadAnsiString(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadAnsiString(Advance: Boolean = True): AnsiString;
-begin
-Result := Stream_ReadAnsiString(fTarget,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadUnicodeString(out Value: UnicodeString; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_ReadUnicodeString(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadUnicodeString(Advance: Boolean = True): UnicodeString;
-begin
-Result := Stream_ReadUnicodeString(fTarget,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadWideString(out Value: WideString; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_ReadWideString(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadWideString(Advance: Boolean = True): WideString;
-begin
-Result := Stream_ReadWideString(fTarget,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadUTF8String(out Value: UTF8String; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_ReadUTF8String(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadUTF8String(Advance: Boolean = True): UTF8String;
-begin
-Result := Stream_ReadUTF8String(fTarget,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadString(out Value: String; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_ReadString(fTarget,Value,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadString(Advance: Boolean = True): String;
-begin
-Result := Stream_ReadString(fTarget,Advance);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TStreamStreamer.ReadBuffer(var Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
-begin
-Result := Stream_ReadBuffer(fTarget,Buffer,Size,Advance);
 end;
 
 end.
