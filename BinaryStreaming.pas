@@ -9,9 +9,9 @@
 
   Binary streaming
 
-  ©František Milt 2015-11-05
+  ©František Milt 2015-12-16
 
-  Version 1.0.1 beta (needs testing)
+  Version 1.1
 
 ===============================================================================}
 unit BinaryStreaming;
@@ -317,11 +317,9 @@ Function Stream_ReadBuffer(Stream: TStream; var Buffer; Size: TMemSize; Advance:
 type
   TCustomStreamer = class(TObject)
   protected
-    fBookmarks:     array of UInt64;
-    fStartPosition: UInt64;
-    fCurrentPtr:    Pointer;
-    fStartPtr:      Pointer;
-    fUserData:      PtrUInt;
+    fBookmarks:       array of UInt64;
+    fStartPosition:   UInt64;
+    fUserData:        PtrUInt;
     Function GetBookmarkCount: Integer; virtual;
     Function GetBookmark(Index: Integer): UInt64; virtual;
     procedure SetBookmark(Index: Integer; Value: UInt64); virtual;
@@ -396,8 +394,6 @@ type
     property CurrentPosition: UInt64 read GetCurrentPosition write SetCurrentPosition;
     property StartPosition: UInt64 read fStartPosition;
     property Distance: Int64 read GetDistance;
-    property CurrentPtr: Pointer read fCurrentPtr;
-    property StartPtr: Pointer read fStartPtr;
     property UserData: PtrUInt read fUserData write fUserData;
   end;
 
@@ -407,8 +403,10 @@ type
 
   TMemoryStreamer = class(TCustomStreamer)
   private
+    fCurrentPtr:  Pointer;
     fOwnsPointer: Boolean;
     fPtrSize:     PtrUInt;
+    Function GetStartPtr: Pointer;
   protected
     procedure SetBookmark(Index: Integer; Value: UInt64); override;
     Function GetCurrentPosition: UInt64; override;
@@ -426,6 +424,8 @@ type
     Function RemoveBookmark(Position: UInt64; RemoveAll: Boolean = True): Integer; override;
     property OwnsPointer: Boolean read fOwnsPointer;
     property PtrSize: PtrUInt read fPtrSize;
+    property CurrentPtr: Pointer read fCurrentPtr write fCurrentPtr;
+    property StartPtr: Pointer read GetStartPtr;
   end;
 
 {==============================================================================}
@@ -2083,8 +2083,6 @@ procedure TCustomStreamer.Initialize;
 begin
 SetLength(fBookmarks,0);
 fStartPosition := 0;
-fCurrentPtr := nil;
-fStartPtr := nil;
 end;
 
 //------------------------------------------------------------------------------
@@ -2522,26 +2520,35 @@ end;
 {==============================================================================}
 
 {------------------------------------------------------------------------------}
+{   TMemoryStreamer - private methods                                          }
+{------------------------------------------------------------------------------}
+
+Function TMemoryStreamer.GetStartPtr: Pointer;
+begin
+Result := {%H-}Pointer(fStartPosition);
+end;
+
+{------------------------------------------------------------------------------}
 {   TMemoryStreamer - protected methods                                        }
 {------------------------------------------------------------------------------}
 
 procedure TMemoryStreamer.SetBookmark(Index: Integer; Value: UInt64);
 begin
-inherited SetBookmark(Index,PtrUInt(Value));
+inherited SetBookmark(Index,UInt64(PtrUInt(Value)));
 end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetCurrentPosition: UInt64;
 begin
-Result := {%H-}PtrUInt(fCurrentPtr);
+Result := {%H-}UInt64(fCurrentPtr);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TMemoryStreamer.SetCurrentPosition(NewPosition: UInt64);
 begin
-fCurrentPtr := {%H-}Pointer(NewPosition);
+fCurrentPtr := {%H-}Pointer(PtrUInt(NewPosition));
 end;
 
 //------------------------------------------------------------------------------
@@ -2596,6 +2603,7 @@ end;
 constructor TMemoryStreamer.Create(Memory: Pointer);
 begin
 inherited Create;
+fOwnsPointer := False;
 Initialize(Memory);
 end;
 
@@ -2604,6 +2612,7 @@ end;
 constructor TMemoryStreamer.Create(Size: PtrUInt);
 begin
 inherited Create;
+fOwnsPointer := False;
 Initialize(Size);
 end;
 
@@ -2612,7 +2621,7 @@ end;
 destructor TMemoryStreamer.Destroy;
 begin
 If fOwnsPointer then
-  FreeMem(fStartPtr,fPtrSize);
+  FreeMem(StartPtr,PtrSize);
 inherited;
 end;
 
@@ -2623,21 +2632,27 @@ begin
 inherited Initialize;
 fOwnsPointer := False;
 fPtrSize := 0;
-fStartPtr := Memory;
 fCurrentPtr := Memory;
-fStartPosition := {%H-}PtrUInt(Memory);
+fStartPosition := {%H-}UInt64(Memory);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
 procedure TMemoryStreamer.Initialize(Size: PtrUInt);
+var
+  TempPtr:  Pointer;
 begin
 inherited Initialize;
+If fOwnsPointer then
+  begin
+    TempPtr := StartPtr;
+    ReallocMem(TempPtr,Size);
+  end
+else TempPtr := AllocMem(Size);
 fOwnsPointer := True;
 fPtrSize := Size;
-ReallocMem(fStartPtr,Size);
-fCurrentPtr := fStartPtr;
-fStartPosition := {%H-}PtrUInt(fStartPtr);
+fCurrentPtr := TempPtr;
+fStartPosition := {%H-}UInt64(TempPtr);
 end;
 
 //------------------------------------------------------------------------------
@@ -2672,14 +2687,14 @@ end;
 
 Function TStreamStreamer.GetCurrentPosition: UInt64;
 begin
-Result := fTarget.Position;
+Result := UInt64(fTarget.Position);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TStreamStreamer.SetCurrentPosition(NewPosition: UInt64);
 begin
-fTarget.Position := NewPosition;
+fTarget.Position := Int64(NewPosition);
 end;
 
 //------------------------------------------------------------------------------
