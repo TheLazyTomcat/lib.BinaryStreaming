@@ -9,9 +9,9 @@
 
   Binary streaming
 
-  ©František Milt 2015-12-16
+  ©František Milt 2015-12-20
 
-  Version 1.1
+  Version 1.2
 
 ===============================================================================}
 unit BinaryStreaming;
@@ -65,6 +65,9 @@ Function Ptr_WriteFloat64(var Dest: Pointer; Value: Float64; Advance: Boolean): 
 Function Ptr_WriteFloat64(Dest: Pointer; Value: Float64): TMemSize; overload;
 
 //------------------------------------------------------------------------------
+
+Function Ptr_WriteShortString(var Dest: Pointer; const Str: ShortString; Advance: Boolean): TMemSize; overload;
+Function Ptr_WriteShortString(Dest: Pointer; const Str: ShortString): TMemSize; overload;
 
 Function Ptr_WriteAnsiString(var Dest: Pointer; const Str: AnsiString; Advance: Boolean): TMemSize; overload;
 Function Ptr_WriteAnsiString(Dest: Pointer; const Str: AnsiString): TMemSize; overload;
@@ -158,6 +161,11 @@ Function Ptr_ReadFloat64(Src: Pointer): Float64; overload;
 
 //------------------------------------------------------------------------------
 
+Function Ptr_ReadShortString(var Src: Pointer; out Str: ShortString; Advance: Boolean): TMemSize; overload;
+Function Ptr_ReadShortString(Src: Pointer; out Str: ShortString): TMemSize; overload;
+Function Ptr_ReadShortString(var Src: Pointer; Advance: Boolean): ShortString; overload;
+Function Ptr_ReadShortString(Src: Pointer): ShortString; overload;
+
 Function Ptr_ReadAnsiString(var Src: Pointer; out Str: AnsiString; Advance: Boolean): TMemSize; overload;
 Function Ptr_ReadAnsiString(Src: Pointer; out Str: AnsiString): TMemSize; overload;
 Function Ptr_ReadAnsiString(var Src: Pointer; Advance: Boolean): AnsiString; overload;
@@ -222,6 +230,8 @@ Function Stream_WriteFloat64(Stream: TStream; Value: Float64; Advance: Boolean =
 
 //------------------------------------------------------------------------------
 
+Function Stream_WriteShortString(Stream: TStream; const Str: ShortString; Advance: Boolean = True): TMemSize;
+
 Function Stream_WriteAnsiString(Stream: TStream; const Str: AnsiString; Advance: Boolean = True): TMemSize;
 
 Function Stream_WriteUnicodeString(Stream: TStream; const Str: UnicodeString; Advance: Boolean = True): TMemSize;
@@ -284,6 +294,9 @@ Function Stream_ReadFloat64(Stream: TStream; out Value: Float64; Advance: Boolea
 Function Stream_ReadFloat64(Stream: TStream; Advance: Boolean = True): Float64; overload;
 
 //------------------------------------------------------------------------------
+
+Function Stream_ReadShortString(Stream: TStream; out Str: ShortString; Advance: Boolean = True): TMemSize; overload;
+Function Stream_ReadShortString(Stream: TStream; Advance: Boolean = True): ShortString; overload;
 
 Function Stream_ReadAnsiString(Stream: TStream; out Str: AnsiString; Advance: Boolean = True): TMemSize; overload;
 Function Stream_ReadAnsiString(Stream: TStream; Advance: Boolean = True): AnsiString; overload;
@@ -349,6 +362,7 @@ type
     Function WriteUInt64(Value: UInt64; Advance: Boolean = True): TMemSize; virtual;
     Function WriteFloat32(Value: Float32; Advance: Boolean = True): TMemSize; virtual;
     Function WriteFloat64(Value: Float64; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteShortString(const Value: ShortString; Advance: Boolean = True): TMemSize; virtual;
     Function WriteAnsiString(const Value: AnsiString; Advance: Boolean = True): TMemSize; virtual;
     Function WriteUnicodeString(const Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
     Function WriteWideString(const Value: WideString; Advance: Boolean = True): TMemSize; virtual;
@@ -378,6 +392,8 @@ type
     Function ReadFloat32(Advance: Boolean = True): Float32; overload; virtual;
     Function ReadFloat64(out Value: Float64; Advance: Boolean = True): TMemSize; overload; virtual;
     Function ReadFloat64(Advance: Boolean = True): Float64; overload; virtual;
+    Function ReadShortString(out Value: ShortString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadShortString(Advance: Boolean = True): ShortString; overload; virtual;
     Function ReadAnsiString(out Value: AnsiString; Advance: Boolean = True): TMemSize; overload; virtual;
     Function ReadAnsiString(Advance: Boolean = True): AnsiString; overload; virtual;
     Function ReadUnicodeString(out Value: UnicodeString; Advance: Boolean = True): TMemSize; overload; virtual;
@@ -459,6 +475,7 @@ const
   PARAM_UTF8STRING    = -4;
   PARAM_STRING        = -5;
   PARAM_FILLBYTES     = -6;
+  PARAM_SHORTSTRING   = -7;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -792,6 +809,26 @@ Result := Ptr_WriteFloat32(Dest,Value,False);
 end;
 
 //==============================================================================
+
+Function Ptr_WriteShortString(var Dest: Pointer; const Str: ShortString; Advance: Boolean): TMemSize;
+begin
+If Assigned(Dest) then
+  begin
+    Result := Ptr_WriteBuffer(Dest,{%H-}Pointer({%H-}PtrUInt(Addr(Str[1])) - 1)^,Length(Str) + 1, Advance);
+    If Advance then Dest := {%H-}Pointer({%H-}PtrUInt(Dest) + Result);
+  end
+else
+  Result := Length(Str) + 1;
+end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+Function Ptr_WriteShortString(Dest: Pointer; const Str: ShortString): TMemSize;
+begin
+Result := Ptr_WriteShortString(Dest,Str,False);
+end;
+
+//------------------------------------------------------------------------------
 
 Function Ptr_WriteAnsiString(var Dest: Pointer; const Str: AnsiString; Advance: Boolean): TMemSize;
 var
@@ -1314,6 +1351,41 @@ end;
 
 //==============================================================================
 
+Function Ptr_ReadShortString(var Src: Pointer; out Str: ShortString; Advance: Boolean): TMemSize;
+var
+  StrLength:  UInt8;
+  WorkPtr:    Pointer;
+begin
+WorkPtr := Src;
+Result := Ptr_ReadUInt8(WorkPtr,StrLength,True);
+SetLength(Str,StrLength);
+Inc(Result,Ptr_ReadBuffer(WorkPtr,Addr(Str[1])^,StrLength,True));
+If Advance then Src := WorkPtr;
+end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+Function Ptr_ReadShortString(Src: Pointer; out Str: ShortString): TMemSize;
+begin
+Result := Ptr_ReadShortString(Src,Str,False);
+end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+Function Ptr_ReadShortString(var Src: Pointer; Advance: Boolean): ShortString;
+begin
+Ptr_ReadShortString(Src,Result,Advance);
+end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+Function Ptr_ReadShortString(Src: Pointer): ShortString;
+begin
+Ptr_ReadShortString(Src,Result,False);
+end;
+
+//------------------------------------------------------------------------------
+
 Function Ptr_ReadAnsiString(var Src: Pointer; out Str: AnsiString; Advance: Boolean): TMemSize;
 var
   StrLength:  Int32;
@@ -1636,6 +1708,14 @@ end;
 
 //==============================================================================
 
+Function Stream_WriteShortString(Stream: TStream; const Str: ShortString; Advance: Boolean = True): TMemSize;
+begin
+Result := Stream_WriteBuffer(Stream,{%H-}Pointer({%H-}PtrUInt(Addr(Str[1])) - 1)^,Length(Str) + 1, Advance);
+If not Advance then Stream.Seek(-Result,soFromCurrent);
+end;
+
+//------------------------------------------------------------------------------
+
 Function Stream_WriteAnsiString(Stream: TStream; const Str: AnsiString; Advance: Boolean = True): TMemSize;
 begin
 Result := Stream_WriteInt32(Stream,Length(Str),True);
@@ -1910,6 +1990,25 @@ Stream_ReadFloat64(Stream,Result,Advance);
 end;
 
 //==============================================================================
+
+Function Stream_ReadShortString(Stream: TStream; out Str: ShortString; Advance: Boolean = True): TMemSize;
+var
+  StrLength:  UInt8;
+begin
+Result := Stream_ReadUInt8(Stream,StrLength,True);
+SetLength(Str,StrLength);
+Inc(Result,Stream_ReadBuffer(Stream,Addr(Str[1])^,StrLength,True));
+If not Advance then Stream.Seek(-Result,soFromCurrent);
+end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+Function Stream_ReadShortString(Stream: TStream; Advance: Boolean = True): ShortString;
+begin
+Stream_ReadShortString(Stream,Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
 
 Function Stream_ReadAnsiString(Stream: TStream; out Str: AnsiString; Advance: Boolean = True): TMemSize;
 var
@@ -2237,6 +2336,13 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TCustomStreamer.WriteShortString(const Value: ShortString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(@Value,Advance,0,PARAM_SHORTSTRING);
+end;
+
+//------------------------------------------------------------------------------
+
 Function TCustomStreamer.WriteAnsiString(const Value: AnsiString; Advance: Boolean = True): TMemSize;
 begin
 Result := WriteValue(@Value,Advance,0,PARAM_ANSISTRING);
@@ -2440,6 +2546,20 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TCustomStreamer.ReadShortString(out Value: ShortString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(@Value,Advance,0,PARAM_SHORTSTRING);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadShortString(Advance: Boolean = True): ShortString;
+begin
+ReadValue(@Result,Advance,0,PARAM_SHORTSTRING);
+end;
+
+//------------------------------------------------------------------------------
+
 Function TCustomStreamer.ReadAnsiString(out Value: AnsiString; Advance: Boolean = True): TMemSize;
 begin
 Result := ReadValue(@Value,Advance,0,PARAM_ANSISTRING);
@@ -2556,6 +2676,7 @@ end;
 Function TMemoryStreamer.WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize;
 begin
 case Param of
+  PARAM_SHORTSTRING:    Result := Ptr_WriteShortString(fCurrentPtr,ShortString(Value^),Advance);
   PARAM_ANSISTRING:     Result := Ptr_WriteAnsiString(fCurrentPtr,AnsiString(Value^),Advance);
   PARAM_UNICODESTRING:  Result := Ptr_WriteUnicodeString(fCurrentPtr,UnicodeString(Value^),Advance);
   PARAM_WIDESTRING:     Result := Ptr_WriteWideString(fCurrentPtr,WideString(Value^),Advance);
@@ -2579,6 +2700,7 @@ end;
 Function TMemoryStreamer.ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize;
 begin
 case Param of
+  PARAM_SHORTSTRING:    Result := Ptr_ReadShortString(fCurrentPtr,ShortString(Value^),Advance);
   PARAM_ANSISTRING:     Result := Ptr_ReadAnsiString(fCurrentPtr,AnsiString(Value^),Advance);
   PARAM_UNICODESTRING:  Result := Ptr_ReadUnicodeString(fCurrentPtr,UnicodeString(Value^),Advance);
   PARAM_WIDESTRING:     Result := Ptr_ReadWideString(fCurrentPtr,WideString(Value^),Advance);
@@ -2702,6 +2824,7 @@ end;
 Function TStreamStreamer.WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize;
 begin
 case Param of
+  PARAM_SHORTSTRING:    Result := Stream_WriteShortString(fTarget,ShortString(Value^),Advance);
   PARAM_ANSISTRING:     Result := Stream_WriteAnsiString(fTarget,AnsiString(Value^),Advance);
   PARAM_UNICODESTRING:  Result := Stream_WriteUnicodeString(fTarget,UnicodeString(Value^),Advance);
   PARAM_WIDESTRING:     Result := Stream_WriteWideString(fTarget,WideString(Value^),Advance);
@@ -2725,6 +2848,7 @@ end;
 Function TStreamStreamer.ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize;
 begin
 case Param of
+  PARAM_SHORTSTRING:    Result := Stream_ReadShortString(fTarget,ShortString(Value^),Advance);
   PARAM_ANSISTRING:     Result := Stream_ReadAnsiString(fTarget,AnsiString(Value^),Advance);
   PARAM_UNICODESTRING:  Result := Stream_ReadUnicodeString(fTarget,UnicodeString(Value^),Advance);
   PARAM_WIDESTRING:     Result := Stream_ReadWideString(fTarget,WideString(Value^),Advance);
