@@ -9,9 +9,9 @@
 
   Binary streaming
 
-  ©František Milt 2015-12-20
+  ©František Milt 2016-02-28
 
-  Version 1.2
+  Version 1.2.1
 
 ===============================================================================}
 unit BinaryStreaming;
@@ -937,7 +937,11 @@ begin
 Result := Ptr_WriteUTF8String(Dest,UTF8Encode(Str),Advance);
 {$ELSE}
 {$IFDEF FPC}
+{$IF FPC_FULLVERSION >= 20701}
+Result := Ptr_WriteAnsiString(Dest,Str,Advance);
+{$ELSE}
 Result := Ptr_WriteUTF8String(Dest,Str,Advance);
+{$IFEND}
 {$ELSE}
 Result := Ptr_WriteUTF8String(Dest,AnsiToUTF8(Str),Advance);
 {$ENDIF}
@@ -1545,7 +1549,11 @@ Result := Ptr_ReadUTF8String(Src,TempStr,Advance);
 Str := UTF8Decode(TempStr);
 {$ELSE}
 {$IFDEF FPC}
+{$IF FPC_FULLVERSION >= 20701}
+Result := Ptr_ReadAnsiString(Src,Str,Advance);
+{$ELSE}
 Result := Ptr_ReadUTF8String(Src,Str,Advance);
+{$IFEND}
 {$ELSE}
 Result := Ptr_ReadUTF8String(Src,TempStr,Advance);
 Str := UTF8ToAnsi(TempStr);
@@ -1766,7 +1774,11 @@ begin
 Result := Stream_WriteUTF8String(Stream,UTF8Encode(Str),Advance);
 {$ELSE}
 {$IFDEF FPC}
+{$IF FPC_FULLVERSION >= 20701}
+Result := Stream_WriteAnsiString(Stream,Str,Advance);
+{$ELSE}
 Result := Stream_WriteUTF8String(Stream,Str,Advance);
+{$IFEND}
 {$ELSE}
 Result := Stream_WriteUTF8String(Stream,AnsiToUTF8(Str),Advance);
 {$ENDIF}
@@ -2105,7 +2117,11 @@ Result := Stream_ReadUTF8String(Stream,TempStr,Advance);
 Str := UTF8Decode(TempStr);
 {$ELSE}
 {$IFDEF FPC}
+{$IF FPC_FULLVERSION >= 20701}
+Result := Stream_ReadAnsiString(Stream,Str,Advance);
+{$ELSE}
 Result := Stream_ReadUTF8String(Stream,Str,Advance);
+{$IFEND}
 {$ELSE}
 Result := Stream_ReadUTF8String(Stream,TempStr,Advance);
 Str := UTF8ToAnsi(TempStr);
