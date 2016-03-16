@@ -9,9 +9,9 @@
 
   Binary streaming
 
-  ©František Milt 2016-03-01
+  ©František Milt 2016-03-17
 
-  Version 1.2.2
+  Version 1.3.0
 
 ===============================================================================}
 unit BinaryStreaming;
@@ -29,6 +29,9 @@ uses
 
 Function Ptr_WriteBool(var Dest: Pointer; Value: ByteBool; Advance: Boolean): TMemSize; overload;
 Function Ptr_WriteBool(Dest: Pointer; Value: ByteBool): TMemSize; overload;
+
+Function Ptr_WriteBoolean(var Dest: Pointer; Value: Boolean; Advance: Boolean): TMemSize; overload;
+Function Ptr_WriteBoolean(Dest: Pointer; Value: Boolean): TMemSize; overload;
 
 //------------------------------------------------------------------------------
 
@@ -104,6 +107,9 @@ Function Ptr_ReadBool(var Src: Pointer; out Value: ByteBool; Advance: Boolean): 
 Function Ptr_ReadBool(Src: Pointer; out Value: ByteBool): TMemSize; overload;
 Function Ptr_ReadBool(var Src: Pointer; Advance: Boolean): ByteBool; overload;
 Function Ptr_ReadBool(Src: Pointer): ByteBool; overload;
+
+Function Ptr_ReadBoolean(var Src: Pointer; out Value: Boolean; Advance: Boolean): TMemSize; overload;
+Function Ptr_ReadBoolean(Src: Pointer; out Value: Boolean): TMemSize; overload;
 
 //------------------------------------------------------------------------------
 
@@ -204,6 +210,8 @@ Function Ptr_ReadBuffer(Src: Pointer; var Buffer; Size: TMemSize): TMemSize; ove
 
 Function Stream_WriteBool(Stream: TStream; Value: ByteBool; Advance: Boolean = True): TMemSize;
 
+Function Stream_WriteBoolean(Stream: TStream; Value: Boolean; Advance: Boolean = True): TMemSize;
+
 //------------------------------------------------------------------------------
 
 Function Stream_WriteInt8(Stream: TStream; Value: Int8; Advance: Boolean = True): TMemSize;
@@ -258,6 +266,8 @@ Function Stream_FillBytes(Stream: TStream; Count: TMemSize; Value: UInt8; Advanc
 
 Function Stream_ReadBool(Stream: TStream; out Value: ByteBool; Advance: Boolean = True): TMemSize; overload;
 Function Stream_ReadBool(Stream: TStream; Advance: Boolean = True): ByteBool; overload;
+
+Function Stream_ReadBoolean(Stream: TStream; out Value: Boolean; Advance: Boolean = True): TMemSize;
 
 //------------------------------------------------------------------------------
 
@@ -352,6 +362,7 @@ type
     Function RemoveBookmark(Position: UInt64; RemoveAll: Boolean = True): Integer; virtual;
     procedure DeleteBookmark(Index: Integer); virtual;
     Function WriteBool(Value: ByteBool; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteBoolean(Value: Boolean; Advance: Boolean = True): TMemSize; virtual;
     Function WriteInt8(Value: Int8; Advance: Boolean = True): TMemSize; virtual;
     Function WriteUInt8(Value: UInt8; Advance: Boolean = True): TMemSize; virtual;
     Function WriteInt16(Value: Int16; Advance: Boolean = True): TMemSize; virtual;
@@ -372,6 +383,7 @@ type
     Function FillBytes(Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize; virtual;
     Function ReadBool(out Value: ByteBool; Advance: Boolean = True): TMemSize; overload; virtual;
     Function ReadBool(Advance: Boolean = True): ByteBool; overload; virtual;
+    Function ReadBoolean(out Value: Boolean; Advance: Boolean = True): TMemSize; virtual;
     Function ReadInt8(out Value: Int8; Advance: Boolean = True): TMemSize; overload; virtual;
     Function ReadInt8(Advance: Boolean = True): Int8; overload; virtual;
     Function ReadUInt8(out Value: UInt8; Advance: Boolean = True): TMemSize; overload; virtual;
@@ -478,7 +490,7 @@ const
   PARAM_SHORTSTRING   = -7;
 
 {$IF not Declared(FPC_FULLVERSION)}
-  FPC_FULLVERSION = Integer(0); // Because Delphi 7, don't ask ;)
+{%H-}FPC_FULLVERSION = Integer(0); // Because Delphi 7, don't ask ;)
 {$IFEND}  
 
 {------------------------------------------------------------------------------}
@@ -618,6 +630,20 @@ end;
 Function Ptr_WriteBool(Dest: Pointer; Value: ByteBool): TMemSize;
 begin
 Result := Ptr_WriteBool({%H-}Dest,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteBoolean(var Dest: Pointer; Value: Boolean; Advance: Boolean): TMemSize;
+begin
+Result := Ptr_WriteBool(Dest,Value,Advance);
+end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+Function Ptr_WriteBoolean(Dest: Pointer; Value: Boolean): TMemSize;
+begin
+Result := Ptr_WriteBool(Dest,Value);
 end;
 
 //==============================================================================
@@ -1026,6 +1052,23 @@ Ptr_ReadBool({%H-}Src,Result,False);
 end;
 
 //------------------------------------------------------------------------------
+
+Function Ptr_ReadBoolean(var Src: Pointer; out Value: Boolean; Advance: Boolean): TMemSize;
+var
+  TempBool: ByteBool;
+begin
+Result := Ptr_ReadBool(Src,TempBool,Advance);
+Value := TempBool;
+end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+Function Ptr_ReadBoolean(Src: Pointer; out Value: Boolean): TMemSize;
+begin
+Result := Ptr_ReadBoolean({%H-}Src,Value,False);
+end;
+
+//==============================================================================
 
 Function Ptr_ReadInt8(var Src: Pointer; out Value: Int8; Advance: Boolean): TMemSize; 
 begin
@@ -1614,6 +1657,13 @@ Result := Stream.Write(Value,SizeOf(Value));
 If not Advance then Stream.Seek(-Result,soFromCurrent);
 end;
 
+//------------------------------------------------------------------------------
+
+Function Stream_WriteBoolean(Stream: TStream; Value: Boolean; Advance: Boolean = True): TMemSize;
+begin
+Result := Stream_WriteBool(Stream,Value,Advance);
+end;
+
 //==============================================================================
 
 Function Stream_WriteInt8(Stream: TStream; Value: Int8; Advance: Boolean = True): TMemSize;
@@ -1829,6 +1879,16 @@ end;
 Function Stream_ReadBool(Stream: TStream; Advance: Boolean = True): ByteBool;
 begin
 Stream_ReadBool(Stream,Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadBoolean(Stream: TStream; out Value: Boolean; Advance: Boolean = True): TMemSize;
+var
+  TempBool: ByteBool;
+begin
+Result := Stream_ReadBool(Stream,TempBool,Advance);
+Value := TempBool;
 end;
 
 //==============================================================================
@@ -2294,6 +2354,13 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TCustomStreamer.WriteBoolean(Value: Boolean; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteBool(Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
 Function TCustomStreamer.WriteInt8(Value: Int8; Advance: Boolean = True): TMemSize;
 begin
 Result := WriteValue(@Value,Advance,SizeOf(Value));
@@ -2428,6 +2495,16 @@ end;
 Function TCustomStreamer.ReadBool(Advance: Boolean = True): ByteBool;
 begin
 ReadValue(@Result,Advance,SizeOf(Result));
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadBoolean(out Value: Boolean; Advance: Boolean = True): TMemSize;
+var
+  TempBool: ByteBool;
+begin
+Result := ReadBool(TempBool,Advance);
+Value := TempBool;
 end;
 
 //------------------------------------------------------------------------------
