@@ -11,7 +11,7 @@
 
   ©František Milt 2016-03-17
 
-  Version 1.3.0
+  Version 1.3.1
 
 ===============================================================================}
 unit BinaryStreaming;
@@ -1870,7 +1870,8 @@ end;
 
 Function Stream_ReadBool(Stream: TStream; out Value: ByteBool; Advance: Boolean = True): TMemSize;
 begin
-Result := Stream.Read({%H-}Value,SizeOf(Value));
+Value := False;
+Result := Stream.Read(Value,SizeOf(Value));
 If not Advance then Stream.Seek(-Result,soFromCurrent);
 end;
 
@@ -1895,7 +1896,8 @@ end;
 
 Function Stream_ReadInt8(Stream: TStream; out Value: Int8; Advance: Boolean = True): TMemSize;
 begin
-Result := Stream.Read({%H-}Value,SizeOf(Value));
+Value := 0;
+Result := Stream.Read(Value,SizeOf(Value));
 If not Advance then Stream.Seek(-Result,soFromCurrent);
 end;
 
@@ -1910,7 +1912,8 @@ end;
 
 Function Stream_ReadUInt8(Stream: TStream; out Value: UInt8; Advance: Boolean = True): TMemSize;
 begin
-Result := Stream.Read({%H-}Value,SizeOf(Value));
+Value := 0;
+Result := Stream.Read(Value,SizeOf(Value));
 If not Advance then Stream.Seek(-Result,soFromCurrent);
 end;
 
@@ -1925,7 +1928,8 @@ end;
 
 Function Stream_ReadInt16(Stream: TStream; out Value: Int16; Advance: Boolean = True): TMemSize;
 begin
-Result := Stream.Read({%H-}Value,SizeOf(Value));
+Value := 0;
+Result := Stream.Read(Value,SizeOf(Value));
 {$IFDEF ENDIAN_BIG}
 Value := Int16(SwapEndian(UInt16(Value)));
 {$ENDIF}
@@ -1943,7 +1947,8 @@ end;
 
 Function Stream_ReadUInt16(Stream: TStream; out Value: UInt16; Advance: Boolean = True): TMemSize;
 begin
-Result := Stream.Read({%H-}Value,SizeOf(Value));
+Value := 0;
+Result := Stream.Read(Value,SizeOf(Value));
 {$IFDEF ENDIAN_BIG}
 Value := SwapEndian(Value);
 {$ENDIF}
@@ -1961,7 +1966,8 @@ end;
 
 Function Stream_ReadInt32(Stream: TStream; out Value: Int32; Advance: Boolean = True): TMemSize;
 begin
-Result := Stream.Read({%H-}Value,SizeOf(Value));
+Value := 0;
+Result := Stream.Read(Value,SizeOf(Value));
 {$IFDEF ENDIAN_BIG}
 Value := Int32(SwapEndian(UInt32(Value)));
 {$ENDIF}
@@ -1979,7 +1985,8 @@ end;
 
 Function Stream_ReadUInt32(Stream: TStream; out Value: UInt32; Advance: Boolean = True): TMemSize;
 begin
-Result := Stream.Read({%H-}Value,SizeOf(Value));
+Value := 0;
+Result := Stream.Read(Value,SizeOf(Value));
 {$IFDEF ENDIAN_BIG}
 Value := SwapEndian(Value);
 {$ENDIF}
@@ -1997,7 +2004,8 @@ end;
 
 Function Stream_ReadInt64(Stream: TStream; out Value: Int64; Advance: Boolean = True): TMemSize;
 begin
-Result := Stream.Read({%H-}Value,SizeOf(Value));
+Value := 0;
+Result := Stream.Read(Value,SizeOf(Value));
 {$IFDEF ENDIAN_BIG}
 Value := Int64(SwapEndian(UInt64(Value)));
 {$ENDIF}
@@ -2015,7 +2023,8 @@ end;
 
 Function Stream_ReadUInt64(Stream: TStream; out Value: UInt64; Advance: Boolean = True): TMemSize;
 begin
-Result := Stream.Read({%H-}Value,SizeOf(Value));
+Value := 0;
+Result := Stream.Read(Value,SizeOf(Value));
 {$IFDEF ENDIAN_BIG}
 Value := SwapEndian(Value);
 {$ENDIF}
@@ -2033,7 +2042,8 @@ end;
 
 Function Stream_ReadFloat32(Stream: TStream; out Value: Float32; Advance: Boolean = True): TMemSize;
 begin
-Result := Stream.Read({%H-}Value,SizeOf(Value));
+Value := 0.0;
+Result := Stream.Read(Value,SizeOf(Value));
 {$IFDEF ENDIAN_BIG}
 Value := SwapEndian(Value);
 {$ENDIF}
@@ -2051,7 +2061,8 @@ end;
 
 Function Stream_ReadFloat64(Stream: TStream; out Value: Float64; Advance: Boolean = True): TMemSize;
 begin
-Result := Stream.Read({%H-}Value,SizeOf(Value));
+Value := 0.0;
+Result := Stream.Read(Value,SizeOf(Value));
 {$IFDEF ENDIAN_BIG}
 Value := SwapEndian(Value);
 {$ENDIF}
