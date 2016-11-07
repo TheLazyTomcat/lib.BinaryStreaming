@@ -16,6 +16,10 @@
 ===============================================================================}
 unit BinaryStreaming;
 
+{$IFDEF FPC}
+  {$MODE ObjFPC}{$H+}
+{$ENDIF}
+
 interface
 
 uses
