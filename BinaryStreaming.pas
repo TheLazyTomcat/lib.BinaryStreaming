@@ -9,12 +9,13 @@
 
   Binary streaming
 
-  ©František Milt 2016-03-17
+  ©František Milt 2017-07-17
 
-  Version 1.3.1
+  Version 1.3.2
 
   Dependencies:
     AuxTypes - github.com/ncs-sniper/Lib.AuxTypes
+    StrRect  - github.com/ncs-sniper/Lib.StrRect
 
 ===============================================================================}
 unit BinaryStreaming;
@@ -485,7 +486,7 @@ type
 implementation
 
 uses
-  SysUtils;
+  SysUtils, StrRect;
 
 const
   PARAM_ANSISTRING    = -1;
@@ -495,10 +496,6 @@ const
   PARAM_STRING        = -5;
   PARAM_FILLBYTES     = -6;
   PARAM_SHORTSTRING   = -7;
-
-{$IF not Declared(FPC_FULLVERSION)}
-{%H-}FPC_FULLVERSION = Integer(0); // Because Delphi 7, don't ask ;)
-{$IFEND}  
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -970,19 +967,7 @@ end;
 
 Function Ptr_WriteString(var Dest: Pointer; const Str: String; Advance: Boolean): TMemSize;
 begin
-{$IFDEF Unicode}
-Result := Ptr_WriteUTF8String(Dest,UTF8Encode(Str),Advance);
-{$ELSE}
-{$IFDEF FPC}
-{$IF FPC_FULLVERSION >= 20701}
-Result := Ptr_WriteAnsiString(Dest,Str,Advance);
-{$ELSE}
-Result := Ptr_WriteUTF8String(Dest,Str,Advance);
-{$IFEND}
-{$ELSE}
-Result := Ptr_WriteUTF8String(Dest,AnsiToUTF8(Str),Advance);
-{$ENDIF}
-{$ENDIF}
+Result := Ptr_WriteUTF8String(Dest,StrToUTF8(Str),Advance);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -1593,26 +1578,11 @@ end;
 //------------------------------------------------------------------------------
 
 Function Ptr_ReadString(var Src: Pointer; out Str: String; Advance: Boolean): TMemSize;
-{$IF defined(Unicode) or not defined(FPC)}
 var
   TempStr:  UTF8String;
-{$IFEND}
 begin
-{$IFDEF Unicode}
 Result := Ptr_ReadUTF8String(Src,TempStr,Advance);
-Str := UTF8Decode(TempStr);
-{$ELSE}
-{$IFDEF FPC}
-{$IF FPC_FULLVERSION >= 20701}
-Result := Ptr_ReadAnsiString(Src,Str,Advance);
-{$ELSE}
-Result := Ptr_ReadUTF8String(Src,Str,Advance);
-{$IFEND}
-{$ELSE}
-Result := Ptr_ReadUTF8String(Src,TempStr,Advance);
-Str := UTF8ToAnsi(TempStr);
-{$ENDIF}
-{$ENDIF}
+Str := UTF8ToStr(TempStr);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -1661,7 +1631,7 @@ end;
 Function Stream_WriteBool(Stream: TStream; Value: ByteBool; Advance: Boolean = True): TMemSize;
 begin
 Result := Stream.Write(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //------------------------------------------------------------------------------
@@ -1676,7 +1646,7 @@ end;
 Function Stream_WriteInt8(Stream: TStream; Value: Int8; Advance: Boolean = True): TMemSize;
 begin
 Result := Stream.Write(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //------------------------------------------------------------------------------
@@ -1684,7 +1654,7 @@ end;
 Function Stream_WriteUInt8(Stream: TStream; Value: UInt8; Advance: Boolean = True): TMemSize;
 begin
 Result := Stream.Write(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //------------------------------------------------------------------------------
@@ -1695,7 +1665,7 @@ begin
 Value := Int16(SwapEndian(UInt16(Value)));
 {$ENDIF}
 Result := Stream.Write(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
  
 //------------------------------------------------------------------------------
@@ -1706,7 +1676,7 @@ begin
 Value := SwapEndian(Value);
 {$ENDIF}
 Result := Stream.Write(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //------------------------------------------------------------------------------
@@ -1717,7 +1687,7 @@ begin
 Value := Int32(SwapEndian(UInt32(Value)));
 {$ENDIF}
 Result := Stream.Write(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //------------------------------------------------------------------------------
@@ -1728,7 +1698,7 @@ begin
 Value := SwapEndian(Value);
 {$ENDIF}
 Result := Stream.Write(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
  
 //------------------------------------------------------------------------------
@@ -1739,7 +1709,7 @@ begin
 Value := Int64(SwapEndian(UInt64(Value)));
 {$ENDIF}
 Result := Stream.Write(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //------------------------------------------------------------------------------
@@ -1750,7 +1720,7 @@ begin
 Value := SwapEndian(Value);
 {$ENDIF}
 Result := Stream.Write(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //==============================================================================
@@ -1761,7 +1731,7 @@ begin
 Value := SwapEndian(Value);
 {$ENDIF}
 Result := Stream.Write(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //------------------------------------------------------------------------------
@@ -1772,7 +1742,7 @@ begin
 Value := SwapEndian(Value);
 {$ENDIF}
 Result := Stream.Write(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //==============================================================================
@@ -1780,7 +1750,7 @@ end;
 Function Stream_WriteShortString(Stream: TStream; const Str: ShortString; Advance: Boolean = True): TMemSize;
 begin
 Result := Stream_WriteBuffer(Stream,{%H-}Pointer({%H-}PtrUInt(Addr(Str[1])) - 1)^,Length(Str) + 1, Advance);
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //------------------------------------------------------------------------------
@@ -1789,7 +1759,7 @@ Function Stream_WriteAnsiString(Stream: TStream; const Str: AnsiString; Advance:
 begin
 Result := Stream_WriteInt32(Stream,Length(Str),True);
 Inc(Result,Stream_WriteBuffer(Stream,PAnsiChar(Str)^,Length(Str) * SizeOf(AnsiChar),True));
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //------------------------------------------------------------------------------
@@ -1802,7 +1772,7 @@ Inc(Result,Stream_WriteUTF16LE(Stream,PUInt16(PUnicodeChar(Str)),Length(Str)));
 {$ELSE}
 Inc(Result,Stream_WriteBuffer(Stream,PUnicodeChar(Str)^,Length(Str) * SizeOf(UnicodeChar),True));
 {$ENDIF}
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //------------------------------------------------------------------------------
@@ -1815,7 +1785,7 @@ Inc(Result,Stream_WriteUTF16LE(Stream,PUInt16(PWideChar(Str)),Length(Str)));
 {$ELSE}
 Inc(Result,Stream_WriteBuffer(Stream,PWideChar(Str)^,Length(Str) * SizeOf(WideChar),True));
 {$ENDIF}
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //------------------------------------------------------------------------------
@@ -1824,26 +1794,14 @@ Function Stream_WriteUTF8String(Stream: TStream; const Str: UTF8String; Advance:
 begin
 Result := Stream_WriteInt32(Stream,Length(Str),True);
 Inc(Result,Stream_WriteBuffer(Stream,PUTF8Char(Str)^,Length(Str) * SizeOf(UTF8Char),True));
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //------------------------------------------------------------------------------
 
 Function Stream_WriteString(Stream: TStream; const Str: String; Advance: Boolean = True): TMemSize;
 begin
-{$IFDEF Unicode}
-Result := Stream_WriteUTF8String(Stream,UTF8Encode(Str),Advance);
-{$ELSE}
-{$IFDEF FPC}
-{$IF FPC_FULLVERSION >= 20701}
-Result := Stream_WriteAnsiString(Stream,Str,Advance);
-{$ELSE}
-Result := Stream_WriteUTF8String(Stream,Str,Advance);
-{$IFEND}
-{$ELSE}
-Result := Stream_WriteUTF8String(Stream,AnsiToUTF8(Str),Advance);
-{$ENDIF}
-{$ENDIF}
+Result := Stream_WriteUTF8String(Stream,StrToUTF8(Str),Advance);
 end;
 
 //==============================================================================
@@ -1851,7 +1809,7 @@ end;
 Function Stream_WriteBuffer(Stream: TStream; const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
 begin
 Result := Stream.Write(Buffer,Size);
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //==============================================================================
@@ -1866,7 +1824,7 @@ For i := 1 to Count do
     Stream.Write(Value,SizeOf(Value));
     Inc(Result);
   end;
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 {------------------------------------------------------------------------------}
@@ -1879,7 +1837,7 @@ Function Stream_ReadBool(Stream: TStream; out Value: ByteBool; Advance: Boolean 
 begin
 Value := False;
 Result := Stream.Read(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -1905,7 +1863,7 @@ Function Stream_ReadInt8(Stream: TStream; out Value: Int8; Advance: Boolean = Tr
 begin
 Value := 0;
 Result := Stream.Read(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -1921,7 +1879,7 @@ Function Stream_ReadUInt8(Stream: TStream; out Value: UInt8; Advance: Boolean = 
 begin
 Value := 0;
 Result := Stream.Read(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -1940,7 +1898,7 @@ Result := Stream.Read(Value,SizeOf(Value));
 {$IFDEF ENDIAN_BIG}
 Value := Int16(SwapEndian(UInt16(Value)));
 {$ENDIF}
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -1959,7 +1917,7 @@ Result := Stream.Read(Value,SizeOf(Value));
 {$IFDEF ENDIAN_BIG}
 Value := SwapEndian(Value);
 {$ENDIF}
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -1978,7 +1936,7 @@ Result := Stream.Read(Value,SizeOf(Value));
 {$IFDEF ENDIAN_BIG}
 Value := Int32(SwapEndian(UInt32(Value)));
 {$ENDIF}
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -1997,7 +1955,7 @@ Result := Stream.Read(Value,SizeOf(Value));
 {$IFDEF ENDIAN_BIG}
 Value := SwapEndian(Value);
 {$ENDIF}
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2016,7 +1974,7 @@ Result := Stream.Read(Value,SizeOf(Value));
 {$IFDEF ENDIAN_BIG}
 Value := Int64(SwapEndian(UInt64(Value)));
 {$ENDIF}
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2035,7 +1993,7 @@ Result := Stream.Read(Value,SizeOf(Value));
 {$IFDEF ENDIAN_BIG}
 Value := SwapEndian(Value);
 {$ENDIF}
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2054,7 +2012,7 @@ Result := Stream.Read(Value,SizeOf(Value));
 {$IFDEF ENDIAN_BIG}
 Value := SwapEndian(Value);
 {$ENDIF}
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2073,7 +2031,7 @@ Result := Stream.Read(Value,SizeOf(Value));
 {$IFDEF ENDIAN_BIG}
 Value := SwapEndian(Value);
 {$ENDIF}
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2092,7 +2050,7 @@ begin
 Result := Stream_ReadUInt8(Stream,StrLength,True);
 SetLength(Str,StrLength);
 Inc(Result,Stream_ReadBuffer(Stream,Addr(Str[1])^,StrLength,True));
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2111,7 +2069,7 @@ begin
 Result := Stream_ReadInt32(Stream,StrLength,True);
 SetLength(Str,StrLength);
 Inc(Result,Stream_ReadBuffer(Stream,PAnsiChar(Str)^,StrLength * SizeOf(AnsiChar),True));
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2134,7 +2092,7 @@ Inc(Result,Stream_ReadUTF16LE(Stream,PUInt16(PUnicodeChar(Str)),StrLength));
 {$ELSE}
 Inc(Result,Stream_ReadBuffer(Stream,PUnicodeChar(Str)^,StrLength * SizeOf(UnicodeChar),True));
 {$ENDIF}
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2157,7 +2115,7 @@ Inc(Result,Stream_ReadUTF16LE(Stream,PUInt16(PWideChar(Str)),StrLength));
 {$ELSE}
 Inc(Result,Stream_ReadBuffer(Stream,PWideChar(Str)^,StrLength * SizeOf(WideChar),True));
 {$ENDIF}
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2176,7 +2134,7 @@ begin
 Result := Stream_ReadInt32(Stream,StrLength,True);
 SetLength(Str,StrLength);
 Inc(Result,Stream_ReadBuffer(Stream,PUTF8Char(Str)^,StrLength * SizeOf(UTF8Char),True));
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2189,26 +2147,11 @@ end;
 //------------------------------------------------------------------------------
 
 Function Stream_ReadString(Stream: TStream; out Str: String; Advance: Boolean = True): TMemSize;
-{$IF defined(Unicode) or not defined(FPC)}
 var
   TempStr:  UTF8String;
-{$IFEND}
 begin
-{$IFDEF Unicode}
 Result := Stream_ReadUTF8String(Stream,TempStr,Advance);
-Str := UTF8Decode(TempStr);
-{$ELSE}
-{$IFDEF FPC}
-{$IF FPC_FULLVERSION >= 20701}
-Result := Stream_ReadAnsiString(Stream,Str,Advance);
-{$ELSE}
-Result := Stream_ReadUTF8String(Stream,Str,Advance);
-{$IFEND}
-{$ELSE}
-Result := Stream_ReadUTF8String(Stream,TempStr,Advance);
-Str := UTF8ToAnsi(TempStr);
-{$ENDIF}
-{$ENDIF}
+Str := UTF8ToStr(TempStr);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2223,7 +2166,7 @@ end;
 Function Stream_ReadBuffer(Stream: TStream; var Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
 begin
 Result := Stream.Read(Buffer,Size);
-If not Advance then Stream.Seek(-Result,soFromCurrent);
+If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 {------------------------------------------------------------------------------}
