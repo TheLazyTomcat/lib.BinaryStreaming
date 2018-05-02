@@ -14,8 +14,9 @@
   Version 1.4
 
   Dependencies:
-    AuxTypes - github.com/ncs-sniper/Lib.AuxTypes
-    StrRect  - github.com/ncs-sniper/Lib.StrRect
+    AuxTypes   - github.com/ncs-sniper/Lib.AuxTypes
+    AuxClasses - github.com/ncs-sniper/Lib.AuxClasses
+    StrRect    - github.com/ncs-sniper/Lib.StrRect
 
 ===============================================================================}
 unit BinaryStreaming;
@@ -28,7 +29,7 @@ unit BinaryStreaming;
 interface
 
 uses
-  Classes, AuxTypes;
+  Classes, AuxTypes, AuxClasses;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -416,11 +417,10 @@ Function Stream_ReadBuffer(Stream: TStream; var Buffer; Size: TMemSize; Advance:
 {==============================================================================}
 
 type
-  TCustomStreamer = class(TObject)
+  TCustomStreamer = class(TCustomObject)
   protected
     fBookmarks:       array of UInt64;
     fStartPosition:   UInt64;
-    fUserData:        PtrUInt;
     Function GetBookmarkCount: Integer; virtual;
     Function GetBookmark(Index: Integer): UInt64; virtual;
     procedure SetBookmark(Index: Integer; Value: UInt64); virtual;
@@ -513,7 +513,6 @@ type
     property CurrentPosition: UInt64 read GetCurrentPosition write SetCurrentPosition;
     property StartPosition: UInt64 read fStartPosition;
     property Distance: Int64 read GetDistance;
-    property UserData: PtrUInt read fUserData write fUserData;
   end;
 
 {==============================================================================}
