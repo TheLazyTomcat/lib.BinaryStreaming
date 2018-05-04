@@ -24,6 +24,7 @@ unit BinaryStreaming;
 {$IFDEF FPC}
   {$MODE ObjFPC}{$H+}
   {$DEFINE FPC_DisableWarns}
+  {$MACRO ON}
 {$ENDIF}
 
 interface
@@ -571,10 +572,11 @@ uses
   SysUtils, StrRect;
 
 {$IFDEF FPC_DisableWarns}
-  {$WARN 4055 OFF}  // Conversion between ordinals and pointers is not portable
-  {$WARN 4056 OFF}  // Conversion between ordinals and pointers is not portable
-  {$WARN 5057 OFF}  // Local variable "$1" does not seem to be initialized
-  {$WARN 5058 OFF}  // Variable "$1" does not seem to be initialized
+  {$DEFINE FPCDWM}
+  {$DEFINE W4055:={$WARN 4055 OFF}} // Conversion between ordinals and pointers is not portable
+  {$DEFINE W4056:={$WARN 4056 OFF}} // Conversion between ordinals and pointers is not portable
+  {$DEFINE W5057:={$WARN 5057 OFF}} // Local variable "$1" does not seem to be initialized
+  {$DEFINE W5058:={$WARN 5058 OFF}} // Variable "$1" does not seem to be initialized
 {$ENDIF}
 
 const
@@ -689,6 +691,7 @@ end;
 
 //------------------------------------------------------------------------------
 
+{$IFDEF FPCDWM}{$PUSH}W5057{$ENDIF}
 Function Stream_ReadUTF16LE(Stream: TStream; Data: PUInt16; Length: TStrSize): TMemSize;
 var
   i:    TStrSize;
@@ -702,6 +705,7 @@ For i := 1 to Length do
     Inc(Data);
   end;
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 {$ENDIF ENDIAN_BIG}
 
@@ -715,15 +719,19 @@ Function Ptr_WriteBool(var Dest: Pointer; Value: ByteBool; Advance: Boolean): TM
 begin
 ByteBool(Dest^) := Value;
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_WriteBool(Dest: Pointer; Value: ByteBool): TMemSize;
 begin
 Result := Ptr_WriteBool(Dest,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -745,15 +753,19 @@ Function Ptr_WriteInt8(var Dest: Pointer; Value: Int8; Advance: Boolean): TMemSi
 begin
 Int8(Dest^) := Value;
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_WriteInt8(Dest: Pointer; Value: Int8): TMemSize;
 begin
 Result := Ptr_WriteInt8(Dest,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -761,15 +773,19 @@ Function Ptr_WriteUInt8(var Dest: Pointer; Value: UInt8; Advance: Boolean): TMem
 begin
 UInt8(Dest^) := Value;
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
  
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_WriteUInt8(Dest: Pointer; Value: UInt8): TMemSize;   
 begin
 Result := Ptr_WriteUInt8(Dest,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -781,15 +797,19 @@ Int16(Dest^) := Int16(SwapEndian(UInt16(Value)));
 Int16(Dest^) := Value;
 {$ENDIF}
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
   
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_WriteInt16(Dest: Pointer; Value: Int16): TMemSize;  
 begin
 Result := Ptr_WriteInt16(Dest,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
  
 //------------------------------------------------------------------------------
 
@@ -801,15 +821,19 @@ UInt16(Dest^) := SwapEndian(Value);
 UInt16(Dest^) := Value;
 {$ENDIF}
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
   
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_WriteUInt16(Dest: Pointer; Value: UInt16): TMemSize;       
 begin
 Result := Ptr_WriteUInt16(Dest,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
  
 //------------------------------------------------------------------------------
 
@@ -821,15 +845,19 @@ Int32(Dest^) := Int32(SwapEndian(UInt32(Value)));
 Int32(Dest^) := Value;
 {$ENDIF}
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
  
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_WriteInt32(Dest: Pointer; Value: Int32): TMemSize;    
 begin
 Result := Ptr_WriteInt32(Dest,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -841,15 +869,19 @@ UInt32(Dest^) := SwapEndian(Value);
 UInt32(Dest^) := Value;
 {$ENDIF}
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
  
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_WriteUInt32(Dest: Pointer; Value: UInt32): TMemSize;
 begin
 Result := Ptr_WriteUInt32(Dest,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
   
 //------------------------------------------------------------------------------
 
@@ -861,15 +893,19 @@ Int64(Dest^) := Int64(SwapEndian(UInt64(Value)));
 Int64(Dest^) := Value;
 {$ENDIF}
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
   
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_WriteInt64(Dest: Pointer; Value: Int64): TMemSize; 
 begin
 Result := Ptr_WriteInt64(Dest,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -881,15 +917,19 @@ UInt64(Dest^) := SwapEndian(Value);
 UInt64(Dest^) := Value;
 {$ENDIF}
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_WriteUInt64(Dest: Pointer; Value: UInt64): TMemSize;
 begin
 Result := Ptr_WriteUInt64(Dest,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //==============================================================================
 
@@ -901,15 +941,19 @@ Float32(Dest^) := SwapEndian(Value);
 Float32(Dest^) := Value;
 {$ENDIF}
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_WriteFloat32(Dest: Pointer; Value: Float32): TMemSize;
 begin
 Result := Ptr_WriteFloat32(Dest,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -921,15 +965,19 @@ Float64(Dest^) := SwapEndian(Value);
 Float64(Dest^) := Value;
 {$ENDIF}
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_WriteFloat64(Dest: Pointer; Value: Float64): TMemSize;
 begin
 Result := Ptr_WriteFloat32(Dest,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //==============================================================================
 
@@ -937,15 +985,19 @@ Function Ptr_WriteAnsiChar(var Dest: Pointer; Value: AnsiChar; Advance: Boolean)
 begin
 AnsiChar(Dest^) := Value;
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_WriteAnsiChar(Dest: Pointer; Value: AnsiChar): TMemSize;
 begin
 Result := Ptr_WriteAnsiChar(Dest,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -953,15 +1005,19 @@ Function Ptr_WriteUTF8Char(var Dest: Pointer; Value: UTF8Char; Advance: Boolean)
 begin
 UTF8Char(Dest^) := Value;
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_WriteUTF8Char(Dest: Pointer; Value: UTF8Char): TMemSize;
 begin
 Result := Ptr_WriteUTF8Char(Dest,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -973,15 +1029,19 @@ WideChar(Dest^) := WideChar(SwapEndian(UInt16(Value)));
 WideChar(Dest^) := Value;
 {$ENDIF}
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_WriteWideChar(Dest: Pointer; Value: WideChar): TMemSize;
 begin
 Result := Ptr_WriteWideChar(Dest,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -996,10 +1056,12 @@ end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_WriteChar(Dest: Pointer; Value: Char): TMemSize;
 begin
 Result := Ptr_WriteChar(Dest,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //==============================================================================
 
@@ -1007,8 +1069,10 @@ Function Ptr_WriteShortString(var Dest: Pointer; const Str: ShortString; Advance
 begin
 If Assigned(Dest) then
   begin
+  {$IFDEF FPCDWM}{$PUSH}W4055 W4056{$ENDIF}
     Result := Ptr_WriteBuffer(Dest,Pointer(PtrUInt(Addr(Str[1])) - 1)^,Length(Str) + 1, Advance);
     If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+  {$IFDEF FPCDWM}{$POP}{$ENDIF}
   end
 else
   Result := Length(Str) + 1;
@@ -1016,10 +1080,12 @@ end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_WriteShortString(Dest: Pointer; const Str: ShortString): TMemSize;
 begin
 Result := Ptr_WriteShortString(Dest,Str,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -1039,10 +1105,12 @@ end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_WriteAnsiString(Dest: Pointer; const Str: AnsiString): TMemSize;
 begin
 Result := Ptr_WriteAnsiString(Dest,Str,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -1067,10 +1135,12 @@ end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_WriteUnicodeString(Dest: Pointer; const Str: UnicodeString): TMemSize;
 begin
 Result := Ptr_WriteUnicodeString(Dest,Str,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -1093,11 +1163,13 @@ else Result := SizeOf(Int32) + (Length(Str) * SizeOf(WideChar));
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+ 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_WriteWideString(Dest: Pointer; const Str: WideString): TMemSize;
 begin
 Result := Ptr_WriteWideString(Dest,Str,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -1116,11 +1188,13 @@ else Result := SizeOf(Int32) + (Length(Str) * SizeOf(UTF8Char));
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+  
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_WriteUTF8String(Dest: Pointer; const Str: UTF8String): TMemSize;
 begin
 Result := Ptr_WriteUTF8String(Dest,Str,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -1130,11 +1204,13 @@ Result := Ptr_WriteUTF8String(Dest,StrToUTF8(Str),Advance);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+    
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_WriteString(Dest: Pointer; const Str: String): TMemSize;
 begin
 Result := Ptr_WriteString(Dest,Str,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //==============================================================================
 
@@ -1142,15 +1218,19 @@ Function Ptr_WriteBuffer(var Dest: Pointer; const Buffer; Size: TMemSize; Advanc
 begin
 Move(Buffer,Dest^,Size);
 Result := Size;
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+    
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_WriteBuffer(Dest: Pointer; const Buffer; Size: TMemSize): TMemSize;
 begin
 Result := Ptr_WriteBuffer(Dest,Buffer,Size,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //==============================================================================
 
@@ -1161,15 +1241,19 @@ begin
 Result := 0;
 For i := Low(Value) to High(Value) do
   Inc(Result,Ptr_WriteUInt8(Dest,Value[i],True));
+{$IFDEF FPCDWM}{$PUSH}W4055 W4056{$ENDIF}
 If not Advance then Dest := Pointer(PtrUInt(Dest) - Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+  
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_WriteBytes(Dest: Pointer; const Value: array of UInt8): TMemSize;
 begin
 Result := Ptr_WriteBytes(Dest,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //==============================================================================
 
@@ -1177,15 +1261,19 @@ Function Ptr_FillBytes(var Dest: Pointer; Count: TMemSize; Value: UInt8; Advance
 begin
 FillChar(Dest^,Count,Value);
 Result := Count;
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+   
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_FillBytes(Dest: Pointer; Count: TMemSize; Value: UInt8): TMemSize;
 begin
 Result := Ptr_FillBytes(Dest,Count,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -1197,15 +1285,19 @@ Function Ptr_ReadBool(var Src: Pointer; out Value: ByteBool; Advance: Boolean): 
 begin
 Value := ByteBool(Src^);
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Src := Pointer(PtrUInt(Src) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+       
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadBool(Src: Pointer; out Value: ByteBool): TMemSize;
 begin
 Result := Ptr_ReadBool(Src,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
  
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
@@ -1215,11 +1307,13 @@ Ptr_ReadBool(Src,Result,Advance);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+      
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadBool(Src: Pointer): ByteBool;
 begin
 Ptr_ReadBool(Src,Result,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -1232,11 +1326,13 @@ Value := TempBool;
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+       
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadBoolean(Src: Pointer; out Value: Boolean): TMemSize;
 begin
 Result := Ptr_ReadBoolean(Src,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //==============================================================================
 
@@ -1244,15 +1340,19 @@ Function Ptr_ReadInt8(var Src: Pointer; out Value: Int8; Advance: Boolean): TMem
 begin
 Value := Int8(Src^);
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Src := Pointer(PtrUInt(Src) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+        
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadInt8(Src: Pointer; out Value: Int8): TMemSize;
 begin
 Result := Ptr_ReadInt8(Src,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
@@ -1262,11 +1362,13 @@ Ptr_ReadInt8(Src,Result,Advance);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+           
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadInt8(Src: Pointer): Int8;
 begin
 Ptr_ReadInt8(Src,Result,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -1274,15 +1376,19 @@ Function Ptr_ReadUInt8(var Src: Pointer; out Value: UInt8; Advance: Boolean): TM
 begin
 Value := UInt8(Src^);
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Src := Pointer(PtrUInt(Src) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+         
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadUInt8(Src: Pointer; out Value: UInt8): TMemSize;
 begin
 Result := Ptr_ReadUInt8(Src,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
@@ -1292,11 +1398,13 @@ Ptr_ReadUInt8(Src,Result,Advance);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+               
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadUInt8(Src: Pointer): UInt8;
 begin
 Ptr_ReadUInt8(Src,Result,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -1308,15 +1416,19 @@ Value := Int16(SwapEndian(UInt16(Src^)));
 Value := Int16(Src^);
 {$ENDIF}
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Src := Pointer(PtrUInt(Src) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+             
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadInt16(Src: Pointer; out Value: Int16): TMemSize;
 begin
 Result := Ptr_ReadInt16(Src,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
@@ -1326,11 +1438,13 @@ Ptr_ReadInt16(Src,Result,Advance);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+             
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadInt16(Src: Pointer): Int16;
 begin
 Ptr_ReadInt16(Src,Result,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -1342,15 +1456,19 @@ Value := SwapEndian(UInt16(Src^));
 Value := UInt16(Src^);
 {$ENDIF}
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Src := Pointer(PtrUInt(Src) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+         
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadUInt16(Src: Pointer; out Value: UInt16): TMemSize;
 begin
 Result := Ptr_ReadUInt16(Src,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
@@ -1360,11 +1478,13 @@ Ptr_ReadUInt16(Src,Result,Advance);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+                
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadUInt16(Src: Pointer): UInt16;
 begin
 Ptr_ReadUInt16(Src,Result,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -1376,15 +1496,19 @@ Value := Int32(SwapEndian(UInt32(Src^)));
 Value := Int32(Src^);
 {$ENDIF}
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Src := Pointer(PtrUInt(Src) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+          
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadInt32(Src: Pointer; out Value: Int32): TMemSize;
 begin
 Result := Ptr_ReadInt32(Src,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
@@ -1394,11 +1518,13 @@ Ptr_ReadInt32(Src,Result,Advance);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+             
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadInt32(Src: Pointer): Int32;
 begin
 Ptr_ReadInt32(Src,Result,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -1410,15 +1536,19 @@ Value := SwapEndian(UInt32(Src^));
 Value := UInt32(Src^);
 {$ENDIF}
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Src := Pointer(PtrUInt(Src) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+          
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadUInt32(Src: Pointer; out Value: UInt32): TMemSize;
 begin
 Result := Ptr_ReadUInt32(Src,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
@@ -1428,11 +1558,13 @@ Ptr_ReadUInt32(Src,Result,Advance);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+             
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadUInt32(Src: Pointer): UInt32;
 begin
 Ptr_ReadUInt32(Src,Result,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
  
 //------------------------------------------------------------------------------
 
@@ -1444,15 +1576,19 @@ Value := Int64(SwapEndian(UInt64(Src^)));
 Value := Int64(Src^);
 {$ENDIF}
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Src := Pointer(PtrUInt(Src) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+             
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadInt64(Src: Pointer; out Value: Int64): TMemSize;
 begin
 Result := Ptr_ReadInt64(Src,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
@@ -1462,11 +1598,13 @@ Ptr_ReadInt64(Src,Result,Advance);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+                
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadInt64(Src: Pointer): Int64;
 begin
 Ptr_ReadInt64(Src,Result,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -1478,15 +1616,19 @@ Value := SwapEndian(UInt64(Src^));
 Value := UInt64(Src^);
 {$ENDIF}
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Src := Pointer(PtrUInt(Src) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+                 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadUInt64(Src: Pointer; out Value: UInt64): TMemSize;
 begin
 Result := Ptr_ReadUInt64(Src,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
@@ -1496,11 +1638,13 @@ Ptr_ReadUInt64(Src,Result,Advance);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+                  
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadUInt64(Src: Pointer): UInt64;
 begin
 Ptr_ReadUInt64(Src,Result,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //==============================================================================
 
@@ -1512,15 +1656,19 @@ Value := SwapEndian(Float32(Src^));
 Value := Float32(Src^);
 {$ENDIF}
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Src := Pointer(PtrUInt(Src) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
  
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+                
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadFloat32(Src: Pointer; out Value: Float32): TMemSize;
 begin
 Result := Ptr_ReadFloat32(Src,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
@@ -1530,11 +1678,13 @@ Ptr_ReadFloat32(Src,Result,Advance);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+                 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadFloat32(Src: Pointer): Float32;
 begin
 Ptr_ReadFloat32(Src,Result,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -1546,15 +1696,19 @@ Value := SwapEndian(Float64(Src^));
 Value := Float64(Src^);
 {$ENDIF}
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Src := Pointer(PtrUInt(Src) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+                 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadFloat64(Src: Pointer; out Value: Float64): TMemSize;
 begin
 Result := Ptr_ReadFloat64(Src,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
@@ -1564,11 +1718,13 @@ Ptr_ReadFloat64(Src,Result,Advance);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+                  
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadFloat64(Src: Pointer): Float64;
 begin
 Ptr_ReadFloat64(Src,Result,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //==============================================================================
 
@@ -1576,15 +1732,19 @@ Function Ptr_ReadAnsiChar(var Src: Pointer; out Value: AnsiChar; Advance: Boolea
 begin
 Value := AnsiChar(Src^);
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Src := Pointer(PtrUInt(Src) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+                 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadAnsiChar(Src: Pointer; out Value: AnsiChar): TMemSize;
 begin
 Result := Ptr_ReadAnsiChar(Src,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
@@ -1594,11 +1754,13 @@ Ptr_ReadAnsiChar(Src,Result,Advance);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+               
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadAnsiChar(Src: Pointer): AnsiChar;
 begin
 Ptr_ReadAnsiChar(Src,Result,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -1606,15 +1768,19 @@ Function Ptr_ReadUTF8Char(var Src: Pointer; out Value: UTF8Char; Advance: Boolea
 begin
 Value := UTF8Char(Src^);
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Src := Pointer(PtrUInt(Src) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+                
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadUTF8Char(Src: Pointer; out Value: UTF8Char): TMemSize;
 begin
 Result := Ptr_ReadUTF8Char(Src,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
@@ -1624,11 +1790,13 @@ Ptr_ReadUTF8Char(Src,Result,Advance);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+                
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadUTF8Char(Src: Pointer): UTF8Char;
 begin
 Ptr_ReadUTF8Char(Src,Result,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -1640,15 +1808,19 @@ Value := WideChar(SwapEndian(UInt16(Src^)));
 Value := WideChar(Src^);
 {$ENDIF}
 Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Src := Pointer(PtrUInt(Src) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+                
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadWideChar(Src: Pointer; out Value: WideChar): TMemSize;
 begin
 Result := Ptr_ReadWideChar(Src,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
@@ -1658,11 +1830,13 @@ Ptr_ReadWideChar(Src,Result,Advance);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+                 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadWideChar(Src: Pointer): WideChar;
 begin
 Ptr_ReadWideChar(Src,Result,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -1676,11 +1850,13 @@ Result := Ptr_ReadAnsiChar(Src,Value,Advance);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+               
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadChar(Src: Pointer; out Value: Char): TMemSize;
 begin
 Result := Ptr_ReadChar(Src,Value,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
@@ -1690,11 +1866,13 @@ Ptr_ReadChar(Src,Result,Advance);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+                
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadChar(Src: Pointer): Char;
 begin
 Ptr_ReadChar(Src,Result,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //==============================================================================
 
@@ -1711,11 +1889,13 @@ If Advance then Src := WorkPtr;
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+            
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadShortString(Src: Pointer; out Str: ShortString): TMemSize;
 begin
 Result := Ptr_ReadShortString(Src,Str,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
@@ -1725,11 +1905,13 @@ Ptr_ReadShortString(Src,Result,Advance);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+            
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadShortString(Src: Pointer): ShortString;
 begin
 Ptr_ReadShortString(Src,Result,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -1746,11 +1928,13 @@ If Advance then Src := WorkPtr;
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+           
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadAnsiString(Src: Pointer; out Str: AnsiString): TMemSize;
 begin
 Result := Ptr_ReadAnsiString(Src,Str,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
@@ -1760,11 +1944,13 @@ Ptr_ReadAnsiString(Src,Result,Advance);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+           
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadAnsiString(Src: Pointer): AnsiString;
 begin
 Ptr_ReadAnsiString(Src,Result,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -1785,11 +1971,13 @@ If Advance then Src := WorkPtr;
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+                
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadUnicodeString(Src: Pointer; out Str: UnicodeString): TMemSize;
 begin
 Result := Ptr_ReadUnicodeString(Src,Str,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
@@ -1799,11 +1987,13 @@ Ptr_ReadUnicodeString(Src,Result,Advance);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+        
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadUnicodeString(Src: Pointer): UnicodeString;
 begin
 Ptr_ReadUnicodeString(Src,Result,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -1824,11 +2014,13 @@ If Advance then Src := WorkPtr;
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+          
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadWideString(Src: Pointer; out Str: WideString): TMemSize;
 begin
 Result := Ptr_ReadWideString(Src,Str,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
@@ -1838,11 +2030,13 @@ Ptr_ReadWideString(Src,Result,Advance);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+           
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadWideString(Src: Pointer): WideString;
 begin
 Ptr_ReadWideString(Src,Result,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -1859,11 +2053,13 @@ If Advance then Src := WorkPtr;
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+       
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadUTF8String(Src: Pointer; out Str: UTF8String): TMemSize;
 begin
 Result := Ptr_ReadUTF8String(Src,Str,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
@@ -1873,11 +2069,13 @@ Ptr_ReadUTF8String(Src,Result,Advance);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+          
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadUTF8String(Src: Pointer): UTF8String;
 begin
 Ptr_ReadUTF8String(Src,Result,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -1890,11 +2088,13 @@ Str := UTF8ToStr(TempStr);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+        
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadString(Src: Pointer; out Str: String): TMemSize;
 begin
 Result := Ptr_ReadString(Src,Str,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
@@ -1904,11 +2104,13 @@ Ptr_ReadString(Src,Result,Advance);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+                   
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadString(Src: Pointer): String;
 begin
 Ptr_ReadString(Src,Result,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //==============================================================================
 
@@ -1916,15 +2118,19 @@ Function Ptr_ReadBuffer(var Src: Pointer; var Buffer; Size: TMemSize; Advance: B
 begin
 Move(Src^,Buffer,Size);
 Result := Size;
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Src := Pointer(PtrUInt(Src) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
+                       
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadBuffer(Src: Pointer; var Buffer; Size: TMemSize): TMemSize;
 begin
 Result := Ptr_ReadBuffer(Src,Buffer,Size,False);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -2091,7 +2297,9 @@ end;
 
 Function Stream_WriteShortString(Stream: TStream; const Str: ShortString; Advance: Boolean = True): TMemSize;
 begin
+{$IFDEF FPCDWM}{$PUSH}W4055 W4056{$ENDIF}
 Result := Stream_WriteBuffer(Stream,Pointer(PtrUInt(Addr(Str[1])) - 1)^,Length(Str) + 1, Advance);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
@@ -3242,7 +3450,9 @@ end;
 
 Function TMemoryStreamer.GetStartPtr: Pointer;
 begin
+{$IFDEF FPCDWM}{$PUSH}W4055 W4056{$ENDIF}
 Result := Pointer(fStartPosition);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 {------------------------------------------------------------------------------}
@@ -3258,14 +3468,18 @@ end;
 
 Function TMemoryStreamer.GetCurrentPosition: UInt64;
 begin
+{$IFDEF FPCDWM}{$PUSH}W4055 W4056{$ENDIF}
 Result := UInt64(fCurrentPtr);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TMemoryStreamer.SetCurrentPosition(NewPosition: UInt64);
 begin
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 fCurrentPtr := Pointer(PtrUInt(NewPosition));
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //------------------------------------------------------------------------------
@@ -3352,7 +3566,9 @@ inherited Initialize;
 fOwnsPointer := False;
 fPtrSize := 0;
 fCurrentPtr := Memory;
+{$IFDEF FPCDWM}{$PUSH}W4055 W4056{$ENDIF}
 fStartPosition := UInt64(Memory);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -3371,7 +3587,9 @@ else TempPtr := AllocMem(Size);
 fOwnsPointer := True;
 fPtrSize := Size;
 fCurrentPtr := TempPtr;
+{$IFDEF FPCDWM}{$PUSH}W4055 W4056{$ENDIF}
 fStartPosition := UInt64(TempPtr);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //------------------------------------------------------------------------------
