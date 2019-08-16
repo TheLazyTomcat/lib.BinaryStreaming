@@ -9,14 +9,25 @@
 
   Binary streaming
 
-  ©František Milt 2018-10-22
+  Version 1.4.2
 
-  Version 1.4.1
+  Last changed 2019-08-16
+
+  ©2015-2019 František Milt
+
+  Contacts:
+    František Milt: frantisek.milt@gmail.com
+
+  Support:
+    If you find this code useful, please consider supporting its author(s) by
+    making a small donation using the following link(s):
+
+      https://www.paypal.me/FMilt  
 
   Dependencies:
-    AuxTypes   - github.com/ncs-sniper/Lib.AuxTypes
-    AuxClasses - github.com/ncs-sniper/Lib.AuxClasses
-    StrRect    - github.com/ncs-sniper/Lib.StrRect
+    AuxTypes   - github.com/TheLazyTomcat/Lib.AuxTypes
+    AuxClasses - github.com/TheLazyTomcat/Lib.AuxClasses
+    StrRect    - github.com/TheLazyTomcat/Lib.StrRect
 
 ===============================================================================}
 unit BinaryStreaming;
@@ -32,7 +43,8 @@ unit BinaryStreaming;
 interface
 
 uses
-  Classes, AuxTypes, AuxClasses;
+  Classes,
+  AuxTypes, AuxClasses;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -567,7 +579,6 @@ type
     property Target: TStream read fTarget;
   end;
 
-
 implementation
 
 uses
@@ -595,6 +606,21 @@ const
 {                              Auxiliary routines                              }
 {==============================================================================}
 {------------------------------------------------------------------------------}
+
+Function BoolToNum(Val: Boolean): UInt8;
+begin
+If Val then Result := $FF
+  else Result := 0;
+end;
+
+//------------------------------------------------------------------------------
+
+Function NumToBool(Val: UInt8): Boolean;
+begin
+Result := Val <> 0;
+end;
+
+//------------------------------------------------------------------------------
 
 {$IFDEF ENDIAN_BIG}
 
@@ -719,8 +745,8 @@ end;
 
 Function Ptr_WriteBool(var Dest: Pointer; Value: ByteBool; Advance: Boolean): TMemSize;
 begin
-ByteBool(Dest^) := Value;
-Result := SizeOf(Value);
+UInt8(Dest^) := BoolToNum(Value);
+Result := SizeOf(UInt8);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
@@ -1068,13 +1094,15 @@ end;
 //==============================================================================
 
 Function Ptr_WriteShortString(var Dest: Pointer; const Str: ShortString; Advance: Boolean): TMemSize;
+var
+  WorkPtr:  Pointer;
 begin
 If Assigned(Dest) then
   begin
-  {$IFDEF FPCDWM}{$PUSH}W4055 W4056{$ENDIF}
-    Result := Ptr_WriteBuffer(Dest,Pointer(PtrUInt(Addr(Str[1])) - 1)^,Length(Str) + 1, Advance);
-    If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
-  {$IFDEF FPCDWM}{$POP}{$ENDIF}
+    WorkPtr := Dest;
+    Result := Ptr_WriteUInt8(WorkPtr,UInt8(Length(Str)),True);
+    Inc(Result,Ptr_WriteBuffer(WorkPtr,(Addr(Str[1]))^,Length(Str),True));
+    If Advance then Dest := WorkPtr;
   end
 else
   Result := Length(Str) + 1;
@@ -1285,8 +1313,8 @@ end;
 
 Function Ptr_ReadBool(var Src: Pointer; out Value: ByteBool; Advance: Boolean): TMemSize;
 begin
-Value := ByteBool(Src^);
-Result := SizeOf(Value);
+Value := NumToBool(UInt8(Src^));
+Result := SizeOf(UInt8);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If Advance then Src := Pointer(PtrUInt(Src) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
@@ -1464,7 +1492,7 @@ If Advance then Src := Pointer(PtrUInt(Src) + Result);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-         
+  
 {$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_ReadUInt16(Src: Pointer; out Value: UInt16): TMemSize;
 begin
@@ -2141,8 +2169,11 @@ end;
 {------------------------------------------------------------------------------}
 
 Function Stream_WriteBool(Stream: TStream; Value: ByteBool; Advance: Boolean = True): TMemSize;
+var
+  Temp: UInt8;
 begin
-Result := Stream.Write(Value,SizeOf(Value));
+Temp := BoolToNum(Value);
+Result := Stream.Write(Temp,SizeOf(Temp));
 If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
@@ -2299,9 +2330,8 @@ end;
 
 Function Stream_WriteShortString(Stream: TStream; const Str: ShortString; Advance: Boolean = True): TMemSize;
 begin
-{$IFDEF FPCDWM}{$PUSH}W4055 W4056{$ENDIF}
-Result := Stream_WriteBuffer(Stream,Pointer(PtrUInt(Addr(Str[1])) - 1)^,Length(Str) + 1, Advance);
-{$IFDEF FPCDWM}{$POP}{$ENDIF}
+Result := Stream_WriteUInt8(Stream,UInt8(Length(Str)),True);
+Inc(Result,Stream_WriteBuffer(Stream,Addr(Str[1])^,Length(Str),True));
 If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
 
@@ -2397,12 +2427,16 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
+{$IFDEF FPCDWM}{$PUSH}W5057{$ENDIF}
 Function Stream_ReadBool(Stream: TStream; out Value: ByteBool; Advance: Boolean = True): TMemSize;
+var
+  Temp: UInt8;
 begin
-Value := False;
-Result := Stream.Read(Value,SizeOf(Value));
+Result := Stream.Read(Temp,SizeOf(Temp));
+Value := NumToBool(Temp);
 If not Advance then Stream.Seek(-Int64(Result),soCurrent);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
@@ -2942,8 +2976,11 @@ end;
 //==============================================================================
 
 Function TCustomStreamer.WriteBool(Value: ByteBool; Advance: Boolean = True): TMemSize;
+var
+  Temp: UInt8;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value));
+Temp := BoolToNum(Value);
+Result := WriteValue(@Temp,Advance,SizeOf(Temp));
 end;
 
 //------------------------------------------------------------------------------
@@ -3126,15 +3163,21 @@ end;
 //==============================================================================
 
 Function TCustomStreamer.ReadBool(out Value: ByteBool; Advance: Boolean = True): TMemSize;
+var
+  Temp: UInt8;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value));
+Result := ReadValue(@Temp,Advance,SizeOf(Temp));
+Value := NumToBool(Temp);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
 Function TCustomStreamer.ReadBool(Advance: Boolean = True): ByteBool;
+var
+  Temp: UInt8;
 begin
-ReadValue(@Result,Advance,SizeOf(Result));
+ReadValue(@Temp,Advance,SizeOf(Temp));
+Result := NumToBool(Temp);
 end;
 
 //------------------------------------------------------------------------------
