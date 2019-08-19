@@ -9,9 +9,9 @@
 
   Binary streaming
 
-  Version 1.4.2
+  Version 1.4.2 (2019-08-19)
 
-  Last changed 2019-08-16
+  Last change 2019-08-19
 
   ©2015-2019 František Milt
 
@@ -22,7 +22,12 @@
     If you find this code useful, please consider supporting its author(s) by
     making a small donation using the following link(s):
 
-      https://www.paypal.me/FMilt  
+      https://www.paypal.me/FMilt
+
+  Changelog:
+    For detailed changelog and history please refer to this git repository:
+
+      github.com/TheLazyTomcat/Lib.BinaryStreaming
 
   Dependencies:
     AuxTypes   - github.com/TheLazyTomcat/Lib.AuxTypes
