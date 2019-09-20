@@ -11,7 +11,7 @@
 
   Version 1.4.2 (2019-08-19)
 
-  Last change 2019-08-19
+  Last change 2019-09-20
 
   ©2015-2019 František Milt
 
@@ -48,8 +48,13 @@ unit BinaryStreaming;
 interface
 
 uses
-  Classes,
+  SysUtils, Classes,
   AuxTypes, AuxClasses;
+
+type
+  EBSException = class(Exception);
+
+  EBSIndexOutOfBounds = class(EBSException);
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -587,7 +592,7 @@ type
 implementation
 
 uses
-  SysUtils, StrRect;
+  StrRect;
 
 {$IFDEF FPC_DisableWarns}
   {$DEFINE FPCDWM}
@@ -2867,7 +2872,7 @@ begin
 If (Index >= Low(fBookmarks)) and (Index <= High(fBookmarks)) then
   Result := fBookmarks[Index]
 else
-  raise Exception.CreateFmt('TCustomStreamer.GetBookmark: Index (%d) out of bounds.',[Index]);
+  raise EBSIndexOutOfBounds.CreateFmt('TCustomStreamer.GetBookmark: Index (%d) out of bounds.',[Index]);
 end;
 
 //------------------------------------------------------------------------------
@@ -2877,7 +2882,7 @@ begin
 If (Index >= Low(fBookmarks)) and (Index <= High(fBookmarks)) then
   fBookmarks[Index] := Value
 else
-  raise Exception.CreateFmt('TCustomStreamer.SetBookmark: Index (%d) out of bounds.',[Index]);
+  raise EBSIndexOutOfBounds.CreateFmt('TCustomStreamer.SetBookmark: Index (%d) out of bounds.',[Index]);
 end;
 
 //------------------------------------------------------------------------------
@@ -2911,7 +2916,7 @@ begin
 If (Index >= Low(fBookmarks)) and (Index <= High(fBookmarks)) then
   CurrentPosition := fBookmarks[Index]
 else
-  raise Exception.CreateFmt('TCustomStreamer.MoveToBookmark: Index (%d) out of bounds.',[Index]);
+  raise EBSIndexOutOfBounds.CreateFmt('TCustomStreamer.MoveToBookmark: Index (%d) out of bounds.',[Index]);
 end;
 
 //------------------------------------------------------------------------------
@@ -2975,7 +2980,7 @@ If (Index >= Low(fBookmarks)) and (Index <= High(fBookmarks)) then
       fBookmarks[i] := fBookMarks[i + 1];
     SetLength(fBookmarks,Length(fBookmarks) - 1);
   end
-else raise Exception.CreateFmt('TCustomStreamer.DeleteBookmark: Index (%d) out of bounds.',[Index]);
+else raise EBSIndexOutOfBounds.CreateFmt('TCustomStreamer.DeleteBookmark: Index (%d) out of bounds.',[Index]);
 end;
 
 //==============================================================================
