@@ -9,11 +9,49 @@
 
   Binary streaming
 
-  Version 1.4.2 (2019-08-19)
+    Set of functions and classes designed to help writing and reading of binary
+    data into/from streams and memory locations.
 
-  Last change 2019-09-20
+    All primitives larger than one byte (integers, floats, wide characters -
+    including in UTF-16 strings, ...) are always written with little endiannes.
 
-  ©2015-2019 František Milt
+    Boolean data are written as one byte, where zero represents false and any
+    non-zero value represents true.
+
+    All strings are written with explicit length, and without terminating zero
+    character. First a length is stored, followed immediately by the character
+    stream.
+
+    Short strings are stored with 8bit unsigned integer length, all other
+    strings are stored with 32bit signed integer length (note that the length
+    of 0 or lower marks an empty string, such length is not followed by any
+    character belonging to that particular string). Length is in characters,
+    not bytes or code points.
+
+    Default type Char is stored either as AnsiChar or as WideChar, depending on
+    whether the symbol Unicode is defined or not (as WideChar when defined).
+
+    Default type String is always stored as UTF-8 encoded string, irrespective
+    of how it is declared.
+
+    Buffers and array of bytes are both stored as plain byte streams, without
+    explicit size.
+
+    Parameter Advance in writing and reading functions indicates whether the
+    position in stream being written to or read from (or the passed memory
+    pointer) can be advanced by number of bytes written or read. When set to
+    true, the position (pointer) is advanced, when false, the position is the
+    same after the call as was before it.
+
+    Return value of almost all reading and writing functions is number of bytes
+    written or read. The exception to this are read functions that are directly
+    returning the value being read.
+
+  Version 1.4.3 (2020-01-24)
+
+  Last change 2020-01-24
+
+  ©2015-2020 František Milt
 
   Contacts:
     František Milt: frantisek.milt@gmail.com
@@ -56,11 +94,11 @@ type
 
   EBSIndexOutOfBounds = class(EBSException);
 
-{------------------------------------------------------------------------------}
-{==============================================================================}
-{                                Memory writing                                }
-{==============================================================================}
-{------------------------------------------------------------------------------}
+{===============================================================================
+--------------------------------------------------------------------------------
+                                 Memory writing
+--------------------------------------------------------------------------------
+===============================================================================}
 
 Function Ptr_WriteBool(var Dest: Pointer; Value: ByteBool; Advance: Boolean): TMemSize; overload;
 Function Ptr_WriteBool(Dest: Pointer; Value: ByteBool): TMemSize; overload;{$IFDEF CanInline} inline; {$ENDIF}
@@ -151,11 +189,11 @@ Function Ptr_WriteBytes(Dest: Pointer; const Value: array of UInt8): TMemSize; o
 Function Ptr_FillBytes(var Dest: Pointer; Count: TMemSize; Value: UInt8; Advance: Boolean): TMemSize; overload;
 Function Ptr_FillBytes(Dest: Pointer; Count: TMemSize; Value: UInt8): TMemSize; overload;{$IFDEF CanInline} inline; {$ENDIF}
 
-{------------------------------------------------------------------------------}
-{==============================================================================}
-{                                Memory reading                                }
-{==============================================================================}
-{------------------------------------------------------------------------------}
+{===============================================================================
+--------------------------------------------------------------------------------
+                                 Memory reading
+--------------------------------------------------------------------------------
+===============================================================================}
 
 Function Ptr_ReadBool(var Src: Pointer; out Value: ByteBool; Advance: Boolean): TMemSize; overload;
 Function Ptr_ReadBool(Src: Pointer; out Value: ByteBool): TMemSize; overload;{$IFDEF CanInline} inline; {$ENDIF}
@@ -278,11 +316,12 @@ Function Ptr_ReadString(Src: Pointer): String; overload;{$IFDEF CanInline} inlin
 Function Ptr_ReadBuffer(var Src: Pointer; var Buffer; Size: TMemSize; Advance: Boolean): TMemSize; overload;
 Function Ptr_ReadBuffer(Src: Pointer; var Buffer; Size: TMemSize): TMemSize; overload;
 
-{------------------------------------------------------------------------------}
-{==============================================================================}
-{                                Stream writing                                }
-{==============================================================================}
-{------------------------------------------------------------------------------}
+
+{===============================================================================
+--------------------------------------------------------------------------------
+                                 Stream writing
+--------------------------------------------------------------------------------
+===============================================================================}
 
 Function Stream_WriteBool(Stream: TStream; Value: ByteBool; Advance: Boolean = True): TMemSize;
 
@@ -348,11 +387,11 @@ Function Stream_WriteBytes(Stream: TStream; const Value: array of UInt8; Advance
 
 Function Stream_FillBytes(Stream: TStream; Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize;
 
-{------------------------------------------------------------------------------}
-{==============================================================================}
-{                                Stream reading                                }
-{==============================================================================}
-{------------------------------------------------------------------------------}
+{===============================================================================
+--------------------------------------------------------------------------------
+                                 Stream reading
+--------------------------------------------------------------------------------
+===============================================================================}
 
 Function Stream_ReadBool(Stream: TStream; out Value: ByteBool; Advance: Boolean = True): TMemSize; overload;
 Function Stream_ReadBool(Stream: TStream; Advance: Boolean = True): ByteBool; overload;{$IFDEF CanInline} inline; {$ENDIF}
@@ -431,39 +470,47 @@ Function Stream_ReadString(Stream: TStream; Advance: Boolean = True): String; ov
 
 Function Stream_ReadBuffer(Stream: TStream; var Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; overload;
 
-{------------------------------------------------------------------------------}
-{==============================================================================}
-{                               Streaming objects                              }
-{==============================================================================}
-{------------------------------------------------------------------------------}
 
-{==============================================================================}
-{                                TCustomStreamer                               }
-{==============================================================================}
+{===============================================================================
+--------------------------------------------------------------------------------
+                                 TCustomStreamer
+--------------------------------------------------------------------------------
+===============================================================================}
+{===============================================================================
+    TCustomStreamer - class declaration
+===============================================================================}
 
 type
-  TCustomStreamer = class(TCustomObject)
+  TCustomStreamer = class(TCustomListObject)
   protected
-    fBookmarks:       array of UInt64;
-    fStartPosition:   UInt64;
-    Function GetBookmarkCount: Integer; virtual;
-    Function GetBookmark(Index: Integer): UInt64; virtual;
-    procedure SetBookmark(Index: Integer; Value: UInt64); virtual;
-    Function GetCurrentPosition: UInt64; virtual; abstract;
-    procedure SetCurrentPosition(NewPosition: UInt64); virtual; abstract;
+    fBookmarks:       array of Int64;
+    fCount:           Integer;
+    fStartPosition:   Int64;
+    Function GetCapacity: Integer; override;
+    procedure SetCapacity(Value: Integer); override;
+    Function GetCount: Integer; override;
+    procedure SetCount(Value: Integer); override;
+    Function GetBookmark(Index: Integer): Int64; virtual;
+    procedure SetBookmark(Index: Integer; Value: Int64); virtual;
+    Function GetCurrentPosition: Int64; virtual; abstract;
+    procedure SetCurrentPosition(NewPosition: Int64); virtual; abstract;
     Function GetDistance: Int64; virtual;
     Function WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize; virtual; abstract;
     Function ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize; virtual; abstract;
   public
+    Function LowIndex: Integer; override;
+    Function HighIndex: Integer; override;
     procedure Initialize; virtual;
     procedure MoveToStart; virtual;
     procedure MoveToBookmark(Index: Integer); virtual;
     procedure MoveBy(Offset: Int64); virtual;
-    Function IndexOfBookmark(Position: UInt64): Integer; virtual;
+    // bookmarks methods
+    Function IndexOfBookmark(Position: Int64): Integer; virtual;
     Function AddBookmark: Integer; overload; virtual;
-    Function AddBookmark(Position: UInt64): Integer; overload; virtual;
-    Function RemoveBookmark(Position: UInt64; RemoveAll: Boolean = True): Integer; virtual;
+    Function AddBookmark(Position: Int64): Integer; overload; virtual;
+    Function RemoveBookmark(Position: Int64; RemoveAll: Boolean = True): Integer; virtual;
     procedure DeleteBookmark(Index: Integer); virtual;
+    // write methods
     Function WriteBool(Value: ByteBool; Advance: Boolean = True): TMemSize; virtual;
     Function WriteBoolean(Value: Boolean; Advance: Boolean = True): TMemSize; virtual;
     Function WriteInt8(Value: Int8; Advance: Boolean = True): TMemSize; virtual;
@@ -488,7 +535,8 @@ type
     Function WriteString(const Value: String; Advance: Boolean = True): TMemSize; virtual;
     Function WriteBuffer(const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; virtual;
     Function WriteBytes(const Value: array of UInt8; Advance: Boolean = True): TMemSize; virtual;
-    Function FillBytes(Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize; virtual;
+    Function FillBytes(ByteCount: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize; virtual;
+    // read methods
     Function ReadBool(out Value: ByteBool; Advance: Boolean = True): TMemSize; overload; virtual;
     Function ReadBool(Advance: Boolean = True): ByteBool; overload; virtual;
     Function ReadBoolean(out Value: Boolean; Advance: Boolean = True): TMemSize; virtual;
@@ -531,56 +579,66 @@ type
     Function ReadUTF8String(out Value: UTF8String; Advance: Boolean = True): TMemSize; overload; virtual;
     Function ReadUTF8String(Advance: Boolean = True): UTF8String; overload; virtual;
     Function ReadString(out Value: String; Advance: Boolean = True): TMemSize; overload; virtual;
-    Function ReadString(Advance: Boolean = True): String; overload; virtual;    
+    Function ReadString(Advance: Boolean = True): String; overload; virtual;
     Function ReadBuffer(var Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; overload; virtual;
-    property Bookmarks[Index: Integer]: UInt64 read GetBookmark write SetBookmark;
-    property BookmarkCount: Integer read GetBookmarkCount;
-    property CurrentPosition: UInt64 read GetCurrentPosition write SetCurrentPosition;
-    property StartPosition: UInt64 read fStartPosition;
+    // properties
+    property Bookmarks[Index: Integer]: Int64 read GetBookmark write SetBookmark;
+    property CurrentPosition: Int64 read GetCurrentPosition write SetCurrentPosition;
+    property StartPosition: Int64 read fStartPosition;
     property Distance: Int64 read GetDistance;
   end;
 
-{==============================================================================}
-{                                TMemoryStreamer                               }
-{==============================================================================}
+{===============================================================================
+--------------------------------------------------------------------------------
+                                 TMemoryStreamer
+--------------------------------------------------------------------------------
+===============================================================================}
+{===============================================================================
+    TMemoryStreamer - class declaration
+===============================================================================}
 
   TMemoryStreamer = class(TCustomStreamer)
   private
     fCurrentPtr:  Pointer;
     fOwnsPointer: Boolean;
-    fPtrSize:     PtrUInt;
+    fMemorySize:  TMemSize;
     Function GetStartPtr: Pointer;
   protected
-    procedure SetBookmark(Index: Integer; Value: UInt64); override;
-    Function GetCurrentPosition: UInt64; override;
-    procedure SetCurrentPosition(NewPosition: UInt64); override;
+    procedure SetBookmark(Index: Integer; Value: Int64); override;
+    Function GetCurrentPosition: Int64; override;
+    procedure SetCurrentPosition(NewPosition: Int64); override;
     Function WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize; override;
     Function ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize; override;
   public
     constructor Create(Memory: Pointer); overload;
-    constructor Create(Size: PtrUInt); overload;
+    constructor Create(MemorySize: TMemSize); overload;
     destructor Destroy; override;
     procedure Initialize(Memory: Pointer); reintroduce; overload; virtual;
-    procedure Initialize(Size: PtrUInt); reintroduce; overload; virtual;
-    Function IndexOfBookmark(Position: UInt64): Integer; override;
-    Function AddBookmark(Position: UInt64): Integer; override;
-    Function RemoveBookmark(Position: UInt64; RemoveAll: Boolean = True): Integer; override;
+    procedure Initialize(MemorySize: TMemSize); reintroduce; overload; virtual;
+    Function IndexOfBookmark(Position: Int64): Integer; override;
+    Function AddBookmark(Position: Int64): Integer; override;
+    Function RemoveBookmark(Position: Int64; RemoveAll: Boolean = True): Integer; override;
     property OwnsPointer: Boolean read fOwnsPointer;
-    property PtrSize: PtrUInt read fPtrSize;
+    property MemorySize: TMemSize read fMemorySize;
     property CurrentPtr: Pointer read fCurrentPtr write fCurrentPtr;
     property StartPtr: Pointer read GetStartPtr;
   end;
 
-{==============================================================================}
-{                                TStreamStreamer                               }
-{==============================================================================}
+{===============================================================================
+--------------------------------------------------------------------------------
+                                 TStreamStreamer
+--------------------------------------------------------------------------------
+===============================================================================}
+{===============================================================================
+    TStreamStreamer - class declaration
+===============================================================================}
 
   TStreamStreamer = class(TCustomStreamer)
   private
     fTarget:  TStream;
   protected
-    Function GetCurrentPosition: UInt64; override;
-    procedure SetCurrentPosition(NewPosition: UInt64); override;
+    Function GetCurrentPosition: Int64; override;
+    procedure SetCurrentPosition(NewPosition: Int64); override;
     Function WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize; override;
     Function ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize; override;
   public
@@ -598,6 +656,7 @@ uses
   {$DEFINE FPCDWM}
   {$DEFINE W4055:={$WARN 4055 OFF}} // Conversion between ordinals and pointers is not portable
   {$DEFINE W4056:={$WARN 4056 OFF}} // Conversion between ordinals and pointers is not portable
+  {$DEFINE W5024:={$WARN 5024 OFF}} // Parameter "$1" not used
   {$DEFINE W5057:={$WARN 5057 OFF}} // Local variable "$1" does not seem to be initialized
   {$DEFINE W5058:={$WARN 5058 OFF}} // Variable "$1" does not seem to be initialized
 {$ENDIF}
@@ -611,11 +670,11 @@ const
   PARAM_FILLBYTES     = -6;
   PARAM_SHORTSTRING   = -7;
 
-{------------------------------------------------------------------------------}
-{==============================================================================}
-{                              Auxiliary routines                              }
-{==============================================================================}
-{------------------------------------------------------------------------------}
+{===============================================================================
+--------------------------------------------------------------------------------
+                               Auxiliary routines
+--------------------------------------------------------------------------------
+===============================================================================}
 
 Function BoolToNum(Val: Boolean): UInt8;
 begin
@@ -747,18 +806,19 @@ end;
 
 {$ENDIF ENDIAN_BIG}
 
-{------------------------------------------------------------------------------}
-{==============================================================================}
-{                                Memory writing                                }
-{==============================================================================}
-{------------------------------------------------------------------------------}
+{===============================================================================
+--------------------------------------------------------------------------------
+                                 Memory writing
+--------------------------------------------------------------------------------
+===============================================================================}
 
 Function Ptr_WriteBool(var Dest: Pointer; Value: ByteBool; Advance: Boolean): TMemSize;
 begin
 UInt8(Dest^) := BoolToNum(Value);
 Result := SizeOf(UInt8);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+If Advance then
+  Dest := Pointer(PtrUInt(Dest) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
@@ -792,7 +852,8 @@ begin
 Int8(Dest^) := Value;
 Result := SizeOf(Value);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+If Advance then
+  Dest := Pointer(PtrUInt(Dest) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
@@ -812,7 +873,8 @@ begin
 UInt8(Dest^) := Value;
 Result := SizeOf(Value);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+If Advance then
+  Dest := Pointer(PtrUInt(Dest) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
  
@@ -836,7 +898,8 @@ Int16(Dest^) := Value;
 {$ENDIF}
 Result := SizeOf(Value);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+If Advance then
+  Dest := Pointer(PtrUInt(Dest) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
   
@@ -860,7 +923,8 @@ UInt16(Dest^) := Value;
 {$ENDIF}
 Result := SizeOf(Value);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+If Advance then
+  Dest := Pointer(PtrUInt(Dest) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
   
@@ -884,7 +948,8 @@ Int32(Dest^) := Value;
 {$ENDIF}
 Result := SizeOf(Value);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+If Advance then
+  Dest := Pointer(PtrUInt(Dest) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
  
@@ -908,7 +973,8 @@ UInt32(Dest^) := Value;
 {$ENDIF}
 Result := SizeOf(Value);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+If Advance then
+  Dest := Pointer(PtrUInt(Dest) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
  
@@ -932,7 +998,8 @@ Int64(Dest^) := Value;
 {$ENDIF}
 Result := SizeOf(Value);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+If Advance then
+  Dest := Pointer(PtrUInt(Dest) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
   
@@ -956,7 +1023,8 @@ UInt64(Dest^) := Value;
 {$ENDIF}
 Result := SizeOf(Value);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+If Advance then
+  Dest := Pointer(PtrUInt(Dest) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
@@ -980,7 +1048,8 @@ Float32(Dest^) := Value;
 {$ENDIF}
 Result := SizeOf(Value);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+If Advance then
+  Dest := Pointer(PtrUInt(Dest) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
@@ -1004,7 +1073,8 @@ Float64(Dest^) := Value;
 {$ENDIF}
 Result := SizeOf(Value);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+If Advance then
+  Dest := Pointer(PtrUInt(Dest) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
@@ -1024,7 +1094,8 @@ begin
 AnsiChar(Dest^) := Value;
 Result := SizeOf(Value);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+If Advance then
+  Dest := Pointer(PtrUInt(Dest) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
@@ -1044,7 +1115,8 @@ begin
 UTF8Char(Dest^) := Value;
 Result := SizeOf(Value);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+If Advance then
+  Dest := Pointer(PtrUInt(Dest) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
@@ -1068,7 +1140,8 @@ WideChar(Dest^) := Value;
 {$ENDIF}
 Result := SizeOf(Value);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+If Advance then
+  Dest := Pointer(PtrUInt(Dest) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
@@ -1112,7 +1185,8 @@ If Assigned(Dest) then
     WorkPtr := Dest;
     Result := Ptr_WriteUInt8(WorkPtr,UInt8(Length(Str)),True);
     Inc(Result,Ptr_WriteBuffer(WorkPtr,(Addr(Str[1]))^,Length(Str),True));
-    If Advance then Dest := WorkPtr;
+    If Advance then
+      Dest := WorkPtr;
   end
 else
   Result := Length(Str) + 1;
@@ -1138,7 +1212,8 @@ If Assigned(Dest) then
     WorkPtr := Dest;
     Result := Ptr_WriteInt32(WorkPtr,Length(Str),True);
     Inc(Result,Ptr_WriteBuffer(WorkPtr,PAnsiChar(Str)^,Length(Str) * SizeOf(AnsiChar),True));
-    If Advance then Dest := WorkPtr;
+    If Advance then
+      Dest := WorkPtr;
   end
 else Result := SizeOf(Int32) + (Length(Str) * SizeOf(AnsiChar));
 end;
@@ -1167,7 +1242,8 @@ If Assigned(Dest) then
   {$ELSE}
     Inc(Result,Ptr_WriteBuffer(WorkPtr,PUnicodeChar(Str)^,Length(Str) * SizeOf(UnicodeChar),True));
   {$ENDIF}
-    If Advance then Dest := WorkPtr;
+    If Advance then
+      Dest := WorkPtr;
   end
 else Result := SizeOf(Int32) + (Length(Str) * SizeOf(UnicodeChar));
 end;
@@ -1197,7 +1273,8 @@ If Assigned(Dest) then
   {$ELSE}
     Inc(Result,Ptr_WriteBuffer(WorkPtr,PWideChar(Str)^,Length(Str) * SizeOf(WideChar),True));
   {$ENDIF}
-    If Advance then Dest := WorkPtr;
+    If Advance then
+      Dest := WorkPtr;
   end
 else Result := SizeOf(Int32) + (Length(Str) * SizeOf(WideChar));
 end;
@@ -1222,7 +1299,8 @@ If Assigned(Dest) then
     WorkPtr := Dest;
     Result := Ptr_WriteInt32(WorkPtr,Length(Str),True);
     Inc(Result,Ptr_WriteBuffer(WorkPtr,PUTF8Char(Str)^,Length(Str) * SizeOf(UTF8Char),True));
-    If Advance then Dest := WorkPtr;
+    If Advance then
+      Dest := WorkPtr;
   end
 else Result := SizeOf(Int32) + (Length(Str) * SizeOf(UTF8Char));
 end;
@@ -1259,7 +1337,8 @@ begin
 Move(Buffer,Dest^,Size);
 Result := Size;
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+If Advance then
+  Dest := Pointer(PtrUInt(Dest) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
@@ -1282,7 +1361,8 @@ Result := 0;
 For i := Low(Value) to High(Value) do
   Inc(Result,Ptr_WriteUInt8(Dest,Value[i],True));
 {$IFDEF FPCDWM}{$PUSH}W4055 W4056{$ENDIF}
-If not Advance then Dest := Pointer(PtrUInt(Dest) - Result);
+If not Advance then
+  Dest := Pointer(PtrUInt(Dest) - Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
@@ -1302,7 +1382,8 @@ begin
 FillChar(Dest^,Count,Value);
 Result := Count;
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Dest := Pointer(PtrUInt(Dest) + Result);
+If Advance then
+  Dest := Pointer(PtrUInt(Dest) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
@@ -1315,18 +1396,19 @@ Result := Ptr_FillBytes(Dest,Count,Value,False);
 end;
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 
-{------------------------------------------------------------------------------}
-{==============================================================================}
-{                                Memory reading                                }
-{==============================================================================}
-{------------------------------------------------------------------------------}
+{===============================================================================
+--------------------------------------------------------------------------------
+                                 Memory reading
+--------------------------------------------------------------------------------
+===============================================================================}
 
 Function Ptr_ReadBool(var Src: Pointer; out Value: ByteBool; Advance: Boolean): TMemSize;
 begin
 Value := NumToBool(UInt8(Src^));
 Result := SizeOf(UInt8);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Src := Pointer(PtrUInt(Src) + Result);
+If Advance then
+  Src := Pointer(PtrUInt(Src) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
@@ -1381,7 +1463,8 @@ begin
 Value := Int8(Src^);
 Result := SizeOf(Value);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Src := Pointer(PtrUInt(Src) + Result);
+If Advance then
+  Src := Pointer(PtrUInt(Src) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
@@ -1417,7 +1500,8 @@ begin
 Value := UInt8(Src^);
 Result := SizeOf(Value);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Src := Pointer(PtrUInt(Src) + Result);
+If Advance then
+  Src := Pointer(PtrUInt(Src) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
@@ -1457,7 +1541,8 @@ Value := Int16(Src^);
 {$ENDIF}
 Result := SizeOf(Value);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Src := Pointer(PtrUInt(Src) + Result);
+If Advance then
+  Src := Pointer(PtrUInt(Src) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
@@ -1497,7 +1582,8 @@ Value := UInt16(Src^);
 {$ENDIF}
 Result := SizeOf(Value);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Src := Pointer(PtrUInt(Src) + Result);
+If Advance then
+  Src := Pointer(PtrUInt(Src) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
@@ -1537,7 +1623,8 @@ Value := Int32(Src^);
 {$ENDIF}
 Result := SizeOf(Value);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Src := Pointer(PtrUInt(Src) + Result);
+If Advance then
+  Src := Pointer(PtrUInt(Src) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
@@ -1577,7 +1664,8 @@ Value := UInt32(Src^);
 {$ENDIF}
 Result := SizeOf(Value);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Src := Pointer(PtrUInt(Src) + Result);
+If Advance then
+  Src := Pointer(PtrUInt(Src) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
@@ -1617,7 +1705,8 @@ Value := Int64(Src^);
 {$ENDIF}
 Result := SizeOf(Value);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Src := Pointer(PtrUInt(Src) + Result);
+If Advance then
+  Src := Pointer(PtrUInt(Src) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
@@ -1657,7 +1746,8 @@ Value := UInt64(Src^);
 {$ENDIF}
 Result := SizeOf(Value);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Src := Pointer(PtrUInt(Src) + Result);
+If Advance then
+  Src := Pointer(PtrUInt(Src) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
@@ -1697,7 +1787,8 @@ Value := Float32(Src^);
 {$ENDIF}
 Result := SizeOf(Value);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Src := Pointer(PtrUInt(Src) + Result);
+If Advance then
+  Src := Pointer(PtrUInt(Src) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
  
@@ -1737,7 +1828,8 @@ Value := Float64(Src^);
 {$ENDIF}
 Result := SizeOf(Value);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Src := Pointer(PtrUInt(Src) + Result);
+If Advance then
+  Src := Pointer(PtrUInt(Src) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
@@ -1773,7 +1865,8 @@ begin
 Value := AnsiChar(Src^);
 Result := SizeOf(Value);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Src := Pointer(PtrUInt(Src) + Result);
+If Advance then
+  Src := Pointer(PtrUInt(Src) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
@@ -1809,7 +1902,8 @@ begin
 Value := UTF8Char(Src^);
 Result := SizeOf(Value);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Src := Pointer(PtrUInt(Src) + Result);
+If Advance then
+  Src := Pointer(PtrUInt(Src) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
@@ -1849,7 +1943,8 @@ Value := WideChar(Src^);
 {$ENDIF}
 Result := SizeOf(Value);
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Src := Pointer(PtrUInt(Src) + Result);
+If Advance then
+  Src := Pointer(PtrUInt(Src) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
@@ -1925,7 +2020,8 @@ WorkPtr := Src;
 Result := Ptr_ReadUInt8(WorkPtr,StrLength,True);
 SetLength(Str,StrLength);
 Inc(Result,Ptr_ReadBuffer(WorkPtr,Addr(Str[1])^,StrLength,True));
-If Advance then Src := WorkPtr;
+If Advance then
+  Src := WorkPtr;
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -1964,7 +2060,8 @@ WorkPtr := Src;
 Result := Ptr_ReadInt32(WorkPtr,StrLength,True);
 SetLength(Str,StrLength);
 Inc(Result,Ptr_ReadBuffer(WorkPtr,PAnsiChar(Str)^,StrLength * SizeOf(AnsiChar),True));
-If Advance then Src := WorkPtr;
+If Advance then
+  Src := WorkPtr;
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2007,7 +2104,8 @@ Inc(Result,Ptr_ReadUTF16LE(PUInt16(WorkPtr),PUInt16(PUnicodeChar(Str)),StrLength
 {$ELSE}
 Inc(Result,Ptr_ReadBuffer(WorkPtr,PUnicodeChar(Str)^,StrLength * SizeOf(UnicodeChar),True));
 {$ENDIF}
-If Advance then Src := WorkPtr;
+If Advance then
+  Src := WorkPtr;
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2050,7 +2148,8 @@ Inc(Result,Ptr_ReadUTF16LE(PUInt16(WorkPtr),PUInt16(PWideChar(Str)),StrLength));
 {$ELSE}
 Inc(Result,Ptr_ReadBuffer(WorkPtr,PWideChar(Str)^,StrLength * SizeOf(WideChar),True));
 {$ENDIF}
-If Advance then Src := WorkPtr;
+If Advance then
+  Src := WorkPtr;
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2089,7 +2188,8 @@ WorkPtr := Src;
 Result := Ptr_ReadInt32(WorkPtr,StrLength,True);
 SetLength(Str,StrLength);
 Inc(Result,Ptr_ReadBuffer(WorkPtr,PUTF8Char(Str)^,StrLength * SizeOf(UTF8Char),True));
-If Advance then Src := WorkPtr;
+If Advance then
+  Src := WorkPtr;
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2159,7 +2259,8 @@ begin
 Move(Src^,Buffer,Size);
 Result := Size;
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If Advance then Src := Pointer(PtrUInt(Src) + Result);
+If Advance then
+  Src := Pointer(PtrUInt(Src) + Result);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
@@ -2172,11 +2273,12 @@ Result := Ptr_ReadBuffer(Src,Buffer,Size,False);
 end;
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 
-{------------------------------------------------------------------------------}
-{==============================================================================}
-{                                Stream writing                                }
-{==============================================================================}
-{------------------------------------------------------------------------------}
+
+{===============================================================================
+--------------------------------------------------------------------------------
+                                 Stream writing
+--------------------------------------------------------------------------------
+===============================================================================}
 
 Function Stream_WriteBool(Stream: TStream; Value: ByteBool; Advance: Boolean = True): TMemSize;
 var
@@ -2184,7 +2286,8 @@ var
 begin
 Temp := BoolToNum(Value);
 Result := Stream.Write(Temp,SizeOf(Temp));
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //------------------------------------------------------------------------------
@@ -2199,7 +2302,8 @@ end;
 Function Stream_WriteInt8(Stream: TStream; Value: Int8; Advance: Boolean = True): TMemSize;
 begin
 Result := Stream.Write(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //------------------------------------------------------------------------------
@@ -2207,7 +2311,8 @@ end;
 Function Stream_WriteUInt8(Stream: TStream; Value: UInt8; Advance: Boolean = True): TMemSize;
 begin
 Result := Stream.Write(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //------------------------------------------------------------------------------
@@ -2218,7 +2323,8 @@ begin
 Value := Int16(SwapEndian(UInt16(Value)));
 {$ENDIF}
 Result := Stream.Write(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
  
 //------------------------------------------------------------------------------
@@ -2229,7 +2335,8 @@ begin
 Value := SwapEndian(Value);
 {$ENDIF}
 Result := Stream.Write(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //------------------------------------------------------------------------------
@@ -2240,7 +2347,8 @@ begin
 Value := Int32(SwapEndian(UInt32(Value)));
 {$ENDIF}
 Result := Stream.Write(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //------------------------------------------------------------------------------
@@ -2251,7 +2359,8 @@ begin
 Value := SwapEndian(Value);
 {$ENDIF}
 Result := Stream.Write(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
  
 //------------------------------------------------------------------------------
@@ -2262,7 +2371,8 @@ begin
 Value := Int64(SwapEndian(UInt64(Value)));
 {$ENDIF}
 Result := Stream.Write(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //------------------------------------------------------------------------------
@@ -2273,7 +2383,8 @@ begin
 Value := SwapEndian(Value);
 {$ENDIF}
 Result := Stream.Write(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //==============================================================================
@@ -2284,7 +2395,8 @@ begin
 Value := SwapEndian(Value);
 {$ENDIF}
 Result := Stream.Write(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //------------------------------------------------------------------------------
@@ -2295,7 +2407,8 @@ begin
 Value := SwapEndian(Value);
 {$ENDIF}
 Result := Stream.Write(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //==============================================================================
@@ -2303,7 +2416,8 @@ end;
 Function Stream_WriteAnsiChar(Stream: TStream; Value: AnsiChar; Advance: Boolean = True): TMemSize;
 begin
 Result := Stream.Write(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //------------------------------------------------------------------------------
@@ -2311,7 +2425,8 @@ end;
 Function Stream_WriteUTF8Char(Stream: TStream; Value: UTF8Char; Advance: Boolean = True): TMemSize;
 begin
 Result := Stream.Write(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //------------------------------------------------------------------------------
@@ -2322,7 +2437,8 @@ begin
 Value := WideChar(SwapEndian(UInt16(Value)));
 {$ENDIF}
 Result := Stream.Write(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //------------------------------------------------------------------------------
@@ -2342,7 +2458,8 @@ Function Stream_WriteShortString(Stream: TStream; const Str: ShortString; Advanc
 begin
 Result := Stream_WriteUInt8(Stream,UInt8(Length(Str)),True);
 Inc(Result,Stream_WriteBuffer(Stream,Addr(Str[1])^,Length(Str),True));
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //------------------------------------------------------------------------------
@@ -2351,7 +2468,8 @@ Function Stream_WriteAnsiString(Stream: TStream; const Str: AnsiString; Advance:
 begin
 Result := Stream_WriteInt32(Stream,Length(Str),True);
 Inc(Result,Stream_WriteBuffer(Stream,PAnsiChar(Str)^,Length(Str) * SizeOf(AnsiChar),True));
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //------------------------------------------------------------------------------
@@ -2364,7 +2482,8 @@ Inc(Result,Stream_WriteUTF16LE(Stream,PUInt16(PUnicodeChar(Str)),Length(Str)));
 {$ELSE}
 Inc(Result,Stream_WriteBuffer(Stream,PUnicodeChar(Str)^,Length(Str) * SizeOf(UnicodeChar),True));
 {$ENDIF}
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //------------------------------------------------------------------------------
@@ -2377,7 +2496,8 @@ Inc(Result,Stream_WriteUTF16LE(Stream,PUInt16(PWideChar(Str)),Length(Str)));
 {$ELSE}
 Inc(Result,Stream_WriteBuffer(Stream,PWideChar(Str)^,Length(Str) * SizeOf(WideChar),True));
 {$ENDIF}
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //------------------------------------------------------------------------------
@@ -2386,7 +2506,8 @@ Function Stream_WriteUTF8String(Stream: TStream; const Str: UTF8String; Advance:
 begin
 Result := Stream_WriteInt32(Stream,Length(Str),True);
 Inc(Result,Stream_WriteBuffer(Stream,PUTF8Char(Str)^,Length(Str) * SizeOf(UTF8Char),True));
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //------------------------------------------------------------------------------
@@ -2401,7 +2522,8 @@ end;
 Function Stream_WriteBuffer(Stream: TStream; const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
 begin
 Result := Stream.Write(Buffer,Size);
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //==============================================================================
@@ -2413,7 +2535,8 @@ begin
 Result := 0;
 For i := Low(Value) to High(Value) do
   Inc(Result,Stream_WriteUInt8(Stream,Value[i],True));
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //==============================================================================
@@ -2428,14 +2551,15 @@ For i := 1 to Count do
     Stream.Write(Value,SizeOf(Value));
     Inc(Result);
   end;
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
-{------------------------------------------------------------------------------}
-{==============================================================================}
-{                                Stream reading                                }
-{==============================================================================}
-{------------------------------------------------------------------------------}
+{===============================================================================
+--------------------------------------------------------------------------------
+                                 Stream reading
+--------------------------------------------------------------------------------
+===============================================================================}
 
 {$IFDEF FPCDWM}{$PUSH}W5057{$ENDIF}
 Function Stream_ReadBool(Stream: TStream; out Value: ByteBool; Advance: Boolean = True): TMemSize;
@@ -2444,7 +2568,8 @@ var
 begin
 Result := Stream.Read(Temp,SizeOf(Temp));
 Value := NumToBool(Temp);
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 
@@ -2471,7 +2596,8 @@ Function Stream_ReadInt8(Stream: TStream; out Value: Int8; Advance: Boolean = Tr
 begin
 Value := 0;
 Result := Stream.Read(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2487,7 +2613,8 @@ Function Stream_ReadUInt8(Stream: TStream; out Value: UInt8; Advance: Boolean = 
 begin
 Value := 0;
 Result := Stream.Read(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2506,7 +2633,8 @@ Result := Stream.Read(Value,SizeOf(Value));
 {$IFDEF ENDIAN_BIG}
 Value := Int16(SwapEndian(UInt16(Value)));
 {$ENDIF}
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2525,7 +2653,8 @@ Result := Stream.Read(Value,SizeOf(Value));
 {$IFDEF ENDIAN_BIG}
 Value := SwapEndian(Value);
 {$ENDIF}
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2544,7 +2673,8 @@ Result := Stream.Read(Value,SizeOf(Value));
 {$IFDEF ENDIAN_BIG}
 Value := Int32(SwapEndian(UInt32(Value)));
 {$ENDIF}
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2563,7 +2693,8 @@ Result := Stream.Read(Value,SizeOf(Value));
 {$IFDEF ENDIAN_BIG}
 Value := SwapEndian(Value);
 {$ENDIF}
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2582,7 +2713,8 @@ Result := Stream.Read(Value,SizeOf(Value));
 {$IFDEF ENDIAN_BIG}
 Value := Int64(SwapEndian(UInt64(Value)));
 {$ENDIF}
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2601,7 +2733,8 @@ Result := Stream.Read(Value,SizeOf(Value));
 {$IFDEF ENDIAN_BIG}
 Value := SwapEndian(Value);
 {$ENDIF}
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2620,7 +2753,8 @@ Result := Stream.Read(Value,SizeOf(Value));
 {$IFDEF ENDIAN_BIG}
 Value := SwapEndian(Value);
 {$ENDIF}
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2639,7 +2773,8 @@ Result := Stream.Read(Value,SizeOf(Value));
 {$IFDEF ENDIAN_BIG}
 Value := SwapEndian(Value);
 {$ENDIF}
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2655,7 +2790,8 @@ Function Stream_ReadAnsiChar(Stream: TStream; out Value: AnsiChar; Advance: Bool
 begin
 Value := AnsiChar(0);
 Result := Stream.Read(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2671,7 +2807,8 @@ Function Stream_ReadUTF8Char(Stream: TStream; out Value: UTF8Char; Advance: Bool
 begin
 Value := UTF8Char(0);
 Result := Stream.Read(Value,SizeOf(Value));
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
  
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2690,7 +2827,8 @@ Result := Stream.Read(Value,SizeOf(Value));
 {$IFDEF ENDIAN_BIG}
 Value := WideChar(SwapEndian(UInt16(Value)));
 {$ENDIF}
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
  
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2727,7 +2865,8 @@ begin
 Result := Stream_ReadUInt8(Stream,StrLength,True);
 SetLength(Str,StrLength);
 Inc(Result,Stream_ReadBuffer(Stream,Addr(Str[1])^,StrLength,True));
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2746,7 +2885,8 @@ begin
 Result := Stream_ReadInt32(Stream,StrLength,True);
 SetLength(Str,StrLength);
 Inc(Result,Stream_ReadBuffer(Stream,PAnsiChar(Str)^,StrLength * SizeOf(AnsiChar),True));
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2769,7 +2909,8 @@ Inc(Result,Stream_ReadUTF16LE(Stream,PUInt16(PUnicodeChar(Str)),StrLength));
 {$ELSE}
 Inc(Result,Stream_ReadBuffer(Stream,PUnicodeChar(Str)^,StrLength * SizeOf(UnicodeChar),True));
 {$ENDIF}
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2792,7 +2933,8 @@ Inc(Result,Stream_ReadUTF16LE(Stream,PUInt16(PWideChar(Str)),StrLength));
 {$ELSE}
 Inc(Result,Stream_ReadBuffer(Stream,PWideChar(Str)^,StrLength * SizeOf(WideChar),True));
 {$ENDIF}
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2811,7 +2953,8 @@ begin
 Result := Stream_ReadInt32(Stream,StrLength,True);
 SetLength(Str,StrLength);
 Inc(Result,Stream_ReadBuffer(Stream,PUTF8Char(Str)^,StrLength * SizeOf(UTF8Char),True));
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2843,33 +2986,61 @@ end;
 Function Stream_ReadBuffer(Stream: TStream; var Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
 begin
 Result := Stream.Read(Buffer,Size);
-If not Advance then Stream.Seek(-Int64(Result),soCurrent);
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
 end;
 
-{------------------------------------------------------------------------------}
-{==============================================================================}
-{                               Streaming objects                              }
-{==============================================================================}
-{------------------------------------------------------------------------------}
 
-{==============================================================================}
-{                                TCustomStreamer                               }
-{==============================================================================}
+{===============================================================================
+--------------------------------------------------------------------------------
+                                 TCustomStreamer
+--------------------------------------------------------------------------------
+===============================================================================}
+{===============================================================================
+    TCustomStreamer - class implementation
+===============================================================================}
+{-------------------------------------------------------------------------------
+    TCustomStreamer - protected methods
+-------------------------------------------------------------------------------}
 
-{------------------------------------------------------------------------------}
-{   TCustomStreamer - protected methods                                        }
-{------------------------------------------------------------------------------}
-
-Function TCustomStreamer.GetBookmarkCount: Integer;
+Function TCustomStreamer.GetCapacity: Integer;
 begin
 Result := Length(fBookmarks);
 end;
 
 //------------------------------------------------------------------------------
 
-Function TCustomStreamer.GetBookmark(Index: Integer): UInt64;
+procedure TCustomStreamer.SetCapacity(Value: Integer);
 begin
-If (Index >= Low(fBookmarks)) and (Index <= High(fBookmarks)) then
+If Value <> Length(fBookmarks) then
+  begin
+    SetLength(fBookMarks,Value);
+    If Value < fCount then
+      fCount := Value;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetCount: Integer;
+begin
+Result := fCount;
+end;
+
+//------------------------------------------------------------------------------
+
+{$IFDEF FPCDWM}{$PUSH}W5024{$ENDIF}
+procedure TCustomStreamer.SetCount(Value: Integer);
+begin
+// do nothing
+end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetBookmark(Index: Integer): Int64;
+begin
+If CheckIndex(Index) then
   Result := fBookmarks[Index]
 else
   raise EBSIndexOutOfBounds.CreateFmt('TCustomStreamer.GetBookmark: Index (%d) out of bounds.',[Index]);
@@ -2877,9 +3048,9 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TCustomStreamer.SetBookmark(Index: Integer; Value: UInt64);
+procedure TCustomStreamer.SetBookmark(Index: Integer; Value: Int64);
 begin
-If (Index >= Low(fBookmarks)) and (Index <= High(fBookmarks)) then
+If CheckIndex(Index) then
   fBookmarks[Index] := Value
 else
   raise EBSIndexOutOfBounds.CreateFmt('TCustomStreamer.SetBookmark: Index (%d) out of bounds.',[Index]);
@@ -2892,9 +3063,23 @@ begin
 Result := CurrentPosition - StartPosition;
 end;
 
-{------------------------------------------------------------------------------}
-{   TCustomStreamer - public methods                                           }
-{------------------------------------------------------------------------------}
+{-------------------------------------------------------------------------------
+    TCustomStreamer - public methods
+-------------------------------------------------------------------------------}
+
+Function TCustomStreamer.LowIndex: Integer;
+begin
+Result := Low(fBookmarks);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.HighIndex: Integer;
+begin
+Result := Pred(fCount);
+end;
+
+//------------------------------------------------------------------------------
 
 procedure TCustomStreamer.Initialize;
 begin
@@ -2913,7 +3098,7 @@ end;
 
 procedure TCustomStreamer.MoveToBookmark(Index: Integer);
 begin
-If (Index >= Low(fBookmarks)) and (Index <= High(fBookmarks)) then
+If CheckIndex(Index) then
   CurrentPosition := fBookmarks[Index]
 else
   raise EBSIndexOutOfBounds.CreateFmt('TCustomStreamer.MoveToBookmark: Index (%d) out of bounds.',[Index]);
@@ -2928,12 +3113,12 @@ end;
 
 //------------------------------------------------------------------------------
  
-Function TCustomStreamer.IndexOfBookmark(Position: UInt64): Integer;
+Function TCustomStreamer.IndexOfBookmark(Position: Int64): Integer;
 var
   i:  Integer;
 begin
 Result := -1;
-For i := Low(fBookMarks) to High(fBookmarks) do
+For i := LowIndex to HighIndex do
   If fBookmarks[i] = Position then
     begin
       Result := i;
@@ -2950,16 +3135,17 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TCustomStreamer.AddBookmark(Position: UInt64): Integer;
+Function TCustomStreamer.AddBookmark(Position: Int64): Integer;
 begin
-SetLength(fBookmarks,Length(fBookmarks) + 1);
-Result := High(fBookmarks);
+Grow;
+Result := fCount;
 fBookmarks[Result] := Position;
+Inc(fCount);
 end;
 
 //------------------------------------------------------------------------------
 
-Function TCustomStreamer.RemoveBookmark(Position: UInt64; RemoveAll: Boolean = True): Integer;
+Function TCustomStreamer.RemoveBookmark(Position: Int64; RemoveAll: Boolean = True): Integer;
 begin
 repeat
   Result := IndexOfBookmark(Position);
@@ -2974,11 +3160,12 @@ procedure TCustomStreamer.DeleteBookmark(Index: Integer);
 var
   i:  Integer;
 begin
-If (Index >= Low(fBookmarks)) and (Index <= High(fBookmarks)) then
+If CheckIndex(Index) then
   begin
     For i := Index to Pred(High(fBookmarks)) do
       fBookmarks[i] := fBookMarks[i + 1];
-    SetLength(fBookmarks,Length(fBookmarks) - 1);
+    Dec(fCount);
+    Shrink;
   end
 else raise EBSIndexOutOfBounds.CreateFmt('TCustomStreamer.DeleteBookmark: Index (%d) out of bounds.',[Index]);
 end;
@@ -3154,20 +3341,21 @@ end;
 Function TCustomStreamer.WriteBytes(const Value: array of UInt8; Advance: Boolean = True): TMemSize;
 var
   i:      Integer;
-  OldPos: UInt64;
+  OldPos: Int64;
 begin
 OldPos := CurrentPosition;
 Result := 0;
 For i := Low(Value) to High(Value) do
   WriteUInt8(Value[i],True);
-If not Advance then CurrentPosition := OldPos;
+If not Advance then
+  CurrentPosition := OldPos;
 end;
 
 //------------------------------------------------------------------------------
 
-Function TCustomStreamer.FillBytes(Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize;
+Function TCustomStreamer.FillBytes(ByteCount: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,Count,PARAM_FILLBYTES);
+Result := WriteValue(@Value,Advance,ByteCount,PARAM_FILLBYTES);
 end;
 
 //==============================================================================
@@ -3495,13 +3683,17 @@ begin
 Result := ReadValue(@Buffer,Advance,Size);
 end;
 
-{==============================================================================}
-{                                TMemoryStreamer                               }
-{==============================================================================}
-
-{------------------------------------------------------------------------------}
-{   TMemoryStreamer - private methods                                          }
-{------------------------------------------------------------------------------}
+{===============================================================================
+--------------------------------------------------------------------------------
+                                 TMemoryStreamer
+--------------------------------------------------------------------------------
+===============================================================================}
+{===============================================================================
+    TMemoryStreamer - class implementation
+===============================================================================}
+{-------------------------------------------------------------------------------
+    TMemoryStreamer - private methods
+-------------------------------------------------------------------------------}
 
 Function TMemoryStreamer.GetStartPtr: Pointer;
 begin
@@ -3510,30 +3702,33 @@ Result := Pointer(fStartPosition);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
-{------------------------------------------------------------------------------}
-{   TMemoryStreamer - protected methods                                        }
-{------------------------------------------------------------------------------}
+{-------------------------------------------------------------------------------
+    TMemoryStreamer - protected methods
+-------------------------------------------------------------------------------}
 
-procedure TMemoryStreamer.SetBookmark(Index: Integer; Value: UInt64);
+procedure TMemoryStreamer.SetBookmark(Index: Integer; Value: Int64);
 begin
-inherited SetBookmark(Index,UInt64(PtrUInt(Value)));
+{
+  casting to PtrInt is done to cut off higher 32bits on 32bit system
+}
+inherited SetBookmark(Index,Int64(PtrInt(Value)));
 end;
 
 //------------------------------------------------------------------------------
 
-Function TMemoryStreamer.GetCurrentPosition: UInt64;
+Function TMemoryStreamer.GetCurrentPosition: Int64;
 begin
 {$IFDEF FPCDWM}{$PUSH}W4055 W4056{$ENDIF}
-Result := UInt64(fCurrentPtr);
+Result := Int64(fCurrentPtr);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TMemoryStreamer.SetCurrentPosition(NewPosition: UInt64);
+procedure TMemoryStreamer.SetCurrentPosition(NewPosition: Int64);
 begin
-{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-fCurrentPtr := Pointer(PtrUInt(NewPosition));
+{$IFDEF FPCDWM}{$PUSH}W4055 W4056{$ENDIF}
+fCurrentPtr := Pointer(NewPosition);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
@@ -3584,9 +3779,9 @@ else
 end;
 end;
 
-{------------------------------------------------------------------------------}
-{   TMemoryStreamer - public methods                                           }
-{------------------------------------------------------------------------------}
+{-------------------------------------------------------------------------------
+    TMemoryStreamer - public methods
+-------------------------------------------------------------------------------}
 
 constructor TMemoryStreamer.Create(Memory: Pointer);
 begin
@@ -3597,11 +3792,11 @@ end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
-constructor TMemoryStreamer.Create(Size: PtrUInt);
+constructor TMemoryStreamer.Create(MemorySize: TMemSize);
 begin
 inherited Create;
 fOwnsPointer := False;
-Initialize(Size);
+Initialize(MemorySize);
 end;
 
 //------------------------------------------------------------------------------
@@ -3609,7 +3804,7 @@ end;
 destructor TMemoryStreamer.Destroy;
 begin
 If fOwnsPointer then
-  FreeMem(StartPtr,PtrSize);
+  FreeMem(StartPtr,fMemorySize);
 inherited;
 end;
 
@@ -3619,16 +3814,16 @@ procedure TMemoryStreamer.Initialize(Memory: Pointer);
 begin
 inherited Initialize;
 fOwnsPointer := False;
-fPtrSize := 0;
+fMemorySize := 0;
 fCurrentPtr := Memory;
 {$IFDEF FPCDWM}{$PUSH}W4055 W4056{$ENDIF}
-fStartPosition := UInt64(Memory);
+fStartPosition := Int64(Memory);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
-procedure TMemoryStreamer.Initialize(Size: PtrUInt);
+procedure TMemoryStreamer.Initialize(MemorySize: TMemSize);
 var
   TempPtr:  Pointer;
 begin
@@ -3636,57 +3831,61 @@ inherited Initialize;
 If fOwnsPointer then
   begin
     TempPtr := StartPtr;
-    ReallocMem(TempPtr,Size);
+    ReallocMem(TempPtr,MemorySize);
   end
-else TempPtr := AllocMem(Size);
+else TempPtr := AllocMem(MemorySize);
 fOwnsPointer := True;
-fPtrSize := Size;
+fMemorySize := MemorySize;
 fCurrentPtr := TempPtr;
 {$IFDEF FPCDWM}{$PUSH}W4055 W4056{$ENDIF}
-fStartPosition := UInt64(TempPtr);
+fStartPosition := Int64(TempPtr);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //------------------------------------------------------------------------------
 
-Function TMemoryStreamer.IndexOfBookmark(Position: UInt64): Integer;
+Function TMemoryStreamer.IndexOfBookmark(Position: Int64): Integer;
 begin
-Result := inherited IndexOfBookmark(PtrUInt(Position));
+Result := inherited IndexOfBookmark(PtrInt(Position));
 end;
 
 //------------------------------------------------------------------------------
 
-Function TMemoryStreamer.AddBookmark(Position: UInt64): Integer;
+Function TMemoryStreamer.AddBookmark(Position: Int64): Integer;
 begin
-Result := inherited AddBookmark(PtrUInt(Position));
+Result := inherited AddBookmark(PtrInt(Position));
 end;
 
 //------------------------------------------------------------------------------
 
-Function TMemoryStreamer.RemoveBookmark(Position: UInt64; RemoveAll: Boolean = True): Integer;
+Function TMemoryStreamer.RemoveBookmark(Position: Int64; RemoveAll: Boolean = True): Integer;
 begin
-Result := inherited RemoveBookmark(PtrUInt(Position),RemoveAll);
+Result := inherited RemoveBookmark(PtrInt(Position),RemoveAll);
 end;
 
 
-{==============================================================================}
-{                                TStreamStreamer                               }
-{==============================================================================}
+{===============================================================================
+--------------------------------------------------------------------------------
+                                 TStreamStreamer
+--------------------------------------------------------------------------------
+===============================================================================}
+{===============================================================================
+    TStreamStreamer - class implementation
+===============================================================================}
+{-------------------------------------------------------------------------------
+    TStreamStreamer - protected methods
+-------------------------------------------------------------------------------}
 
-{------------------------------------------------------------------------------}
-{   TStreamStreamer - protected methods                                        }
-{------------------------------------------------------------------------------}
-
-Function TStreamStreamer.GetCurrentPosition: UInt64;
+Function TStreamStreamer.GetCurrentPosition: Int64;
 begin
-Result := UInt64(fTarget.Position);
+Result := fTarget.Position;
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TStreamStreamer.SetCurrentPosition(NewPosition: UInt64);
+procedure TStreamStreamer.SetCurrentPosition(NewPosition: Int64);
 begin
-fTarget.Position := Int64(NewPosition);
+fTarget.Position := NewPosition;
 end;
 
 //------------------------------------------------------------------------------
@@ -3736,9 +3935,9 @@ else
 end;
 end;
 
-{------------------------------------------------------------------------------}
-{   TStreamStreamer - public methods                                           }
-{------------------------------------------------------------------------------}
+{-------------------------------------------------------------------------------
+    TStreamStreamer - public methods
+-------------------------------------------------------------------------------}
 
 constructor TStreamStreamer.Create(Target: TStream);
 begin
