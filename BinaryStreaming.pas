@@ -47,9 +47,9 @@
     written or read. The exception to this are read functions that are directly
     returning the value being read.
 
-  Version 1.4.3 (2020-01-24)
+  Version 1.4.4 (2020-05-19)
 
-  Last change 2020-01-24
+  Last change 2020-05-19
 
   ©2015-2020 František Milt
 
@@ -510,6 +510,7 @@ type
     Function AddBookmark(Position: Int64): Integer; overload; virtual;
     Function RemoveBookmark(Position: Int64; RemoveAll: Boolean = True): Integer; virtual;
     procedure DeleteBookmark(Index: Integer); virtual;
+    procedure ClearBookmark; virtual;
     // write methods
     Function WriteBool(Value: ByteBool; Advance: Boolean = True): TMemSize; virtual;
     Function WriteBoolean(Value: Boolean; Advance: Boolean = True): TMemSize; virtual;
@@ -3168,6 +3169,14 @@ If CheckIndex(Index) then
     Shrink;
   end
 else raise EBSIndexOutOfBounds.CreateFmt('TCustomStreamer.DeleteBookmark: Index (%d) out of bounds.',[Index]);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TCustomStreamer.ClearBookmark;
+begin
+fCount := 0;
+Shrink;
 end;
 
 //==============================================================================
