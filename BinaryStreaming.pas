@@ -49,7 +49,7 @@
 
   Version 1.4.4 (2020-05-19)
 
-  Last change 2020-05-19
+  Last change 2020-08-02
 
   ©2015-2020 František Milt
 
@@ -76,12 +76,13 @@
 unit BinaryStreaming;
 
 {$IFDEF FPC}
-  {$MODE ObjFPC}{$H+}
+  {$MODE ObjFPC}
   {$INLINE ON}
   {$DEFINE CanInline}
   {$DEFINE FPC_DisableWarns}
   {$MACRO ON}
 {$ENDIF}
+{$H+}
 
 interface
 
