@@ -47,9 +47,9 @@
     written or read. The exception to this are read functions that are directly
     returning the value being read.
 
-  Version 1.4.4 (2020-05-19)
+  Version 1.5 (2020-08-16)
 
-  Last change 2020-08-02
+  Last change 020-08-16
 
   ©2015-2020 František Milt
 
@@ -140,6 +140,15 @@ Function Ptr_WriteFloat32(Dest: Pointer; Value: Float32): TMemSize; overload;{$I
 
 Function Ptr_WriteFloat64(var Dest: Pointer; Value: Float64; Advance: Boolean): TMemSize; overload;
 Function Ptr_WriteFloat64(Dest: Pointer; Value: Float64): TMemSize; overload;{$IFDEF CanInline} inline; {$ENDIF}
+
+Function Ptr_WriteFloat80(var Dest: Pointer; Value: Float80; Advance: Boolean): TMemSize; overload;
+Function Ptr_WriteFloat80(Dest: Pointer; Value: Float80): TMemSize; overload;{$IFDEF CanInline} inline; {$ENDIF}
+
+Function Ptr_WriteDateTime(var Dest: Pointer; Value: TDateTime; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function Ptr_WriteDateTime(Dest: Pointer; Value: TDateTime): TMemSize; overload;{$IFDEF CanInline} inline; {$ENDIF}
+
+Function Ptr_WriteCurrency(var Dest: Pointer; Value: Currency; Advance: Boolean): TMemSize; overload;
+Function Ptr_WriteCurrency(Dest: Pointer; Value: Currency): TMemSize; overload;{$IFDEF CanInline} inline; {$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -258,6 +267,21 @@ Function Ptr_ReadFloat64(Src: Pointer; out Value: Float64): TMemSize; overload;{
 Function Ptr_ReadFloat64(var Src: Pointer; Advance: Boolean): Float64; overload;{$IFDEF CanInline} inline; {$ENDIF}
 Function Ptr_ReadFloat64(Src: Pointer): Float64; overload;{$IFDEF CanInline} inline; {$ENDIF}
 
+Function Ptr_ReadFloat80(var Src: Pointer; out Value: Float80; Advance: Boolean): TMemSize; overload;
+Function Ptr_ReadFloat80(Src: Pointer; out Value: Float80): TMemSize; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function Ptr_ReadFloat80(var Src: Pointer; Advance: Boolean): Float80; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function Ptr_ReadFloat80(Src: Pointer): Float80; overload;{$IFDEF CanInline} inline; {$ENDIF}
+
+Function Ptr_ReadDateTime(var Src: Pointer; out Value: TDateTime; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function Ptr_ReadDateTime(Src: Pointer; out Value: TDateTime): TMemSize; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function Ptr_ReadDateTime(var Src: Pointer; Advance: Boolean): TDateTime; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function Ptr_ReadDateTime(Src: Pointer): TDateTime; overload;{$IFDEF CanInline} inline; {$ENDIF}
+
+Function Ptr_ReadCurrency(var Src: Pointer; out Value: Currency; Advance: Boolean): TMemSize; overload;
+Function Ptr_ReadCurrency(Src: Pointer; out Value: Currency): TMemSize; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function Ptr_ReadCurrency(var Src: Pointer; Advance: Boolean): Currency; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function Ptr_ReadCurrency(Src: Pointer): Currency; overload;{$IFDEF CanInline} inline; {$ENDIF}
+
 //------------------------------------------------------------------------------
 
 Function Ptr_ReadAnsiChar(var Src: Pointer; out Value: AnsiChar; Advance: Boolean): TMemSize; overload;
@@ -352,6 +376,12 @@ Function Stream_WriteFloat32(Stream: TStream; Value: Float32; Advance: Boolean =
 
 Function Stream_WriteFloat64(Stream: TStream; Value: Float64; Advance: Boolean = True): TMemSize;
 
+Function Stream_WriteFloat80(Stream: TStream; Value: Float80; Advance: Boolean = True): TMemSize;
+
+Function Stream_WriteDateTime(Stream: TStream; Value: TDateTime; Advance: Boolean = True): TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+
+Function Stream_WriteCurrency(Stream: TStream; Value: Currency; Advance: Boolean = True): TMemSize;
+
 //------------------------------------------------------------------------------
 
 Function Stream_WriteAnsiChar(Stream: TStream; Value: AnsiChar; Advance: Boolean = True): TMemSize;
@@ -433,6 +463,15 @@ Function Stream_ReadFloat32(Stream: TStream; Advance: Boolean = True): Float32; 
 Function Stream_ReadFloat64(Stream: TStream; out Value: Float64; Advance: Boolean = True): TMemSize; overload;
 Function Stream_ReadFloat64(Stream: TStream; Advance: Boolean = True): Float64; overload;{$IFDEF CanInline} inline; {$ENDIF}
 
+Function Stream_ReadFloat80(Stream: TStream; out Value: Float80; Advance: Boolean = True): TMemSize; overload;
+Function Stream_ReadFloat80(Stream: TStream; Advance: Boolean = True): Float80; overload;{$IFDEF CanInline} inline; {$ENDIF}
+
+Function Stream_ReadDateTime(Stream: TStream; out Value: TDateTime; Advance: Boolean = True): TMemSize; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function Stream_ReadDateTime(Stream: TStream; Advance: Boolean = True): TDateTime; overload;{$IFDEF CanInline} inline; {$ENDIF}
+
+Function Stream_ReadCurrency(Stream: TStream; out Value: Currency; Advance: Boolean = True): TMemSize; overload;
+Function Stream_ReadCurrency(Stream: TStream; Advance: Boolean = True): Currency; overload;{$IFDEF CanInline} inline; {$ENDIF}
+
 //------------------------------------------------------------------------------
 
 Function Stream_ReadAnsiChar(Stream: TStream; out Value: AnsiChar; Advance: Boolean = True): TMemSize; overload;
@@ -477,6 +516,11 @@ Function Stream_ReadBuffer(Stream: TStream; var Buffer; Size: TMemSize; Advance:
                                  TCustomStreamer
 --------------------------------------------------------------------------------
 ===============================================================================}
+type
+  TValueType = (vtShortString,vtAnsiString,vtUTF8String,vtWideString,
+                vtUnicodeString,vtString,vtFillBytes,vtBytes,vtPrimitive1B,
+                vtPrimitive2B,vtPrimitive4B,vtPrimitive8B,vtPrimitive10B);
+
 {===============================================================================
     TCustomStreamer - class declaration
 ===============================================================================}
@@ -496,8 +540,8 @@ type
     Function GetCurrentPosition: Int64; virtual; abstract;
     procedure SetCurrentPosition(NewPosition: Int64); virtual; abstract;
     Function GetDistance: Int64; virtual;
-    Function WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize; virtual; abstract;
-    Function ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize; virtual; abstract;
+    Function WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; ValueType: TValueType): TMemSize; virtual; abstract;
+    Function ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; ValueType: TValueType): TMemSize; virtual; abstract;
   public
     Function LowIndex: Integer; override;
     Function HighIndex: Integer; override;
@@ -525,6 +569,9 @@ type
     Function WriteUInt64(Value: UInt64; Advance: Boolean = True): TMemSize; virtual;
     Function WriteFloat32(Value: Float32; Advance: Boolean = True): TMemSize; virtual;
     Function WriteFloat64(Value: Float64; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteFloat80(Value: Float80; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteDateTime(Value: TDateTime; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteCurrency(Value: Currency; Advance: Boolean = True): TMemSize; virtual;
     Function WriteAnsiChar(Value: AnsiChar; Advance: Boolean = True): TMemSize; virtual;
     Function WriteUTF8Char(Value: UTF8Char; Advance: Boolean = True): TMemSize; virtual;
     Function WriteWideChar(Value: WideChar; Advance: Boolean = True): TMemSize; virtual;
@@ -562,6 +609,12 @@ type
     Function ReadFloat32(Advance: Boolean = True): Float32; overload; virtual;
     Function ReadFloat64(out Value: Float64; Advance: Boolean = True): TMemSize; overload; virtual;
     Function ReadFloat64(Advance: Boolean = True): Float64; overload; virtual;
+    Function ReadFloat80(out Value: Float80; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadFloat80(Advance: Boolean = True): Float80; overload; virtual;
+    Function ReadDateTime(out Value: TDateTime; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadDateTime(Advance: Boolean = True): TDateTime; overload; virtual;
+    Function ReadCurrency(out Value: Currency; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadCurrency(Advance: Boolean = True): Currency; overload; virtual;
     Function ReadAnsiChar(out Value: AnsiChar; Advance: Boolean = True): TMemSize; overload; virtual;
     Function ReadAnsiChar(Advance: Boolean = True): AnsiChar; overload; virtual;
     Function ReadUTF8Char(out Value: UTF8Char; Advance: Boolean = True): TMemSize; overload; virtual;
@@ -609,8 +662,8 @@ type
     procedure SetBookmark(Index: Integer; Value: Int64); override;
     Function GetCurrentPosition: Int64; override;
     procedure SetCurrentPosition(NewPosition: Int64); override;
-    Function WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize; override;
-    Function ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize; override;
+    Function WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; ValueType: TValueType): TMemSize; override;
+    Function ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; ValueType: TValueType): TMemSize; override;
   public
     constructor Create(Memory: Pointer); overload;
     constructor Create(MemorySize: TMemSize); overload;
@@ -641,8 +694,8 @@ type
   protected
     Function GetCurrentPosition: Int64; override;
     procedure SetCurrentPosition(NewPosition: Int64); override;
-    Function WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize; override;
-    Function ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize; override;
+    Function WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; ValueType: TValueType): TMemSize; override;
+    Function ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; ValueType: TValueType): TMemSize; override;
   public
     constructor Create(Target: TStream);
     procedure Initialize(Target: TStream); reintroduce; virtual;
@@ -662,15 +715,6 @@ uses
   {$DEFINE W5057:={$WARN 5057 OFF}} // Local variable "$1" does not seem to be initialized
   {$DEFINE W5058:={$WARN 5058 OFF}} // Variable "$1" does not seem to be initialized
 {$ENDIF}
-
-const
-  PARAM_ANSISTRING    = -1;
-  PARAM_UNICODESTRING = -2;
-  PARAM_WIDESTRING    = -3;
-  PARAM_UTF8STRING    = -4;
-  PARAM_STRING        = -5;
-  PARAM_FILLBYTES     = -6;
-  PARAM_SHORTSTRING   = -7;
 
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -738,6 +782,24 @@ Function SwapEndian(Value: Float64): Float64; overload;
 begin
 Int64Rec(Result).Hi := SwapEndian(Int64Rec(Value).Lo);
 Int64Rec(Result).Lo := SwapEndian(Int64Rec(Value).Hi);
+end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+Function SwapEndian(Value: Float80): Float80; overload;
+type
+  TOverlay = packed array[0..9] of Byte;
+begin
+TOverlay(Result)[0] := TOverlay(Value)[9];
+TOverlay(Result)[1] := TOverlay(Value)[8];
+TOverlay(Result)[2] := TOverlay(Value)[7];
+TOverlay(Result)[3] := TOverlay(Value)[6];
+TOverlay(Result)[4] := TOverlay(Value)[5];
+TOverlay(Result)[5] := TOverlay(Value)[4];
+TOverlay(Result)[6] := TOverlay(Value)[3];
+TOverlay(Result)[7] := TOverlay(Value)[2];
+TOverlay(Result)[8] := TOverlay(Value)[1];
+TOverlay(Result)[9] := TOverlay(Value)[0];
 end;
 
 //------------------------------------------------------------------------------
@@ -1085,7 +1147,74 @@ end;
 {$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function Ptr_WriteFloat64(Dest: Pointer; Value: Float64): TMemSize;
 begin
-Result := Ptr_WriteFloat32(Dest,Value,False);
+Result := Ptr_WriteFloat64(Dest,Value,False);
+end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteFloat80(var Dest: Pointer; Value: Float80; Advance: Boolean): TMemSize;
+begin
+{$IFDEF ENDIAN_BIG}
+Float80(Dest^) := SwapEndian(Value);
+{$ELSE}
+Float80(Dest^) := Value;
+{$ENDIF}
+Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
+If Advance then
+  Dest := Pointer(PtrUInt(Dest) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
+end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
+Function Ptr_WriteFloat80(Dest: Pointer; Value: Float80): TMemSize;
+begin
+Result := Ptr_WriteFloat80(Dest,Value,False);
+end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteDateTime(var Dest: Pointer; Value: TDateTime; Advance: Boolean): TMemSize;
+begin
+Result := Ptr_WriteFloat64(Dest,Value,Advance);
+end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
+Function Ptr_WriteDateTime(Dest: Pointer; Value: TDateTime): TMemSize;
+begin
+Result := Ptr_WriteDateTime(Dest,Value,False);
+end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteCurrency(var Dest: Pointer; Value: Currency; Advance: Boolean): TMemSize;
+begin
+// prevent conversion of currency to other types
+{$IFDEF ENDIAN_BIG}
+Int64(Dest^) := SwapEndian(Int64(Addr(Value)^));
+{$ELSE}
+Int64(Dest^) := Int64(Addr(Value)^);
+{$ENDIF}
+Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
+If Advance then
+  Dest := Pointer(PtrUInt(Dest) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
+end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
+Function Ptr_WriteCurrency(Dest: Pointer; Value: Currency): TMemSize;
+begin
+Result := Ptr_WriteCurrency(Dest,Value,False);
 end;
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 
@@ -1860,6 +1989,124 @@ Ptr_ReadFloat64(Src,Result,False);
 end;
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadFloat80(var Src: Pointer; out Value: Float80; Advance: Boolean): TMemSize;
+begin
+{$IFDEF ENDIAN_BIG}
+Value := SwapEndian(Float80(Src^));
+{$ELSE}
+Value := Float80(Src^);
+{$ENDIF}
+Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
+If Advance then
+  Src := Pointer(PtrUInt(Src) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
+end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
+Function Ptr_ReadFloat80(Src: Pointer; out Value: Float80): TMemSize;
+begin
+Result := Ptr_ReadFloat80(Src,Value,False);
+end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+Function Ptr_ReadFloat80(var Src: Pointer; Advance: Boolean): Float80;
+begin
+Ptr_ReadFloat80(Src,Result,Advance);
+end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
+Function Ptr_ReadFloat80(Src: Pointer): Float80;
+begin
+Ptr_ReadFloat80(Src,Result,False);
+end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadDateTime(var Src: Pointer; out Value: TDateTime; Advance: Boolean): TMemSize;
+begin
+Result := Ptr_ReadFloat64(Src,Float64(Value),Advance);
+end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
+Function Ptr_ReadDateTime(Src: Pointer; out Value: TDateTime): TMemSize;
+begin
+Result := Ptr_ReadDateTime(Src,Value,False);
+end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+Function Ptr_ReadDateTime(var Src: Pointer; Advance: Boolean): TDateTime;
+begin
+Ptr_ReadDateTime(Src,Result,Advance);
+end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
+Function Ptr_ReadDateTime(Src: Pointer): TDateTime;
+begin
+Ptr_ReadDateTime(Src,Result,False);
+end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadCurrency(var Src: Pointer; out Value: Currency; Advance: Boolean): TMemSize;
+{$IFDEF ENDIAN_BIG}
+var
+  Temp: UInt64 absolute Value;
+{$ENDIF}
+begin
+{$IFDEF ENDIAN_BIG}
+Temp := SwapEndian(UInt64(Src^));
+{$ELSE}
+Value := Currency(Src^);
+{$ENDIF}
+Result := SizeOf(Value);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
+If Advance then
+  Src := Pointer(PtrUInt(Src) + Result);
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
+end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
+Function Ptr_ReadCurrency(Src: Pointer; out Value: Currency): TMemSize;
+begin
+Result := Ptr_ReadCurrency(Src,Value,False);
+end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+Function Ptr_ReadCurrency(var Src: Pointer; Advance: Boolean): Currency;
+begin
+Ptr_ReadCurrency(Src,Result,Advance);
+end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
+Function Ptr_ReadCurrency(Src: Pointer): Currency;
+begin
+Ptr_ReadCurrency(Src,Result,False);
+end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
+
 //==============================================================================
 
 Function Ptr_ReadAnsiChar(var Src: Pointer; out Value: AnsiChar; Advance: Boolean): TMemSize;
@@ -2413,6 +2660,37 @@ If not Advance then
   Stream.Seek(-Int64(Result),soCurrent);
 end;
 
+//------------------------------------------------------------------------------
+
+Function Stream_WriteFloat80(Stream: TStream; Value: Float80; Advance: Boolean = True): TMemSize;
+begin
+{$IFDEF ENDIAN_BIG}
+Value := SwapEndian(Value);
+{$ENDIF}
+Result := Stream.Write(Value,SizeOf(Value));
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteDateTime(Stream: TStream; Value: TDateTime; Advance: Boolean = True): TMemSize;
+begin
+Result := Stream_WriteFloat64(Stream,Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteCurrency(Stream: TStream; Value: Currency; Advance: Boolean = True): TMemSize;
+begin
+{$IFDEF ENDIAN_BIG}
+UInt64(Addr(Value)^) := SwapEndian(UInt64(Addr(Value)^));
+{$ENDIF}
+Result := Stream.Write(Value,SizeOf(Value));
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
+end;
+
 //==============================================================================
 
 Function Stream_WriteAnsiChar(Stream: TStream; Value: AnsiChar; Advance: Boolean = True): TMemSize;
@@ -2784,6 +3062,60 @@ end;
 Function Stream_ReadFloat64(Stream: TStream; Advance: Boolean = True): Float64;
 begin
 Stream_ReadFloat64(Stream,Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadFloat80(Stream: TStream; out Value: Float80; Advance: Boolean = True): TMemSize;
+begin
+FillChar(Addr(Value)^,SizeOf(Value),0);
+Result := Stream.Read(Value,SizeOf(Value));
+{$IFDEF ENDIAN_BIG}
+Value := SwapEndian(Value);
+{$ENDIF}
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
+end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+Function Stream_ReadFloat80(Stream: TStream; Advance: Boolean = True): Float80;
+begin
+Stream_ReadFloat80(Stream,Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadDateTime(Stream: TStream; out Value: TDateTime; Advance: Boolean = True): TMemSize;
+begin
+Result := Stream_ReadFloat64(Stream,Float64(Value),Advance);
+end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+Function Stream_ReadDateTime(Stream: TStream; Advance: Boolean = True): TDateTime;
+begin
+Stream_ReadDateTime(Stream,Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadCurrency(Stream: TStream; out Value: Currency; Advance: Boolean = True): TMemSize;
+begin
+Value := 0.0;
+Result := Stream.Read(Value,SizeOf(Value));
+{$IFDEF ENDIAN_BIG}
+UInt64(Addr(Value)^) := SwapEndian(UInt64(Addr(Value)^));
+{$ENDIF}
+If not Advance then
+  Stream.Seek(-Int64(Result),soCurrent);
+end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+Function Stream_ReadCurrency(Stream: TStream; Advance: Boolean = True): Currency;
+begin
+Stream_ReadCurrency(Stream,Result,Advance);
 end;
 
 //==============================================================================
@@ -3187,7 +3519,7 @@ var
   Temp: UInt8;
 begin
 Temp := BoolToNum(Value);
-Result := WriteValue(@Temp,Advance,SizeOf(Temp));
+Result := WriteValue(@Temp,Advance,SizeOf(Temp),vtPrimitive1B);
 end;
 
 //------------------------------------------------------------------------------
@@ -3201,89 +3533,112 @@ end;
 
 Function TCustomStreamer.WriteInt8(Value: Int8; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value));
+Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive1B);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUInt8(Value: UInt8; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value));
+Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive1B);
 end;
  
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteInt16(Value: Int16; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value));
+Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive2B);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUInt16(Value: UInt16; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value));
+Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive2B);
 end;
+
+//------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteInt32(Value: Int32; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value));
+Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive4B);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUInt32(Value: UInt32; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value));
+Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive4B);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteInt64(Value: Int64; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value));
+Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive8B);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUInt64(Value: UInt64; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value));
+Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive8B);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteFloat32(Value: Float32; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value));
+Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive4B);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteFloat64(Value: Float64; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value));
+Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive8B);
 end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteFloat80(Value: Float80; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive10B);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteDateTime(Value: TDateTime; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive8B);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteCurrency(Value: Currency; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive8B);
+end;   
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteAnsiChar(Value: AnsiChar; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value));
+Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive1B);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUTF8Char(Value: UTF8Char; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value));
+Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive1B);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteWideChar(Value: WideChar; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value));
+Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive2B);
 end;
 
 //------------------------------------------------------------------------------
@@ -3301,49 +3656,49 @@ end;
 
 Function TCustomStreamer.WriteShortString(const Value: ShortString; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,0,PARAM_SHORTSTRING);
+Result := WriteValue(@Value,Advance,0,vtShortString);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteAnsiString(const Value: AnsiString; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,0,PARAM_ANSISTRING);
+Result := WriteValue(@Value,Advance,0,vtAnsiString);
 end;
  
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUnicodeString(const Value: UnicodeString; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,0,PARAM_UNICODESTRING);
+Result := WriteValue(@Value,Advance,0,vtUnicodeString);
 end;
   
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteWideString(const Value: WideString; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,0,PARAM_WIDESTRING);
+Result := WriteValue(@Value,Advance,0,vtWideString);
 end;
   
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUTF8String(const Value: UTF8String; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,0,PARAM_UTF8STRING);
+Result := WriteValue(@Value,Advance,0,vtUTF8String);
 end;
   
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteString(const Value: String; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,0,PARAM_STRING);
+Result := WriteValue(@Value,Advance,0,vtString);
 end;
   
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteBuffer(const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Buffer,Advance,Size);
+Result := WriteValue(@Buffer,Advance,Size,vtBytes);
 end;
 
 //------------------------------------------------------------------------------
@@ -3365,7 +3720,7 @@ end;
 
 Function TCustomStreamer.FillBytes(ByteCount: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,ByteCount,PARAM_FILLBYTES);
+Result := WriteValue(@Value,Advance,ByteCount,vtFillBytes);
 end;
 
 //==============================================================================
@@ -3374,7 +3729,7 @@ Function TCustomStreamer.ReadBool(out Value: ByteBool; Advance: Boolean = True):
 var
   Temp: UInt8;
 begin
-Result := ReadValue(@Temp,Advance,SizeOf(Temp));
+Result := ReadValue(@Temp,Advance,SizeOf(Temp),vtPrimitive1B);
 Value := NumToBool(Temp);
 end;
 
@@ -3384,7 +3739,7 @@ Function TCustomStreamer.ReadBool(Advance: Boolean = True): ByteBool;
 var
   Temp: UInt8;
 begin
-ReadValue(@Temp,Advance,SizeOf(Temp));
+ReadValue(@Temp,Advance,SizeOf(Temp),vtPrimitive1B);
 Result := NumToBool(Temp);
 end;
 
@@ -3402,182 +3757,224 @@ end;
 
 Function TCustomStreamer.ReadInt8(out Value: Int8; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value));
+Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive1B);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
 Function TCustomStreamer.ReadInt8(Advance: Boolean = True): Int8;
 begin
-ReadValue(@Result,Advance,SizeOf(Result));
+ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive1B);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUInt8(out Value: UInt8; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value));
+Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive1B);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
 Function TCustomStreamer.ReadUInt8(Advance: Boolean = True): UInt8;
 begin
-ReadValue(@Result,Advance,SizeOf(Result));
+ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive1B);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadInt16(out Value: Int16; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value));
+Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive2B);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
 Function TCustomStreamer.ReadInt16(Advance: Boolean = True): Int16;
 begin
-ReadValue(@Result,Advance,SizeOf(Result));
+ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive2B);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUInt16(out Value: UInt16; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value));
+Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive2B);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
 Function TCustomStreamer.ReadUInt16(Advance: Boolean = True): UInt16;
 begin
-ReadValue(@Result,Advance,SizeOf(Result));
+ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive2B);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadInt32(out Value: Int32; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value));
+Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive4B);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
 Function TCustomStreamer.ReadInt32(Advance: Boolean = True): Int32;
 begin
-ReadValue(@Result,Advance,SizeOf(Result));
+ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive4B);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUInt32(out Value: UInt32; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value));
+Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive4B);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
 Function TCustomStreamer.ReadUInt32(Advance: Boolean = True): UInt32;
 begin
-ReadValue(@Result,Advance,SizeOf(Result));
+ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive4B);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadInt64(out Value: Int64; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value));
+Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive8B);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
 Function TCustomStreamer.ReadInt64(Advance: Boolean = True): Int64;
 begin
-ReadValue(@Result,Advance,SizeOf(Result));
+ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive8B);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUInt64(out Value: UInt64; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value));
+Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive8B);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
 Function TCustomStreamer.ReadUInt64(Advance: Boolean = True): UInt64;
 begin
-ReadValue(@Result,Advance,SizeOf(Result));
+ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive8B);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadFloat32(out Value: Float32; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value));
+Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive4B);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
 Function TCustomStreamer.ReadFloat32(Advance: Boolean = True): Float32;
 begin
-ReadValue(@Result,Advance,SizeOf(Result));
+ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive4B);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadFloat64(out Value: Float64; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value));
+Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive8B);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
 Function TCustomStreamer.ReadFloat64(Advance: Boolean = True): Float64;
 begin
-ReadValue(@Result,Advance,SizeOf(Result));
+ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive8B);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadFloat80(out Value: Float80; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive10B);
+end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+Function TCustomStreamer.ReadFloat80(Advance: Boolean = True): Float80;
+begin
+ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive10B);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadDateTime(out Value: TDateTime; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive8B);
+end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+Function TCustomStreamer.ReadDateTime(Advance: Boolean = True): TDateTime;
+begin
+ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive8B);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadCurrency(out Value: Currency; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive8B);
+end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+Function TCustomStreamer.ReadCurrency(Advance: Boolean = True): Currency;
+begin
+ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive8B);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadAnsiChar(out Value: AnsiChar; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value));
+Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive1B);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
 Function TCustomStreamer.ReadAnsiChar(Advance: Boolean = True): AnsiChar;
 begin
-ReadValue(@Result,Advance,SizeOf(Result));
+ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive1B);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUTF8Char(out Value: UTF8Char; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value));
+Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive1B);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
 Function TCustomStreamer.ReadUTF8Char(Advance: Boolean = True): UTF8Char;
 begin
-ReadValue(@Result,Advance,SizeOf(Result));
+ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive1B);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadWideChar(out Value: WideChar; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value));
+Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive2B);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
 Function TCustomStreamer.ReadWideChar(Advance: Boolean = True): WideChar;
 begin
-ReadValue(@Result,Advance,SizeOf(Result));
+ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive2B);
 end;
 
 //------------------------------------------------------------------------------
@@ -3606,91 +4003,91 @@ end;
 
 Function TCustomStreamer.ReadShortString(out Value: ShortString; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,0,PARAM_SHORTSTRING);
+Result := ReadValue(@Value,Advance,0,vtShortString);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
 Function TCustomStreamer.ReadShortString(Advance: Boolean = True): ShortString;
 begin
-ReadValue(@Result,Advance,0,PARAM_SHORTSTRING);
+ReadValue(@Result,Advance,0,vtShortString);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadAnsiString(out Value: AnsiString; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,0,PARAM_ANSISTRING);
+Result := ReadValue(@Value,Advance,0,vtAnsiString);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
 Function TCustomStreamer.ReadAnsiString(Advance: Boolean = True): AnsiString;
 begin
-ReadValue(@Result,Advance,0,PARAM_ANSISTRING);
+ReadValue(@Result,Advance,0,vtAnsiString);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUnicodeString(out Value: UnicodeString; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,0,PARAM_UNICODESTRING);
+Result := ReadValue(@Value,Advance,0,vtUnicodeString);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
 Function TCustomStreamer.ReadUnicodeString(Advance: Boolean = True): UnicodeString;
 begin
-ReadValue(@Result,Advance,0,PARAM_UNICODESTRING);
+ReadValue(@Result,Advance,0,vtUnicodeString);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadWideString(out Value: WideString; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,0,PARAM_WIDESTRING);
+Result := ReadValue(@Value,Advance,0,vtWideString);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
 Function TCustomStreamer.ReadWideString(Advance: Boolean = True): WideString;
 begin
-ReadValue(@Result,Advance,0,PARAM_WIDESTRING);
+ReadValue(@Result,Advance,0,vtWideString);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUTF8String(out Value: UTF8String; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,0,PARAM_UTF8STRING);
+Result := ReadValue(@Value,Advance,0,vtUTF8String);
 end;
  
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
 Function TCustomStreamer.ReadUTF8String(Advance: Boolean = True): UTF8String;
 begin
-ReadValue(@Result,Advance,0,PARAM_UTF8STRING);
+ReadValue(@Result,Advance,0,vtUTF8String);
 end;
  
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadString(out Value: String; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,0,PARAM_STRING);
+Result := ReadValue(@Value,Advance,0,vtString);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
 Function TCustomStreamer.ReadString(Advance: Boolean = True): String;
 begin
-ReadValue(@Result,Advance,0,PARAM_STRING);
+ReadValue(@Result,Advance,0,vtString);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadBuffer(var Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Buffer,Advance,Size);
+Result := ReadValue(@Buffer,Advance,Size,vtBytes);
 end;
 
 {===============================================================================
@@ -3744,48 +4141,46 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TMemoryStreamer.WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize;
+Function TMemoryStreamer.WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; ValueType: TValueType): TMemSize;
 begin
-case Param of
-  PARAM_SHORTSTRING:    Result := Ptr_WriteShortString(fCurrentPtr,ShortString(Value^),Advance);
-  PARAM_ANSISTRING:     Result := Ptr_WriteAnsiString(fCurrentPtr,AnsiString(Value^),Advance);
-  PARAM_UNICODESTRING:  Result := Ptr_WriteUnicodeString(fCurrentPtr,UnicodeString(Value^),Advance);
-  PARAM_WIDESTRING:     Result := Ptr_WriteWideString(fCurrentPtr,WideString(Value^),Advance);
-  PARAM_UTF8STRING:     Result := Ptr_WriteUTF8String(fCurrentPtr,UTF8String(Value^),Advance);
-  PARAM_STRING:         Result := Ptr_WriteString(fCurrentPtr,String(Value^),Advance);
-  PARAM_FILLBYTES:      Result := Ptr_FillBytes(fCurrentPtr,Size,UInt8(Value^),Advance);
+case ValueType of
+  vtShortString:    Result := Ptr_WriteShortString(fCurrentPtr,ShortString(Value^),Advance);
+  vtAnsiString:     Result := Ptr_WriteAnsiString(fCurrentPtr,AnsiString(Value^),Advance);
+  vtUTF8String:     Result := Ptr_WriteUTF8String(fCurrentPtr,UTF8String(Value^),Advance);
+  vtWideString:     Result := Ptr_WriteWideString(fCurrentPtr,WideString(Value^),Advance);
+  vtUnicodeString:  Result := Ptr_WriteUnicodeString(fCurrentPtr,UnicodeString(Value^),Advance);
+  vtString:         Result := Ptr_WriteString(fCurrentPtr,String(Value^),Advance);
+  vtFillBytes:      Result := Ptr_FillBytes(fCurrentPtr,Size,UInt8(Value^),Advance);
+  vtPrimitive1B:    Result := Ptr_WriteUInt8(fCurrentPtr,UInt8(Value^),Advance);
+  vtPrimitive2B:    Result := Ptr_WriteUInt16(fCurrentPtr,UInt16(Value^),Advance);
+  vtPrimitive4B:    Result := Ptr_WriteUInt32(fCurrentPtr,UInt32(Value^),Advance);
+  vtPrimitive8B:    Result := Ptr_WriteUInt64(fCurrentPtr,UInt64(Value^),Advance);
+  vtPrimitive10B:   Result := Ptr_WriteFloat80(fCurrentPtr,Float80(Value^),Advance);
 else
-  case Size of
-    1:  Result := Ptr_WriteUInt8(fCurrentPtr,UInt8(Value^),Advance);
-    2:  Result := Ptr_WriteUInt16(fCurrentPtr,UInt16(Value^),Advance);
-    4:  Result := Ptr_WriteUInt32(fCurrentPtr,UInt32(Value^),Advance);
-    8:  Result := Ptr_WriteUInt64(fCurrentPtr,UInt64(Value^),Advance);
-  else
-    Result := Ptr_WriteBuffer(fCurrentPtr,Value^,Size,Advance);
-  end;
+ {vtBytes}
+  Result := Ptr_WriteBuffer(fCurrentPtr,Value^,Size,Advance);
 end;
 end;
 
 //------------------------------------------------------------------------------
 
-Function TMemoryStreamer.ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize;
+Function TMemoryStreamer.ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; ValueType: TValueType): TMemSize;
 begin
-case Param of
-  PARAM_SHORTSTRING:    Result := Ptr_ReadShortString(fCurrentPtr,ShortString(Value^),Advance);
-  PARAM_ANSISTRING:     Result := Ptr_ReadAnsiString(fCurrentPtr,AnsiString(Value^),Advance);
-  PARAM_UNICODESTRING:  Result := Ptr_ReadUnicodeString(fCurrentPtr,UnicodeString(Value^),Advance);
-  PARAM_WIDESTRING:     Result := Ptr_ReadWideString(fCurrentPtr,WideString(Value^),Advance);
-  PARAM_UTF8STRING:     Result := Ptr_ReadUTF8String(fCurrentPtr,UTF8String(Value^),Advance);
-  PARAM_STRING:         Result := Ptr_ReadString(fCurrentPtr,String(Value^),Advance);
+case ValueType of
+  vtShortString:    Result := Ptr_ReadShortString(fCurrentPtr,ShortString(Value^),Advance);
+  vtAnsiString:     Result := Ptr_ReadAnsiString(fCurrentPtr,AnsiString(Value^),Advance);
+  vtUTF8String:     Result := Ptr_ReadUTF8String(fCurrentPtr,UTF8String(Value^),Advance);
+  vtWideString:     Result := Ptr_ReadWideString(fCurrentPtr,WideString(Value^),Advance);
+  vtUnicodeString:  Result := Ptr_ReadUnicodeString(fCurrentPtr,UnicodeString(Value^),Advance);
+  vtString:         Result := Ptr_ReadString(fCurrentPtr,String(Value^),Advance);
+  vtPrimitive1B:    Result := Ptr_ReadUInt8(fCurrentPtr,UInt8(Value^),Advance);
+  vtPrimitive2B:    Result := Ptr_ReadUInt16(fCurrentPtr,UInt16(Value^),Advance);
+  vtPrimitive4B:    Result := Ptr_ReadUInt32(fCurrentPtr,UInt32(Value^),Advance);
+  vtPrimitive8B:    Result := Ptr_ReadUInt64(fCurrentPtr,UInt64(Value^),Advance);
+  vtPrimitive10B:   Result := Ptr_ReadFloat80(fCurrentPtr,Float80(Value^),Advance);
 else
-  case Size of
-    1:  Result := Ptr_ReadUInt8(fCurrentPtr,UInt8(Value^),Advance);
-    2:  Result := Ptr_ReadUInt16(fCurrentPtr,UInt16(Value^),Advance);
-    4:  Result := Ptr_ReadUInt32(fCurrentPtr,UInt32(Value^),Advance);
-    8:  Result := Ptr_ReadUInt64(fCurrentPtr,UInt64(Value^),Advance);
-  else
-    Result := Ptr_ReadBuffer(fCurrentPtr,Value^,Size,Advance);
-  end;
+ {vtFillBytes, vtBytes}
+  Result := Ptr_ReadBuffer(fCurrentPtr,Value^,Size,Advance);
 end;
 end;
 
@@ -3900,48 +4295,46 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TStreamStreamer.WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize;
+Function TStreamStreamer.WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; ValueType: TValueType): TMemSize;
 begin
-case Param of
-  PARAM_SHORTSTRING:    Result := Stream_WriteShortString(fTarget,ShortString(Value^),Advance);
-  PARAM_ANSISTRING:     Result := Stream_WriteAnsiString(fTarget,AnsiString(Value^),Advance);
-  PARAM_UNICODESTRING:  Result := Stream_WriteUnicodeString(fTarget,UnicodeString(Value^),Advance);
-  PARAM_WIDESTRING:     Result := Stream_WriteWideString(fTarget,WideString(Value^),Advance);
-  PARAM_UTF8STRING:     Result := Stream_WriteUTF8String(fTarget,UTF8String(Value^),Advance);
-  PARAM_STRING:         Result := Stream_WriteString(fTarget,String(Value^),Advance);
-  PARAM_FILLBYTES:      Result := Stream_FillBytes(fTarget,Size,UInt8(Value^),Advance);
+case ValueType of
+  vtShortString:    Result := Stream_WriteShortString(fTarget,ShortString(Value^),Advance);
+  vtAnsiString:     Result := Stream_WriteAnsiString(fTarget,AnsiString(Value^),Advance);
+  vtUTF8String:     Result := Stream_WriteUTF8String(fTarget,UTF8String(Value^),Advance);
+  vtWideString:     Result := Stream_WriteWideString(fTarget,WideString(Value^),Advance);
+  vtUnicodeString:  Result := Stream_WriteUnicodeString(fTarget,UnicodeString(Value^),Advance);
+  vtString:         Result := Stream_WriteString(fTarget,String(Value^),Advance);
+  vtFillBytes:      Result := Stream_FillBytes(fTarget,Size,UInt8(Value^),Advance);
+  vtPrimitive1B:    Result := Stream_WriteUInt8(fTarget,UInt8(Value^),Advance);
+  vtPrimitive2B:    Result := Stream_WriteUInt16(fTarget,UInt16(Value^),Advance);
+  vtPrimitive4B:    Result := Stream_WriteUInt32(fTarget,UInt32(Value^),Advance);
+  vtPrimitive8B:    Result := Stream_WriteUInt64(fTarget,UInt64(Value^),Advance);
+  vtPrimitive10B:   Result := Stream_WriteFloat80(fTarget,Float80(Value^),Advance);
 else
-  case Size of
-    1:  Result := Stream_WriteUInt8(fTarget,UInt8(Value^),Advance);
-    2:  Result := Stream_WriteUInt16(fTarget,UInt16(Value^),Advance);
-    4:  Result := Stream_WriteUInt32(fTarget,UInt32(Value^),Advance);
-    8:  Result := Stream_WriteUInt64(fTarget,UInt64(Value^),Advance);
-  else
-    Result := Stream_WriteBuffer(fTarget,Value^,Size,Advance);
-  end;
+ {vtBytes}
+  Result := Stream_WriteBuffer(fTarget,Value^,Size,Advance);
 end;
 end;
 
 //------------------------------------------------------------------------------
 
-Function TStreamStreamer.ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; Param: Integer = 0): TMemSize;
+Function TStreamStreamer.ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; ValueType: TValueType): TMemSize;
 begin
-case Param of
-  PARAM_SHORTSTRING:    Result := Stream_ReadShortString(fTarget,ShortString(Value^),Advance);
-  PARAM_ANSISTRING:     Result := Stream_ReadAnsiString(fTarget,AnsiString(Value^),Advance);
-  PARAM_UNICODESTRING:  Result := Stream_ReadUnicodeString(fTarget,UnicodeString(Value^),Advance);
-  PARAM_WIDESTRING:     Result := Stream_ReadWideString(fTarget,WideString(Value^),Advance);
-  PARAM_UTF8STRING:     Result := Stream_ReadUTF8String(fTarget,UTF8String(Value^),Advance);
-  PARAM_STRING:         Result := Stream_ReadString(fTarget,String(Value^),Advance);
+case ValueType of
+  vtShortString:    Result := Stream_ReadShortString(fTarget,ShortString(Value^),Advance);
+  vtAnsiString:     Result := Stream_ReadAnsiString(fTarget,AnsiString(Value^),Advance);
+  vtUTF8String:     Result := Stream_ReadUTF8String(fTarget,UTF8String(Value^),Advance);
+  vtWideString:     Result := Stream_ReadWideString(fTarget,WideString(Value^),Advance);
+  vtUnicodeString:  Result := Stream_ReadUnicodeString(fTarget,UnicodeString(Value^),Advance);
+  vtString:         Result := Stream_ReadString(fTarget,String(Value^),Advance);
+  vtPrimitive1B:    Result := Stream_ReadUInt8(fTarget,UInt8(Value^),Advance);
+  vtPrimitive2B:    Result := Stream_ReadUInt16(fTarget,UInt16(Value^),Advance);
+  vtPrimitive4B:    Result := Stream_ReadUInt32(fTarget,UInt32(Value^),Advance);
+  vtPrimitive8B:    Result := Stream_ReadUInt64(fTarget,UInt64(Value^),Advance);
+  vtPrimitive10B:   Result := Stream_ReadFloat80(fTarget,Float80(Value^),Advance);
 else
-  case Size of
-    1:  Result := Stream_ReadUInt8(fTarget,UInt8(Value^),Advance);
-    2:  Result := Stream_ReadUInt16(fTarget,UInt16(Value^),Advance);
-    4:  Result := Stream_ReadUInt32(fTarget,UInt32(Value^),Advance);
-    8:  Result := Stream_ReadUInt64(fTarget,UInt64(Value^),Advance);
-  else
-    Result := Stream_ReadBuffer(fTarget,Value^,Size,Advance);
-  end;
+ {vtFillBytes,vtBytes}
+  Result := Stream_ReadBuffer(fTarget,Value^,Size,Advance);
 end;
 end;
 
