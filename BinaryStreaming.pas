@@ -28,11 +28,11 @@
     character belonging to that particular string). Length is in characters,
     not bytes or code points.
 
-    Default type Char is stored either as AnsiChar or as WideChar, depending on
-    whether the symbol Unicode is defined or not (as WideChar when defined).
+    Default type Char is always stored as 16bit integer, irrespective of how it
+    is declared.
 
-    Default type String is always stored as UTF-8 encoded string, irrespective
-    of how it is declared.
+    Default type String is always stored as UTF-8 encoded string, again
+    irrespective of how it is declared.
 
     Buffers and array of bytes are both stored as plain byte streams, without
     explicit size.
@@ -47,7 +47,7 @@
     written or read. The exception to this are read functions that are directly
     returning the value being read.
 
-  Version 1.5 (2020-08-16)
+  Version 1.5.1 (2020-08-16)
 
   Last change 020-08-16
 
@@ -1289,11 +1289,7 @@ end;
 
 Function Ptr_WriteChar(var Dest: Pointer; Value: Char; Advance: Boolean): TMemSize;
 begin
-{$IFDEF Unicode}
-Result := Ptr_WriteWideChar(Dest,Value,Advance);
-{$ELSE}
-Result := Ptr_WriteAnsiChar(Dest,Value,Advance);
-{$ENDIF}
+Result := Ptr_WriteUInt16(Dest,UInt16(Ord(Value)),Advance);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2225,12 +2221,11 @@ end;
 //------------------------------------------------------------------------------
 
 Function Ptr_ReadChar(var Src: Pointer; out Value: Char; Advance: Boolean): TMemSize;
+var
+  Temp: UInt16;
 begin
-{$IFDEF Unicode}
-Result := Ptr_ReadWideChar(Src,Value,Advance);
-{$ELSE}
-Result := Ptr_ReadAnsiChar(Src,Value,Advance);
-{$ENDIF}
+Result := Ptr_ReadUInt16(Src,Temp,Advance);
+Value := Char(Temp);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -2725,11 +2720,7 @@ end;
 
 Function Stream_WriteChar(Stream: TStream; Value: Char; Advance: Boolean = True): TMemSize;
 begin
-{$IFDEF Unicode}
-Result := Stream_WriteWideChar(Stream,Value,Advance);
-{$ELSE}
-Result := Stream_WriteAnsiChar(Stream,Value,Advance);
-{$ENDIF}
+Result := Stream_WriteUInt16(Stream,UInt16(Ord(Value)),Advance);
 end;
 
 //==============================================================================
@@ -3175,12 +3166,11 @@ end;
 //------------------------------------------------------------------------------
 
 Function Stream_ReadChar(Stream: TStream; out Value: Char; Advance: Boolean = True): TMemSize;
+var
+  Temp: UInt16;
 begin
-{$IFDEF Unicode}
-Result := Stream_ReadWideChar(Stream,Value,Advance);
-{$ELSE}
-Result := Stream_ReadAnsiChar(Stream,Value,Advance);
-{$ENDIF}
+Result := Stream_ReadUInt16(Stream,Temp,Advance);
+Value := Char(Temp);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -3644,12 +3634,11 @@ end;
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteChar(Value: Char; Advance: Boolean = True): TMemSize;
+var
+  Temp: UInt16;
 begin
-{$IFDEF Unicode}
-Result := WriteWideChar(Value,Advance);
-{$ELSE}
-Result := WriteAnsiChar(Value,Advance);
-{$ENDIF}
+Temp := UInt16(Ord(Value));
+Result := WriteValue(@Temp,Advance,SizeOf(Temp),vtPrimitive2B);
 end;
 
 //------------------------------------------------------------------------------
@@ -3980,23 +3969,21 @@ end;
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadChar(out Value: Char; Advance: Boolean = True): TMemSize;
+var
+  Temp: UInt16;
 begin
-{$IFDEF Unicode}
-Result := ReadWideChar(Value,Advance);
-{$ELSE}
-Result := ReadAnsiChar(Value,Advance);
-{$ENDIF}
+Result := ReadValue(@Temp,Advance,SizeOf(Temp),vtPrimitive2B);
+Value := Char(Temp);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
 Function TCustomStreamer.ReadChar(Advance: Boolean = True): Char;
+var
+  Temp: UInt16;
 begin
-{$IFDEF Unicode}
-Result := ReadWideChar(Advance);
-{$ELSE}
-Result := ReadAnsiChar(Advance);
-{$ENDIF}
+ReadValue(@Temp,Advance,SizeOf(Temp),vtPrimitive2B);
+Result := Char(Temp);
 end;
 
 //------------------------------------------------------------------------------
