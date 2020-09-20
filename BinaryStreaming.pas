@@ -28,8 +28,8 @@
     character belonging to that particular string). Length is in characters,
     not bytes or code points.
 
-    Default type Char is always stored as 16bit integer, irrespective of how it
-    is declared.
+    Default type Char is always stored as 16bit unsigned integer, irrespective
+    of how it is declared.
 
     Default type String is always stored as UTF-8 encoded string, again
     irrespective of how it is declared.
@@ -47,9 +47,9 @@
     written or read. The exception to this are read functions that are directly
     returning the value being read.
 
-  Version 1.6 (2020-08-17)
+  Version 1.7 (2020-09-20)
 
-  Last change 2020-08-17
+  Last change 2020-09-20
 
   ©2015-2020 František Milt
 
@@ -94,6 +94,63 @@ type
   EBSException = class(Exception);
 
   EBSIndexOutOfBounds = class(EBSException);
+
+{===============================================================================
+--------------------------------------------------------------------------------
+                               Allocation helpers
+--------------------------------------------------------------------------------
+===============================================================================}
+{
+  Following functions are returning number of bytes that are required to store
+  a given object. They are here mainly to ease allocation when streaming into
+  memory.
+  Basic types have static size (nevertheless for completeness sake they are
+  included), but some strings might be a little tricky (because of implicit
+  conversion and explicitly stored size).
+}
+Function StreamedSize_Bool: TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+Function StreamedSize_Boolean: TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_Int8: TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+Function StreamedSize_UInt8: TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+Function StreamedSize_Int16: TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+Function StreamedSize_UInt16: TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+Function StreamedSize_Int32: TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+Function StreamedSize_UInt32: TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+Function StreamedSize_Int64: TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+Function StreamedSize_UInt64: TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_Float32: TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+Function StreamedSize_Float64: TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+Function StreamedSize_Float80: TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+Function StreamedSize_DateTime: TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+Function StreamedSize_Currency: TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_AnsiChar: TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+Function StreamedSize_UTF8Char: TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+Function StreamedSize_WideChar: TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+Function StreamedSize_UnicodeChar: TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+Function StreamedSize_Char: TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_ShortString(const Str: ShortString): TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+Function StreamedSize_AnsiString(const Str: AnsiString): TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+Function StreamedSize_UTF8String(const Str: UTF8String): TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+Function StreamedSize_WideString(const Str: WideString): TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+Function StreamedSize_UnicodeString(const Str: UnicodeString): TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+Function StreamedSize_String(const Str: String): TMemSize;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_Buffer(Size: TMemSize): TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+Function StreamedSize_Bytes(Count: TMemSize): TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
 
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -861,7 +918,8 @@ Result := 0;
 For i := 1 to Length do
   begin
     Buff := SwapEndian(Data^);
-    Inc(Result,TMemSize(Stream.Write(Buff,SizeOf(UInt16))));
+    Stream.WriteBuffer(Buff,SizeOf(UInt16));
+    Inc(Result,TMemSize(SizeOf(UInt16)));
     Inc(Data);
   end;
 end;
@@ -877,7 +935,8 @@ begin
 Result := 0;
 For i := 1 to Length do
   begin
-    Inc(Result,TMemSize(Stream.Read(Buff,SizeOf(UInt16))));
+    Stream.ReadBuffer(Buff,SizeOf(UInt16));
+    Inc(Result,TMemSize(SizeOf(UInt16)));
     Data^ := SwapEndian(Buff);
     Inc(Data);
   end;
@@ -885,6 +944,206 @@ end;
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 {$ENDIF ENDIAN_BIG}
+
+{===============================================================================
+--------------------------------------------------------------------------------
+                               Allocation helpers
+--------------------------------------------------------------------------------
+===============================================================================}
+
+Function StreamedSize_Bool: TMemSize;
+begin
+Result := SizeOf(UInt8);
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_Boolean: TMemSize;
+begin
+Result := StreamedSize_Bool;
+end;
+
+//==============================================================================
+
+Function StreamedSize_Int8: TMemSize;
+begin
+Result := SizeOf(Int8);
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_UInt8: TMemSize;
+begin
+Result := SizeOf(UInt8);
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_Int16: TMemSize;
+begin
+Result := SizeOf(Int16);
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_UInt16: TMemSize;
+begin
+Result := SizeOf(UInt16);
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_Int32: TMemSize;
+begin
+Result := SizeOf(Int32);
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_UInt32: TMemSize;
+begin
+Result := SizeOf(UInt32);
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_Int64: TMemSize;
+begin
+Result := SizeOf(Int64);
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_UInt64: TMemSize;
+begin
+Result := SizeOf(UInt64);
+end;
+
+//==============================================================================
+
+Function StreamedSize_Float32: TMemSize;
+begin
+Result := SizeOf(Float32);
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_Float64: TMemSize;
+begin
+Result := SizeOf(Float64);
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_Float80: TMemSize;
+begin
+Result := SizeOf(Float80);
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_DateTime: TMemSize;
+begin
+Result := StreamedSize_Float64;
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_Currency: TMemSize;
+begin
+Result := SizeOf(Currency);
+end;
+
+//==============================================================================
+
+Function StreamedSize_AnsiChar: TMemSize;
+begin
+Result := SizeOf(AnsiChar);
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_UTF8Char: TMemSize;
+begin
+Result := SizeOf(UTF8Char);
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_WideChar: TMemSize;
+begin
+Result := SizeOf(WideChar);
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_UnicodeChar: TMemSize;
+begin
+Result := SizeOf(UnicodeChar);
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_Char: TMemSize;
+begin
+Result := StreamedSize_UInt16;
+end;
+
+//==============================================================================
+
+Function StreamedSize_ShortString(const Str: ShortString): TMemSize;
+begin
+Result := StreamedSize_UInt8 + TMemSize(Length(Str));
+end;     
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_AnsiString(const Str: AnsiString): TMemSize;
+begin
+Result := StreamedSize_Int32 + TMemSize(Length(Str) * SizeOf(AnsiChar));
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_UTF8String(const Str: UTF8String): TMemSize;
+begin
+Result := StreamedSize_Int32 + TMemSize(Length(Str) * SizeOf(UTF8Char));
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_WideString(const Str: WideString): TMemSize;
+begin
+Result := StreamedSize_Int32 + TMemSize(Length(Str) * SizeOf(WideChar));
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_UnicodeString(const Str: UnicodeString): TMemSize;
+begin
+Result := StreamedSize_Int32 + TMemSize(Length(Str) * SizeOf(UnicodeChar));
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_String(const Str: String): TMemSize;
+begin
+Result := StreamedSize_UTF8String(StrToUTF8(Str));
+end;
+
+//==============================================================================
+
+Function StreamedSize_Buffer(Size: TMemSize): TMemSize;
+begin
+Result := Size;
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_Bytes(Count: TMemSize): TMemSize;
+begin
+Result := Count;
+end;
 
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -2611,7 +2870,8 @@ var
   Temp: UInt8;
 begin
 Temp := BoolToNum(Value);
-Result := Stream.Write(Temp,SizeOf(Temp));
+Stream.WriteBuffer(Temp,SizeOf(Temp));
+Result := SizeOf(Temp);
 If not Advance then
   Stream.Seek(-Int64(Result),soCurrent);
 end;
@@ -2627,7 +2887,8 @@ end;
 
 Function Stream_WriteInt8(Stream: TStream; Value: Int8; Advance: Boolean = True): TMemSize;
 begin
-Result := Stream.Write(Value,SizeOf(Value));
+Stream.WriteBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 If not Advance then
   Stream.Seek(-Int64(Result),soCurrent);
 end;
@@ -2636,7 +2897,8 @@ end;
 
 Function Stream_WriteUInt8(Stream: TStream; Value: UInt8; Advance: Boolean = True): TMemSize;
 begin
-Result := Stream.Write(Value,SizeOf(Value));
+Stream.WriteBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 If not Advance then
   Stream.Seek(-Int64(Result),soCurrent);
 end;
@@ -2648,7 +2910,8 @@ begin
 {$IFDEF ENDIAN_BIG}
 Value := Int16(SwapEndian(UInt16(Value)));
 {$ENDIF}
-Result := Stream.Write(Value,SizeOf(Value));
+Stream.WriteBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 If not Advance then
   Stream.Seek(-Int64(Result),soCurrent);
 end;
@@ -2660,7 +2923,8 @@ begin
 {$IFDEF ENDIAN_BIG}
 Value := SwapEndian(Value);
 {$ENDIF}
-Result := Stream.Write(Value,SizeOf(Value));
+Stream.WriteBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 If not Advance then
   Stream.Seek(-Int64(Result),soCurrent);
 end;
@@ -2672,7 +2936,8 @@ begin
 {$IFDEF ENDIAN_BIG}
 Value := Int32(SwapEndian(UInt32(Value)));
 {$ENDIF}
-Result := Stream.Write(Value,SizeOf(Value));
+Stream.WriteBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 If not Advance then
   Stream.Seek(-Int64(Result),soCurrent);
 end;
@@ -2684,7 +2949,8 @@ begin
 {$IFDEF ENDIAN_BIG}
 Value := SwapEndian(Value);
 {$ENDIF}
-Result := Stream.Write(Value,SizeOf(Value));
+Stream.WriteBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 If not Advance then
   Stream.Seek(-Int64(Result),soCurrent);
 end;
@@ -2696,7 +2962,8 @@ begin
 {$IFDEF ENDIAN_BIG}
 Value := Int64(SwapEndian(UInt64(Value)));
 {$ENDIF}
-Result := Stream.Write(Value,SizeOf(Value));
+Stream.WriteBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 If not Advance then
   Stream.Seek(-Int64(Result),soCurrent);
 end;
@@ -2708,7 +2975,8 @@ begin
 {$IFDEF ENDIAN_BIG}
 Value := SwapEndian(Value);
 {$ENDIF}
-Result := Stream.Write(Value,SizeOf(Value));
+Stream.WriteBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 If not Advance then
   Stream.Seek(-Int64(Result),soCurrent);
 end;
@@ -2720,7 +2988,8 @@ begin
 {$IFDEF ENDIAN_BIG}
 Value := SwapEndian(Value);
 {$ENDIF}
-Result := Stream.Write(Value,SizeOf(Value));
+Stream.WriteBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 If not Advance then
   Stream.Seek(-Int64(Result),soCurrent);
 end;
@@ -2732,7 +3001,8 @@ begin
 {$IFDEF ENDIAN_BIG}
 Value := SwapEndian(Value);
 {$ENDIF}
-Result := Stream.Write(Value,SizeOf(Value));
+Stream.WriteBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 If not Advance then
   Stream.Seek(-Int64(Result),soCurrent);
 end;
@@ -2744,7 +3014,8 @@ begin
 {$IFDEF ENDIAN_BIG}
 Value := SwapEndian(Value);
 {$ENDIF}
-Result := Stream.Write(Value,SizeOf(Value));
+Stream.WriteBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 If not Advance then
   Stream.Seek(-Int64(Result),soCurrent);
 end;
@@ -2763,7 +3034,8 @@ begin
 {$IFDEF ENDIAN_BIG}
 UInt64(Addr(Value)^) := SwapEndian(UInt64(Addr(Value)^));
 {$ENDIF}
-Result := Stream.Write(Value,SizeOf(Value));
+Stream.WriteBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 If not Advance then
   Stream.Seek(-Int64(Result),soCurrent);
 end;
@@ -2772,7 +3044,8 @@ end;
 
 Function Stream_WriteAnsiChar(Stream: TStream; Value: AnsiChar; Advance: Boolean = True): TMemSize;
 begin
-Result := Stream.Write(Value,SizeOf(Value));
+Stream.WriteBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 If not Advance then
   Stream.Seek(-Int64(Result),soCurrent);
 end;
@@ -2781,7 +3054,8 @@ end;
 
 Function Stream_WriteUTF8Char(Stream: TStream; Value: UTF8Char; Advance: Boolean = True): TMemSize;
 begin
-Result := Stream.Write(Value,SizeOf(Value));
+Stream.WriteBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 If not Advance then
   Stream.Seek(-Int64(Result),soCurrent);
 end;
@@ -2793,7 +3067,8 @@ begin
 {$IFDEF ENDIAN_BIG}
 Value := WideChar(SwapEndian(UInt16(Value)));
 {$ENDIF}
-Result := Stream.Write(Value,SizeOf(Value));
+Stream.WriteBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 If not Advance then
   Stream.Seek(-Int64(Result),soCurrent);
 end;
@@ -2805,7 +3080,8 @@ begin
 {$IFDEF ENDIAN_BIG}
 Value := UnicodeChar(SwapEndian(UInt16(Value)));
 {$ENDIF}
-Result := Stream.Write(Value,SizeOf(Value));
+Stream.WriteBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 If not Advance then
   Stream.Seek(-Int64(Result),soCurrent);
 end;
@@ -2886,7 +3162,8 @@ end;
 
 Function Stream_WriteBuffer(Stream: TStream; const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
 begin
-Result := Stream.Write(Buffer,Size);
+Stream.WriteBuffer(Buffer,Size);
+Result := Size;
 If not Advance then
   Stream.Seek(-Int64(Result),soCurrent);
 end;
@@ -2913,8 +3190,8 @@ begin
 Result := 0;
 For i := 1 to Count do
   begin
-    Stream.Write(Value,SizeOf(Value));
-    Inc(Result);
+    Stream.WriteBuffer(Value,SizeOf(Value));
+    Inc(Result,SizeOf(Value));
   end;
 If not Advance then
   Stream.Seek(-Int64(Result),soCurrent);
@@ -2931,7 +3208,8 @@ Function Stream_ReadBool(Stream: TStream; out Value: ByteBool; Advance: Boolean 
 var
   Temp: UInt8;
 begin
-Result := Stream.Read(Temp,SizeOf(Temp));
+Stream.ReadBuffer(Temp,SizeOf(Temp));
+Result := SizeOf(Temp);
 Value := NumToBool(Temp);
 If not Advance then
   Stream.Seek(-Int64(Result),soCurrent);
@@ -2960,7 +3238,8 @@ end;
 Function Stream_ReadInt8(Stream: TStream; out Value: Int8; Advance: Boolean = True): TMemSize;
 begin
 Value := 0;
-Result := Stream.Read(Value,SizeOf(Value));
+Stream.ReadBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 If not Advance then
   Stream.Seek(-Int64(Result),soCurrent);
 end;
@@ -2977,7 +3256,8 @@ end;
 Function Stream_ReadUInt8(Stream: TStream; out Value: UInt8; Advance: Boolean = True): TMemSize;
 begin
 Value := 0;
-Result := Stream.Read(Value,SizeOf(Value));
+Stream.ReadBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 If not Advance then
   Stream.Seek(-Int64(Result),soCurrent);
 end;
@@ -2994,7 +3274,8 @@ end;
 Function Stream_ReadInt16(Stream: TStream; out Value: Int16; Advance: Boolean = True): TMemSize;
 begin
 Value := 0;
-Result := Stream.Read(Value,SizeOf(Value));
+Stream.ReadBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 {$IFDEF ENDIAN_BIG}
 Value := Int16(SwapEndian(UInt16(Value)));
 {$ENDIF}
@@ -3014,7 +3295,8 @@ end;
 Function Stream_ReadUInt16(Stream: TStream; out Value: UInt16; Advance: Boolean = True): TMemSize;
 begin
 Value := 0;
-Result := Stream.Read(Value,SizeOf(Value));
+Stream.ReadBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 {$IFDEF ENDIAN_BIG}
 Value := SwapEndian(Value);
 {$ENDIF}
@@ -3034,7 +3316,8 @@ end;
 Function Stream_ReadInt32(Stream: TStream; out Value: Int32; Advance: Boolean = True): TMemSize;
 begin
 Value := 0;
-Result := Stream.Read(Value,SizeOf(Value));
+Stream.ReadBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 {$IFDEF ENDIAN_BIG}
 Value := Int32(SwapEndian(UInt32(Value)));
 {$ENDIF}
@@ -3054,7 +3337,8 @@ end;
 Function Stream_ReadUInt32(Stream: TStream; out Value: UInt32; Advance: Boolean = True): TMemSize;
 begin
 Value := 0;
-Result := Stream.Read(Value,SizeOf(Value));
+Stream.ReadBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 {$IFDEF ENDIAN_BIG}
 Value := SwapEndian(Value);
 {$ENDIF}
@@ -3074,7 +3358,8 @@ end;
 Function Stream_ReadInt64(Stream: TStream; out Value: Int64; Advance: Boolean = True): TMemSize;
 begin
 Value := 0;
-Result := Stream.Read(Value,SizeOf(Value));
+Stream.ReadBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 {$IFDEF ENDIAN_BIG}
 Value := Int64(SwapEndian(UInt64(Value)));
 {$ENDIF}
@@ -3094,7 +3379,8 @@ end;
 Function Stream_ReadUInt64(Stream: TStream; out Value: UInt64; Advance: Boolean = True): TMemSize;
 begin
 Value := 0;
-Result := Stream.Read(Value,SizeOf(Value));
+Stream.ReadBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 {$IFDEF ENDIAN_BIG}
 Value := SwapEndian(Value);
 {$ENDIF}
@@ -3114,7 +3400,8 @@ end;
 Function Stream_ReadFloat32(Stream: TStream; out Value: Float32; Advance: Boolean = True): TMemSize;
 begin
 Value := 0.0;
-Result := Stream.Read(Value,SizeOf(Value));
+Stream.ReadBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 {$IFDEF ENDIAN_BIG}
 Value := SwapEndian(Value);
 {$ENDIF}
@@ -3134,7 +3421,8 @@ end;
 Function Stream_ReadFloat64(Stream: TStream; out Value: Float64; Advance: Boolean = True): TMemSize;
 begin
 Value := 0.0;
-Result := Stream.Read(Value,SizeOf(Value));
+Stream.ReadBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 {$IFDEF ENDIAN_BIG}
 Value := SwapEndian(Value);
 {$ENDIF}
@@ -3154,7 +3442,8 @@ end;
 Function Stream_ReadFloat80(Stream: TStream; out Value: Float80; Advance: Boolean = True): TMemSize;
 begin
 FillChar(Addr(Value)^,SizeOf(Value),0);
-Result := Stream.Read(Value,SizeOf(Value));
+Stream.ReadBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 {$IFDEF ENDIAN_BIG}
 Value := SwapEndian(Value);
 {$ENDIF}
@@ -3188,7 +3477,8 @@ end;
 Function Stream_ReadCurrency(Stream: TStream; out Value: Currency; Advance: Boolean = True): TMemSize;
 begin
 Value := 0.0;
-Result := Stream.Read(Value,SizeOf(Value));
+Stream.ReadBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 {$IFDEF ENDIAN_BIG}
 UInt64(Addr(Value)^) := SwapEndian(UInt64(Addr(Value)^));
 {$ENDIF}
@@ -3208,7 +3498,8 @@ end;
 Function Stream_ReadAnsiChar(Stream: TStream; out Value: AnsiChar; Advance: Boolean = True): TMemSize;
 begin
 Value := AnsiChar(0);
-Result := Stream.Read(Value,SizeOf(Value));
+Stream.ReadBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 If not Advance then
   Stream.Seek(-Int64(Result),soCurrent);
 end;
@@ -3225,7 +3516,8 @@ end;
 Function Stream_ReadUTF8Char(Stream: TStream; out Value: UTF8Char; Advance: Boolean = True): TMemSize;
 begin
 Value := UTF8Char(0);
-Result := Stream.Read(Value,SizeOf(Value));
+Stream.ReadBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 If not Advance then
   Stream.Seek(-Int64(Result),soCurrent);
 end;
@@ -3242,7 +3534,8 @@ end;
 Function Stream_ReadWideChar(Stream: TStream; out Value: WideChar; Advance: Boolean = True): TMemSize;
 begin
 Value := WideChar(0);
-Result := Stream.Read(Value,SizeOf(Value));
+Stream.ReadBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 {$IFDEF ENDIAN_BIG}
 Value := WideChar(SwapEndian(UInt16(Value)));
 {$ENDIF}
@@ -3262,7 +3555,8 @@ end;
 Function Stream_ReadUnicodeChar(Stream: TStream; out Value: UnicodeChar; Advance: Boolean = True): TMemSize;
 begin
 Value := UnicodeChar(0);
-Result := Stream.Read(Value,SizeOf(Value));
+Stream.ReadBuffer(Value,SizeOf(Value));
+Result := SizeOf(Value);
 {$IFDEF ENDIAN_BIG}
 Value := UnicodeChar(SwapEndian(UInt16(Value)));
 {$ENDIF}
@@ -3423,7 +3717,8 @@ end;
 
 Function Stream_ReadBuffer(Stream: TStream; var Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
 begin
-Result := Stream.Read(Buffer,Size);
+Stream.ReadBuffer(Buffer,Size);
+Result := Size;
 If not Advance then
   Stream.Seek(-Int64(Result),soCurrent);
 end;
