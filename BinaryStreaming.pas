@@ -49,9 +49,9 @@
 
   Version 1.8 (2021-03-04)
 
-  Last change 2021-03-04
+  Last change 2022-09-13
 
-  ©2015-2021 František Milt
+  ©2015-2022 František Milt
 
   Contacts:
     František Milt: frantisek.milt@gmail.com
@@ -623,7 +623,6 @@ type
 {===============================================================================
     TCustomStreamer - class declaration
 ===============================================================================}
-
 type
   TCustomStreamer = class(TCustomListObject)
   protected
@@ -759,14 +758,13 @@ type
 {===============================================================================
     TMemoryStreamer - class declaration
 ===============================================================================}
-
+type
   TMemoryStreamer = class(TCustomStreamer)
-  private
+  protected
     fCurrentPtr:  Pointer;
     fOwnsPointer: Boolean;
     fMemorySize:  TMemSize;
-    Function GetStartPtr: Pointer;
-  protected
+    Function GetStartPtr: Pointer; virtual;
     procedure SetBookmark(Index: Integer; Value: Int64); override;
     Function GetCurrentPosition: Int64; override;
     procedure SetCurrentPosition(NewPosition: Int64); override;
@@ -795,11 +793,10 @@ type
 {===============================================================================
     TStreamStreamer - class declaration
 ===============================================================================}
-
+type
   TStreamStreamer = class(TCustomStreamer)
-  private
-    fTarget:  TStream;
   protected
+    fTarget:  TStream;
     Function GetCurrentPosition: Int64; override;
     procedure SetCurrentPosition(NewPosition: Int64); override;
     Function WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; ValueType: TValueType): TMemSize; override;
@@ -4921,7 +4918,7 @@ end;
     TMemoryStreamer - class implementation
 ===============================================================================}
 {-------------------------------------------------------------------------------
-    TMemoryStreamer - private methods
+    TMemoryStreamer - protected methods
 -------------------------------------------------------------------------------}
 
 Function TMemoryStreamer.GetStartPtr: Pointer;
@@ -4931,9 +4928,7 @@ Result := Pointer(fStartPosition);
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
-{-------------------------------------------------------------------------------
-    TMemoryStreamer - protected methods
--------------------------------------------------------------------------------}
+//------------------------------------------------------------------------------
 
 procedure TMemoryStreamer.SetBookmark(Index: Integer; Value: Int64);
 begin
