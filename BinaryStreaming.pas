@@ -703,10 +703,12 @@ type
     Function GetDistance: Int64; virtual;
     Function WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; ValueType: TValueType): TMemSize; virtual; abstract;
     Function ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; ValueType: TValueType): TMemSize; virtual; abstract;
+    procedure Initialize; virtual;
+    procedure Finalize; virtual;
   public
+    destructor Destroy; override;
     Function LowIndex: Integer; override;
     Function HighIndex: Integer; override;
-    procedure Initialize; virtual;
     procedure MoveToStart; virtual;
     procedure MoveToBookmark(Index: Integer); virtual;
     procedure MoveBy(Offset: Int64); virtual;
@@ -828,25 +830,18 @@ type
   TMemoryStreamer = class(TCustomStreamer)
   protected
     fCurrentPtr:  Pointer;
-    fOwnsPointer: Boolean;
-    fMemorySize:  TMemSize;
     Function GetStartPtr: Pointer; virtual;
     procedure SetBookmark(Index: Integer; Value: Int64); override;
     Function GetCurrentPosition: Int64; override;
     procedure SetCurrentPosition(NewPosition: Int64); override;
     Function WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; ValueType: TValueType): TMemSize; override;
     Function ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; ValueType: TValueType): TMemSize; override;
+    procedure Initialize(Memory: Pointer); reintroduce; virtual;
   public
     constructor Create(Memory: Pointer); overload;
-    constructor Create(MemorySize: TMemSize); overload;
-    destructor Destroy; override;
-    procedure Initialize(Memory: Pointer); reintroduce; overload; virtual;
-    procedure Initialize(MemorySize: TMemSize); reintroduce; overload; virtual;
     Function IndexOfBookmark(Position: Int64): Integer; override;
     Function AddBookmark(Position: Int64): Integer; override;
     Function RemoveBookmark(Position: Int64; RemoveAll: Boolean = True): Integer; override;
-    property OwnsPointer: Boolean read fOwnsPointer;
-    property MemorySize: TMemSize read fMemorySize;
     property CurrentPtr: Pointer read fCurrentPtr write fCurrentPtr;
     property StartPtr: Pointer read GetStartPtr;
   end;
@@ -867,9 +862,9 @@ type
     procedure SetCurrentPosition(NewPosition: Int64); override;
     Function WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; ValueType: TValueType): TMemSize; override;
     Function ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; ValueType: TValueType): TMemSize; override;
+    procedure Initialize(Target: TStream); reintroduce; virtual;
   public
     constructor Create(Target: TStream);
-    procedure Initialize(Target: TStream); reintroduce; virtual;
     property Target: TStream read fTarget;
   end;
 
@@ -4638,9 +4633,33 @@ begin
 Result := CurrentPosition - StartPosition;
 end;
 
+//------------------------------------------------------------------------------
+
+procedure TCustomStreamer.Initialize;
+begin
+SetLength(fBookmarks,0);
+fCount := 0;
+fStartPosition := 0;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TCustomStreamer.Finalize;
+begin
+// nothing to do
+end;
+
 {-------------------------------------------------------------------------------
     TCustomStreamer - public methods
 -------------------------------------------------------------------------------}
+
+destructor TCustomStreamer.Destroy;
+begin
+Finalize;
+inherited;
+end;
+
+//------------------------------------------------------------------------------
 
 Function TCustomStreamer.LowIndex: Integer;
 begin
@@ -4652,14 +4671,6 @@ end;
 Function TCustomStreamer.HighIndex: Integer;
 begin
 Result := Pred(fCount);
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TCustomStreamer.Initialize;
-begin
-SetLength(fBookmarks,0);
-fStartPosition := 0;
 end;
 
 //------------------------------------------------------------------------------
@@ -4724,9 +4735,9 @@ Function TCustomStreamer.RemoveBookmark(Position: Int64; RemoveAll: Boolean = Tr
 begin
 repeat
   Result := IndexOfBookmark(Position);
-  If Result >= 0 then
+  If CheckIndex(Result) then
     DeleteBookMark(Result);
-until (Result < 0) or not RemoveAll;
+until not CheckIndex(Result) or not RemoveAll;
 end;
 
 //------------------------------------------------------------------------------
@@ -5509,6 +5520,17 @@ else
 end;
 end;
 
+//------------------------------------------------------------------------------
+
+procedure TMemoryStreamer.Initialize(Memory: Pointer);
+begin
+inherited Initialize;
+fCurrentPtr := Memory;
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
+fStartPosition := Int64(PtrUInt(Memory));
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
+end;
+
 {-------------------------------------------------------------------------------
     TMemoryStreamer - public methods
 -------------------------------------------------------------------------------}
@@ -5516,60 +5538,7 @@ end;
 constructor TMemoryStreamer.Create(Memory: Pointer);
 begin
 inherited Create;
-fOwnsPointer := False;
 Initialize(Memory);
-end;
-
-//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
-constructor TMemoryStreamer.Create(MemorySize: TMemSize);
-begin
-inherited Create;
-fOwnsPointer := False;
-Initialize(MemorySize);
-end;
-
-//------------------------------------------------------------------------------
-
-destructor TMemoryStreamer.Destroy;
-begin
-If fOwnsPointer then
-  FreeMem(StartPtr,fMemorySize);
-inherited;
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TMemoryStreamer.Initialize(Memory: Pointer);
-begin
-inherited Initialize;
-fOwnsPointer := False;
-fMemorySize := 0;
-fCurrentPtr := Memory;
-{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-fStartPosition := Int64(PtrUInt(Memory));
-{$IFDEF FPCDWM}{$POP}{$ENDIF}
-end;
-
-//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
-procedure TMemoryStreamer.Initialize(MemorySize: TMemSize);
-var
-  TempPtr:  Pointer;
-begin
-inherited Initialize;
-If fOwnsPointer then
-  begin
-    TempPtr := StartPtr;
-    ReallocMem(TempPtr,MemorySize);
-  end
-else TempPtr := AllocMem(MemorySize);
-fOwnsPointer := True;
-fMemorySize := MemorySize;
-fCurrentPtr := TempPtr;
-{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-fStartPosition := Int64(PtrUInt(TempPtr));
-{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //------------------------------------------------------------------------------
@@ -5667,6 +5636,15 @@ else
 end;
 end;
 
+//------------------------------------------------------------------------------
+
+procedure TStreamStreamer.Initialize(Target: TStream);
+begin
+inherited Initialize;
+fTarget := Target;
+fStartPosition := Target.Position;
+end;
+
 {-------------------------------------------------------------------------------
     TStreamStreamer - public methods
 -------------------------------------------------------------------------------}
@@ -5675,15 +5653,6 @@ constructor TStreamStreamer.Create(Target: TStream);
 begin
 inherited Create;
 Initialize(Target);
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TStreamStreamer.Initialize(Target: TStream);
-begin
-inherited Initialize;
-fTarget := Target;
-fStartPosition := Target.Position;
 end;
 
 end.
