@@ -37,7 +37,7 @@
     Buffers and array of bytes are both stored as plain byte streams, without
     explicit size.
 
-    Variants are stored in a litle more compley way - first a byte denoting
+    Variants are stored in a litle more complex way - first a byte denoting
     the type of the variant is stored (note that value of this byte do NOT
     correspond to TVarType value), directly followed by the value itself.
     The value is stored as if it was a normal variable (eg. for varWord variant
@@ -116,8 +116,14 @@ unit BinaryStreaming;
   {$MODE ObjFPC}
   {$INLINE ON}
   {$DEFINE CanInline}
+  {$DEFINE CanInlineFPC}
   {$DEFINE FPC_DisableWarns}
   {$MACRO ON}
+{$ELSE}
+  {$IF CompilerVersion >= 17 then}  // Delphi 2005+
+    {$DEFINE CanInline}
+    {$DEFINE CanInlineDelphi}
+  {$IFEND}
 {$ENDIF}
 {$H+}
 
@@ -125,7 +131,7 @@ interface
 
 uses
   SysUtils, Classes,
-  AuxTypes, AuxClasses;
+  AuxTypes, AuxClasses{$IFNDEF FPC}, StrRect{$ENDIF};
 
 {===============================================================================
     Library-specific exceptions
@@ -133,15 +139,14 @@ uses
 type
   EBSException = class(Exception);
 
-  EBSIndexOutOfBounds = class(EBSException);
-
+  EBSIndexOutOfBounds   = class(EBSException);
   EBSUnsupportedVarType = class(EBSException);
 
 {===============================================================================
     Endianess - declaration
 ===============================================================================}
 type
-  TEndian = (endLittle,endBig,endSystem,endDefault{enLittle});
+  TEndian = (endLittle,endBig,endSystem,endDefault{endLittle});
 
 const
   SysEndian = {$IFDEF ENDIAN_BIG}endBig{$ELSE}endLittle{$ENDIF};
@@ -149,8 +154,8 @@ const
 {
   ResolveEndian
 
-  Resolves enSystem to a value of constant SysEndian, also enDefault is changed
-  to enLittle.
+  Resolves enSystem to a value of constant SysEndian and enDefault to enLittle,
+  other values are returned unchanged.
 }
 Function ResolveEndian(Endian: TEndian): TEndian;
 
@@ -163,10 +168,11 @@ Function ResolveEndian(Endian: TEndian): TEndian;
   Following functions are returning number of bytes that are required to store
   a given object. They are here mainly to ease allocation when streaming into
   memory.
-  Basic types have static size (for completeness sake they are still included),
-  but some strings might be a little tricky (because of implicit conversion
-  and explicitly stored size).
+  Basic types have static size (for completeness sake they are nevertheless
+  included), but some strings might be a little tricky (because of implicit
+  conversion and explicitly stored size).
 }
+
 Function StreamedSize_Bool: TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
 Function StreamedSize_Boolean: TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
 
@@ -226,11 +232,11 @@ Function StreamedSize_Variant(const Value: Variant): TMemSize;
     Booleans
 -------------------------------------------------------------------------------}
 
-Function Ptr_WriteBool_LE(var Dest: Pointer; Value: ByteBool; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_WriteBool_LE(Dest: Pointer; Value: ByteBool): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_WriteBool_LE(var Dest: Pointer; Value: ByteBool; Advance: Boolean): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_WriteBool_LE(Dest: Pointer; Value: ByteBool): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
-Function Ptr_WriteBool_BE(var Dest: Pointer; Value: ByteBool; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_WriteBool_BE(Dest: Pointer; Value: ByteBool): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_WriteBool_BE(var Dest: Pointer; Value: ByteBool; Advance: Boolean): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_WriteBool_BE(Dest: Pointer; Value: ByteBool): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
 Function Ptr_WriteBool(var Dest: Pointer; Value: ByteBool; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_WriteBool(Dest: Pointer; Value: ByteBool; Endian: TEndian = endDefault): TMemSize; overload;
@@ -250,22 +256,22 @@ Function Ptr_WriteBoolean(Dest: Pointer; Value: Boolean; Endian: TEndian = endDe
     Integers
 -------------------------------------------------------------------------------}
 
-Function Ptr_WriteInt8_LE(var Dest: Pointer; Value: Int8; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_WriteInt8_LE(Dest: Pointer; Value: Int8): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_WriteInt8_LE(var Dest: Pointer; Value: Int8; Advance: Boolean): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_WriteInt8_LE(Dest: Pointer; Value: Int8): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
-Function Ptr_WriteInt8_BE(var Dest: Pointer; Value: Int8; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_WriteInt8_BE(Dest: Pointer; Value: Int8): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_WriteInt8_BE(var Dest: Pointer; Value: Int8; Advance: Boolean): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_WriteInt8_BE(Dest: Pointer; Value: Int8): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
 Function Ptr_WriteInt8(var Dest: Pointer; Value: Int8; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_WriteInt8(Dest: Pointer; Value: Int8; Endian: TEndian = endDefault): TMemSize; overload;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_WriteUInt8_LE(var Dest: Pointer; Value: UInt8; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_WriteUInt8_LE(Dest: Pointer; Value: UInt8): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_WriteUInt8_LE(var Dest: Pointer; Value: UInt8; Advance: Boolean): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_WriteUInt8_LE(Dest: Pointer; Value: UInt8): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
-Function Ptr_WriteUInt8_BE(var Dest: Pointer; Value: UInt8; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_WriteUInt8_BE(Dest: Pointer; Value: UInt8): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_WriteUInt8_BE(var Dest: Pointer; Value: UInt8; Advance: Boolean): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_WriteUInt8_BE(Dest: Pointer; Value: UInt8): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
 Function Ptr_WriteUInt8(var Dest: Pointer; Value: UInt8; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_WriteUInt8(Dest: Pointer; Value: UInt8; Endian: TEndian = endDefault): TMemSize; overload;
@@ -397,22 +403,22 @@ Function Ptr_WriteCurrency(Dest: Pointer; Value: Currency; Endian: TEndian = end
     Characters
 -------------------------------------------------------------------------------}
 
-Function Ptr_WriteAnsiChar_LE(var Dest: Pointer; Value: AnsiChar; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_WriteAnsiChar_LE(Dest: Pointer; Value: AnsiChar): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_WriteAnsiChar_LE(var Dest: Pointer; Value: AnsiChar; Advance: Boolean): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_WriteAnsiChar_LE(Dest: Pointer; Value: AnsiChar): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
-Function Ptr_WriteAnsiChar_BE(var Dest: Pointer; Value: AnsiChar; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_WriteAnsiChar_BE(Dest: Pointer; Value: AnsiChar): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_WriteAnsiChar_BE(var Dest: Pointer; Value: AnsiChar; Advance: Boolean): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_WriteAnsiChar_BE(Dest: Pointer; Value: AnsiChar): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
 Function Ptr_WriteAnsiChar(var Dest: Pointer; Value: AnsiChar; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_WriteAnsiChar(Dest: Pointer; Value: AnsiChar; Endian: TEndian = endDefault): TMemSize; overload;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_WriteUTF8Char_LE(var Dest: Pointer; Value: UTF8Char; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_WriteUTF8Char_LE(Dest: Pointer; Value: UTF8Char): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_WriteUTF8Char_LE(var Dest: Pointer; Value: UTF8Char; Advance: Boolean): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_WriteUTF8Char_LE(Dest: Pointer; Value: UTF8Char): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
-Function Ptr_WriteUTF8Char_BE(var Dest: Pointer; Value: UTF8Char; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_WriteUTF8Char_BE(Dest: Pointer; Value: UTF8Char): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_WriteUTF8Char_BE(var Dest: Pointer; Value: UTF8Char; Advance: Boolean): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_WriteUTF8Char_BE(Dest: Pointer; Value: UTF8Char): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
 Function Ptr_WriteUTF8Char(var Dest: Pointer; Value: UTF8Char; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_WriteUTF8Char(Dest: Pointer; Value: UTF8Char; Endian: TEndian = endDefault): TMemSize; overload;
@@ -465,11 +471,11 @@ Function Ptr_WriteChar(Dest: Pointer; Value: Char; Endian: TEndian = endDefault)
     Strings
 -------------------------------------------------------------------------------}
 
-Function Ptr_WriteShortString_LE(var Dest: Pointer; const Str: ShortString; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_WriteShortString_LE(Dest: Pointer; const Str: ShortString): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_WriteShortString_LE(var Dest: Pointer; const Str: ShortString; Advance: Boolean): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_WriteShortString_LE(Dest: Pointer; const Str: ShortString): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
-Function Ptr_WriteShortString_BE(var Dest: Pointer; const Str: ShortString; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_WriteShortString_BE(Dest: Pointer; const Str: ShortString): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_WriteShortString_BE(var Dest: Pointer; const Str: ShortString; Advance: Boolean): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_WriteShortString_BE(Dest: Pointer; const Str: ShortString): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
 Function Ptr_WriteShortString(var Dest: Pointer; const Str: ShortString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_WriteShortString(Dest: Pointer; const Str: ShortString; Endian: TEndian = endDefault): TMemSize; overload;
@@ -554,6 +560,7 @@ Function Ptr_WriteBuffer(var Dest: Pointer; const Buffer; Size: TMemSize; Advanc
 Function Ptr_WriteBuffer(Dest: Pointer; const Buffer; Size: TMemSize; Endian: TEndian = endDefault): TMemSize; overload;
 
 //------------------------------------------------------------------------------
+// note - calls with open array cannot be inlined both in Delphi and FPC
 
 Function Ptr_WriteBytes_LE(var Dest: Pointer; const Value: array of UInt8; Advance: Boolean): TMemSize; overload;
 Function Ptr_WriteBytes_LE(Dest: Pointer; const Value: array of UInt8): TMemSize; overload;
@@ -566,11 +573,11 @@ Function Ptr_WriteBytes(Dest: Pointer; const Value: array of UInt8; Endian: TEnd
 
 //------------------------------------------------------------------------------
 
-Function Ptr_FillBytes_LE(var Dest: Pointer; Count: TMemSize; Value: UInt8; Advance: Boolean): TMemSize; overload;
-Function Ptr_FillBytes_LE(Dest: Pointer; Count: TMemSize; Value: UInt8): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_FillBytes_LE(var Dest: Pointer; Count: TMemSize; Value: UInt8; Advance: Boolean): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_FillBytes_LE(Dest: Pointer; Count: TMemSize; Value: UInt8): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
-Function Ptr_FillBytes_BE(var Dest: Pointer; Count: TMemSize; Value: UInt8; Advance: Boolean): TMemSize; overload;
-Function Ptr_FillBytes_BE(Dest: Pointer; Count: TMemSize; Value: UInt8): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_FillBytes_BE(var Dest: Pointer; Count: TMemSize; Value: UInt8; Advance: Boolean): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_FillBytes_BE(Dest: Pointer; Count: TMemSize; Value: UInt8): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
 Function Ptr_FillBytes(var Dest: Pointer; Count: TMemSize; Value: UInt8; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_FillBytes(Dest: Pointer; Count: TMemSize; Value: UInt8; Endian: TEndian = endDefault): TMemSize; overload;
@@ -597,23 +604,23 @@ Function Ptr_WriteVariant(Dest: Pointer; const Value: Variant; Endian: TEndian =
     Booleans
 -------------------------------------------------------------------------------}
 
-Function Ptr_ReadBool_LE(var Src: Pointer; out Value: ByteBool; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_ReadBool_LE(Src: Pointer; out Value: ByteBool): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_ReadBool_LE(var Src: Pointer; out Value: ByteBool; Advance: Boolean): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_ReadBool_LE(Src: Pointer; out Value: ByteBool): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
-Function Ptr_ReadBool_BE(var Src: Pointer; out Value: ByteBool; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_ReadBool_BE(Src: Pointer; out Value: ByteBool): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_ReadBool_BE(var Src: Pointer; out Value: ByteBool; Advance: Boolean): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_ReadBool_BE(Src: Pointer; out Value: ByteBool): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
 Function Ptr_ReadBool(var Src: Pointer; out Value: ByteBool; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_ReadBool(Src: Pointer; out Value: ByteBool; Endian: TEndian = endDefault): TMemSize; overload;
 
-Function Ptr_LoadBool_LE(var Src: Pointer; Advance: Boolean): ByteBool; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadBool_LE(Src: Pointer): ByteBool; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetBool_LE(var Src: Pointer; Advance: Boolean): ByteBool; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_GetBool_LE(Src: Pointer): ByteBool; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
-Function Ptr_LoadBool_BE(var Src: Pointer; Advance: Boolean): ByteBool; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadBool_BE(Src: Pointer): ByteBool; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetBool_BE(var Src: Pointer; Advance: Boolean): ByteBool; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_GetBool_BE(Src: Pointer): ByteBool; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
-Function Ptr_LoadBool(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): ByteBool; overload;
-Function Ptr_LoadBool(Src: Pointer; Endian: TEndian = endDefault): ByteBool; overload;
+Function Ptr_GetBool(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): ByteBool; overload;
+Function Ptr_GetBool(Src: Pointer; Endian: TEndian = endDefault): ByteBool; overload;
 
 //------------------------------------------------------------------------------
 
@@ -626,56 +633,56 @@ Function Ptr_ReadBoolean_BE(Src: Pointer; out Value: Boolean): TMemSize; overloa
 Function Ptr_ReadBoolean(var Src: Pointer; out Value: Boolean; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function Ptr_ReadBoolean(Src: Pointer; out Value: Boolean; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadBoolean_LE(var Src: Pointer; Advance: Boolean): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadBoolean_LE(Src: Pointer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetBoolean_LE(var Src: Pointer; Advance: Boolean): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetBoolean_LE(Src: Pointer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadBoolean_BE(var Src: Pointer; Advance: Boolean): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadBoolean_BE(Src: Pointer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetBoolean_BE(var Src: Pointer; Advance: Boolean): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetBoolean_BE(Src: Pointer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadBoolean(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadBoolean(Src: Pointer; Endian: TEndian = endDefault): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetBoolean(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetBoolean(Src: Pointer; Endian: TEndian = endDefault): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
 {-------------------------------------------------------------------------------
     Integers
 -------------------------------------------------------------------------------}
 
-Function Ptr_ReadInt8_LE(var Src: Pointer; out Value: Int8; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_ReadInt8_LE(Src: Pointer; out Value: Int8): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_ReadInt8_LE(var Src: Pointer; out Value: Int8; Advance: Boolean): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_ReadInt8_LE(Src: Pointer; out Value: Int8): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
-Function Ptr_ReadInt8_BE(var Src: Pointer; out Value: Int8; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_ReadInt8_BE(Src: Pointer; out Value: Int8): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_ReadInt8_BE(var Src: Pointer; out Value: Int8; Advance: Boolean): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_ReadInt8_BE(Src: Pointer; out Value: Int8): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
 Function Ptr_ReadInt8(var Src: Pointer; out Value: Int8; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_ReadInt8(Src: Pointer; out Value: Int8; Endian: TEndian = endDefault): TMemSize; overload;
 
-Function Ptr_LoadInt8_LE(var Src: Pointer; Advance: Boolean): Int8; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadInt8_LE(Src: Pointer): Int8; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetInt8_LE(var Src: Pointer; Advance: Boolean): Int8; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_GetInt8_LE(Src: Pointer): Int8; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
-Function Ptr_LoadInt8_BE(var Src: Pointer; Advance: Boolean): Int8; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadInt8_BE(Src: Pointer): Int8; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetInt8_BE(var Src: Pointer; Advance: Boolean): Int8; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_GetInt8_BE(Src: Pointer): Int8; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
-Function Ptr_LoadInt8(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Int8; overload;
-Function Ptr_LoadInt8(Src: Pointer; Endian: TEndian = endDefault): Int8; overload;
+Function Ptr_GetInt8(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Int8; overload;
+Function Ptr_GetInt8(Src: Pointer; Endian: TEndian = endDefault): Int8; overload;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_ReadUInt8_LE(var Src: Pointer; out Value: UInt8; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_ReadUInt8_LE(Src: Pointer; out Value: UInt8): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_ReadUInt8_LE(var Src: Pointer; out Value: UInt8; Advance: Boolean): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_ReadUInt8_LE(Src: Pointer; out Value: UInt8): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
-Function Ptr_ReadUInt8_BE(var Src: Pointer; out Value: UInt8; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_ReadUInt8_BE(Src: Pointer; out Value: UInt8): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_ReadUInt8_BE(var Src: Pointer; out Value: UInt8; Advance: Boolean): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_ReadUInt8_BE(Src: Pointer; out Value: UInt8): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
 Function Ptr_ReadUInt8(var Src: Pointer; out Value: UInt8; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_ReadUInt8(Src: Pointer; out Value: UInt8; Endian: TEndian = endDefault): TMemSize; overload;
 
-Function Ptr_LoadUInt8_LE(var Src: Pointer; Advance: Boolean): UInt8; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadUInt8_LE(Src: Pointer): UInt8; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUInt8_LE(var Src: Pointer; Advance: Boolean): UInt8; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_GetUInt8_LE(Src: Pointer): UInt8; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
-Function Ptr_LoadUInt8_BE(var Src: Pointer; Advance: Boolean): UInt8; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadUInt8_BE(Src: Pointer): UInt8; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUInt8_BE(var Src: Pointer; Advance: Boolean): UInt8; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_GetUInt8_BE(Src: Pointer): UInt8; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
-Function Ptr_LoadUInt8(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UInt8; overload;
-Function Ptr_LoadUInt8(Src: Pointer; Endian: TEndian = endDefault): UInt8; overload;
+Function Ptr_GetUInt8(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UInt8; overload;
+Function Ptr_GetUInt8(Src: Pointer; Endian: TEndian = endDefault): UInt8; overload;
 
 //------------------------------------------------------------------------------
 
@@ -688,14 +695,14 @@ Function Ptr_ReadInt16_BE(Src: Pointer; out Value: Int16): TMemSize; overload;{$
 Function Ptr_ReadInt16(var Src: Pointer; out Value: Int16; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_ReadInt16(Src: Pointer; out Value: Int16; Endian: TEndian = endDefault): TMemSize; overload;
 
-Function Ptr_LoadInt16_LE(var Src: Pointer; Advance: Boolean): Int16; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadInt16_LE(Src: Pointer): Int16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetInt16_LE(var Src: Pointer; Advance: Boolean): Int16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetInt16_LE(Src: Pointer): Int16; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadInt16_BE(var Src: Pointer; Advance: Boolean): Int16; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadInt16_BE(Src: Pointer): Int16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetInt16_BE(var Src: Pointer; Advance: Boolean): Int16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetInt16_BE(Src: Pointer): Int16; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadInt16(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Int16; overload;
-Function Ptr_LoadInt16(Src: Pointer; Endian: TEndian = endDefault): Int16; overload;
+Function Ptr_GetInt16(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Int16; overload;
+Function Ptr_GetInt16(Src: Pointer; Endian: TEndian = endDefault): Int16; overload;
 
 //------------------------------------------------------------------------------
 
@@ -708,14 +715,14 @@ Function Ptr_ReadUInt16_BE(Src: Pointer; out Value: UInt16): TMemSize; overload;
 Function Ptr_ReadUInt16(var Src: Pointer; out Value: UInt16; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_ReadUInt16(Src: Pointer; out Value: UInt16; Endian: TEndian = endDefault): TMemSize; overload;
 
-Function Ptr_LoadUInt16_LE(var Src: Pointer; Advance: Boolean): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadUInt16_LE(Src: Pointer): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUInt16_LE(var Src: Pointer; Advance: Boolean): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUInt16_LE(Src: Pointer): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadUInt16_BE(var Src: Pointer; Advance: Boolean): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadUInt16_BE(Src: Pointer): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUInt16_BE(var Src: Pointer; Advance: Boolean): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUInt16_BE(Src: Pointer): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadUInt16(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UInt16; overload;
-Function Ptr_LoadUInt16(Src: Pointer; Endian: TEndian = endDefault): UInt16; overload;
+Function Ptr_GetUInt16(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UInt16; overload;
+Function Ptr_GetUInt16(Src: Pointer; Endian: TEndian = endDefault): UInt16; overload;
 
 //------------------------------------------------------------------------------
 
@@ -728,14 +735,14 @@ Function Ptr_ReadInt32_BE(Src: Pointer; out Value: Int32): TMemSize; overload;{$
 Function Ptr_ReadInt32(var Src: Pointer; out Value: Int32; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_ReadInt32(Src: Pointer; out Value: Int32; Endian: TEndian = endDefault): TMemSize; overload;
 
-Function Ptr_LoadInt32_LE(var Src: Pointer; Advance: Boolean): Int32; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadInt32_LE(Src: Pointer): Int32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetInt32_LE(var Src: Pointer; Advance: Boolean): Int32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetInt32_LE(Src: Pointer): Int32; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadInt32_BE(var Src: Pointer; Advance: Boolean): Int32; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadInt32_BE(Src: Pointer): Int32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetInt32_BE(var Src: Pointer; Advance: Boolean): Int32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetInt32_BE(Src: Pointer): Int32; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadInt32(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Int32; overload;
-Function Ptr_LoadInt32(Src: Pointer; Endian: TEndian = endDefault): Int32; overload;
+Function Ptr_GetInt32(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Int32; overload;
+Function Ptr_GetInt32(Src: Pointer; Endian: TEndian = endDefault): Int32; overload;
 
 //------------------------------------------------------------------------------
 
@@ -748,14 +755,14 @@ Function Ptr_ReadUInt32_BE(Src: Pointer; out Value: UInt32): TMemSize; overload;
 Function Ptr_ReadUInt32(var Src: Pointer; out Value: UInt32; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_ReadUInt32(Src: Pointer; out Value: UInt32; Endian: TEndian = endDefault): TMemSize; overload;
 
-Function Ptr_LoadUInt32_LE(var Src: Pointer; Advance: Boolean): UInt32; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadUInt32_LE(Src: Pointer): UInt32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUInt32_LE(var Src: Pointer; Advance: Boolean): UInt32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUInt32_LE(Src: Pointer): UInt32; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadUInt32_BE(var Src: Pointer; Advance: Boolean): UInt32; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadUInt32_BE(Src: Pointer): UInt32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUInt32_BE(var Src: Pointer; Advance: Boolean): UInt32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUInt32_BE(Src: Pointer): UInt32; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadUInt32(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UInt32; overload;
-Function Ptr_LoadUInt32(Src: Pointer; Endian: TEndian = endDefault): UInt32; overload;
+Function Ptr_GetUInt32(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UInt32; overload;
+Function Ptr_GetUInt32(Src: Pointer; Endian: TEndian = endDefault): UInt32; overload;
 
 //------------------------------------------------------------------------------
 
@@ -768,14 +775,14 @@ Function Ptr_ReadInt64_BE(Src: Pointer; out Value: Int64): TMemSize; overload;{$
 Function Ptr_ReadInt64(var Src: Pointer; out Value: Int64; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_ReadInt64(Src: Pointer; out Value: Int64; Endian: TEndian = endDefault): TMemSize; overload;
 
-Function Ptr_LoadInt64_LE(var Src: Pointer; Advance: Boolean): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadInt64_LE(Src: Pointer): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetInt64_LE(var Src: Pointer; Advance: Boolean): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetInt64_LE(Src: Pointer): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadInt64_BE(var Src: Pointer; Advance: Boolean): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadInt64_BE(Src: Pointer): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetInt64_BE(var Src: Pointer; Advance: Boolean): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetInt64_BE(Src: Pointer): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadInt64(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Int64; overload;
-Function Ptr_LoadInt64(Src: Pointer; Endian: TEndian = endDefault): Int64; overload;
+Function Ptr_GetInt64(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Int64; overload;
+Function Ptr_GetInt64(Src: Pointer; Endian: TEndian = endDefault): Int64; overload;
 
 //------------------------------------------------------------------------------
 
@@ -788,14 +795,14 @@ Function Ptr_ReadUInt64_BE(Src: Pointer; out Value: UInt64): TMemSize; overload;
 Function Ptr_ReadUInt64(var Src: Pointer; out Value: UInt64; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_ReadUInt64(Src: Pointer; out Value: UInt64; Endian: TEndian = endDefault): TMemSize; overload;
 
-Function Ptr_LoadUInt64_LE(var Src: Pointer; Advance: Boolean): UInt64; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadUInt64_LE(Src: Pointer): UInt64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUInt64_LE(var Src: Pointer; Advance: Boolean): UInt64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUInt64_LE(Src: Pointer): UInt64; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadUInt64_BE(var Src: Pointer; Advance: Boolean): UInt64; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadUInt64_BE(Src: Pointer): UInt64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUInt64_BE(var Src: Pointer; Advance: Boolean): UInt64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUInt64_BE(Src: Pointer): UInt64; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadUInt64(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UInt64; overload;
-Function Ptr_LoadUInt64(Src: Pointer; Endian: TEndian = endDefault): UInt64; overload;
+Function Ptr_GetUInt64(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UInt64; overload;
+Function Ptr_GetUInt64(Src: Pointer; Endian: TEndian = endDefault): UInt64; overload;
 
 {-------------------------------------------------------------------------------
     Floating point numbers
@@ -810,14 +817,14 @@ Function Ptr_ReadFloat32_BE(Src: Pointer; out Value: Float32): TMemSize; overloa
 Function Ptr_ReadFloat32(var Src: Pointer; out Value: Float32; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_ReadFloat32(Src: Pointer; out Value: Float32; Endian: TEndian = endDefault): TMemSize; overload;
 
-Function Ptr_LoadFloat32_LE(var Src: Pointer; Advance: Boolean): Float32; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadFloat32_LE(Src: Pointer): Float32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetFloat32_LE(var Src: Pointer; Advance: Boolean): Float32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetFloat32_LE(Src: Pointer): Float32; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadFloat32_BE(var Src: Pointer; Advance: Boolean): Float32; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadFloat32_BE(Src: Pointer): Float32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetFloat32_BE(var Src: Pointer; Advance: Boolean): Float32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetFloat32_BE(Src: Pointer): Float32; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadFloat32(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Float32; overload;
-Function Ptr_LoadFloat32(Src: Pointer; Endian: TEndian = endDefault): Float32; overload;
+Function Ptr_GetFloat32(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Float32; overload;
+Function Ptr_GetFloat32(Src: Pointer; Endian: TEndian = endDefault): Float32; overload;
 
 //------------------------------------------------------------------------------
 
@@ -830,14 +837,14 @@ Function Ptr_ReadFloat64_BE(Src: Pointer; out Value: Float64): TMemSize; overloa
 Function Ptr_ReadFloat64(var Src: Pointer; out Value: Float64; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_ReadFloat64(Src: Pointer; out Value: Float64; Endian: TEndian = endDefault): TMemSize; overload;
 
-Function Ptr_LoadFloat64_LE(var Src: Pointer; Advance: Boolean): Float64; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadFloat64_LE(Src: Pointer): Float64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetFloat64_LE(var Src: Pointer; Advance: Boolean): Float64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetFloat64_LE(Src: Pointer): Float64; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadFloat64_BE(var Src: Pointer; Advance: Boolean): Float64; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadFloat64_BE(Src: Pointer): Float64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetFloat64_BE(var Src: Pointer; Advance: Boolean): Float64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetFloat64_BE(Src: Pointer): Float64; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadFloat64(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Float64; overload;
-Function Ptr_LoadFloat64(Src: Pointer; Endian: TEndian = endDefault): Float64; overload;
+Function Ptr_GetFloat64(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Float64; overload;
+Function Ptr_GetFloat64(Src: Pointer; Endian: TEndian = endDefault): Float64; overload;
 
 //------------------------------------------------------------------------------
 
@@ -850,14 +857,14 @@ Function Ptr_ReadFloat80_BE(Src: Pointer; out Value: Float80): TMemSize; overloa
 Function Ptr_ReadFloat80(var Src: Pointer; out Value: Float80; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_ReadFloat80(Src: Pointer; out Value: Float80; Endian: TEndian = endDefault): TMemSize; overload;
 
-Function Ptr_LoadFloat80_LE(var Src: Pointer; Advance: Boolean): Float80; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadFloat80_LE(Src: Pointer): Float80; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetFloat80_LE(var Src: Pointer; Advance: Boolean): Float80; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetFloat80_LE(Src: Pointer): Float80; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadFloat80_BE(var Src: Pointer; Advance: Boolean): Float80; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadFloat80_BE(Src: Pointer): Float80; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetFloat80_BE(var Src: Pointer; Advance: Boolean): Float80; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetFloat80_BE(Src: Pointer): Float80; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadFloat80(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Float80; overload;
-Function Ptr_LoadFloat80(Src: Pointer; Endian: TEndian = endDefault): Float80; overload;
+Function Ptr_GetFloat80(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Float80; overload;
+Function Ptr_GetFloat80(Src: Pointer; Endian: TEndian = endDefault): Float80; overload;
 
 //------------------------------------------------------------------------------
 
@@ -870,14 +877,14 @@ Function Ptr_ReadDateTime_BE(Src: Pointer; out Value: TDateTime): TMemSize; over
 Function Ptr_ReadDateTime(var Src: Pointer; out Value: TDateTime; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function Ptr_ReadDateTime(Src: Pointer; out Value: TDateTime; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadDateTime_LE(var Src: Pointer; Advance: Boolean): TDateTime; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadDateTime_LE(Src: Pointer): TDateTime; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetDateTime_LE(var Src: Pointer; Advance: Boolean): TDateTime; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetDateTime_LE(Src: Pointer): TDateTime; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadDateTime_BE(var Src: Pointer; Advance: Boolean): TDateTime; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadDateTime_BE(Src: Pointer): TDateTime; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetDateTime_BE(var Src: Pointer; Advance: Boolean): TDateTime; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetDateTime_BE(Src: Pointer): TDateTime; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadDateTime(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): TDateTime; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadDateTime(Src: Pointer; Endian: TEndian = endDefault): TDateTime; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetDateTime(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): TDateTime; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetDateTime(Src: Pointer; Endian: TEndian = endDefault): TDateTime; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -890,56 +897,56 @@ Function Ptr_ReadCurrency_BE(Src: Pointer; out Value: Currency): TMemSize; overl
 Function Ptr_ReadCurrency(var Src: Pointer; out Value: Currency; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_ReadCurrency(Src: Pointer; out Value: Currency; Endian: TEndian = endDefault): TMemSize; overload;
 
-Function Ptr_LoadCurrency_LE(var Src: Pointer; Advance: Boolean): Currency; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadCurrency_LE(Src: Pointer): Currency; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetCurrency_LE(var Src: Pointer; Advance: Boolean): Currency; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetCurrency_LE(Src: Pointer): Currency; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadCurrency_BE(var Src: Pointer; Advance: Boolean): Currency; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadCurrency_BE(Src: Pointer): Currency; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetCurrency_BE(var Src: Pointer; Advance: Boolean): Currency; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetCurrency_BE(Src: Pointer): Currency; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadCurrency(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Currency; overload;
-Function Ptr_LoadCurrency(Src: Pointer; Endian: TEndian = endDefault): Currency; overload;
+Function Ptr_GetCurrency(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Currency; overload;
+Function Ptr_GetCurrency(Src: Pointer; Endian: TEndian = endDefault): Currency; overload;
 
 {-------------------------------------------------------------------------------
     Characters
 -------------------------------------------------------------------------------}
 
-Function Ptr_ReadAnsiChar_LE(var Src: Pointer; out Value: AnsiChar; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_ReadAnsiChar_LE(Src: Pointer; out Value: AnsiChar): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_ReadAnsiChar_LE(var Src: Pointer; out Value: AnsiChar; Advance: Boolean): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_ReadAnsiChar_LE(Src: Pointer; out Value: AnsiChar): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
-Function Ptr_ReadAnsiChar_BE(var Src: Pointer; out Value: AnsiChar; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_ReadAnsiChar_BE(Src: Pointer; out Value: AnsiChar): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_ReadAnsiChar_BE(var Src: Pointer; out Value: AnsiChar; Advance: Boolean): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_ReadAnsiChar_BE(Src: Pointer; out Value: AnsiChar): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
 Function Ptr_ReadAnsiChar(var Src: Pointer; out Value: AnsiChar; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_ReadAnsiChar(Src: Pointer; out Value: AnsiChar; Endian: TEndian = endDefault): TMemSize; overload;
 
-Function Ptr_LoadAnsiChar_LE(var Src: Pointer; Advance: Boolean): AnsiChar; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadAnsiChar_LE(Src: Pointer): AnsiChar; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetAnsiChar_LE(var Src: Pointer; Advance: Boolean): AnsiChar; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_GetAnsiChar_LE(Src: Pointer): AnsiChar; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
-Function Ptr_LoadAnsiChar_BE(var Src: Pointer; Advance: Boolean): AnsiChar; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadAnsiChar_BE(Src: Pointer): AnsiChar; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetAnsiChar_BE(var Src: Pointer; Advance: Boolean): AnsiChar; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_GetAnsiChar_BE(Src: Pointer): AnsiChar; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
-Function Ptr_LoadAnsiChar(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): AnsiChar; overload;
-Function Ptr_LoadAnsiChar(Src: Pointer; Endian: TEndian = endDefault): AnsiChar; overload;
+Function Ptr_GetAnsiChar(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): AnsiChar; overload;
+Function Ptr_GetAnsiChar(Src: Pointer; Endian: TEndian = endDefault): AnsiChar; overload;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_ReadUTF8Char_LE(var Src: Pointer; out Value: UTF8Char; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_ReadUTF8Char_LE(Src: Pointer; out Value: UTF8Char): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_ReadUTF8Char_LE(var Src: Pointer; out Value: UTF8Char; Advance: Boolean): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_ReadUTF8Char_LE(Src: Pointer; out Value: UTF8Char): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
-Function Ptr_ReadUTF8Char_BE(var Src: Pointer; out Value: UTF8Char; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_ReadUTF8Char_BE(Src: Pointer; out Value: UTF8Char): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_ReadUTF8Char_BE(var Src: Pointer; out Value: UTF8Char; Advance: Boolean): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_ReadUTF8Char_BE(Src: Pointer; out Value: UTF8Char): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
 Function Ptr_ReadUTF8Char(var Src: Pointer; out Value: UTF8Char; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_ReadUTF8Char(Src: Pointer; out Value: UTF8Char; Endian: TEndian = endDefault): TMemSize; overload;
 
-Function Ptr_LoadUTF8Char_LE(var Src: Pointer; Advance: Boolean): UTF8Char; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadUTF8Char_LE(Src: Pointer): UTF8Char; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUTF8Char_LE(var Src: Pointer; Advance: Boolean): UTF8Char; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_GetUTF8Char_LE(Src: Pointer): UTF8Char; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
-Function Ptr_LoadUTF8Char_BE(var Src: Pointer; Advance: Boolean): UTF8Char; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadUTF8Char_BE(Src: Pointer): UTF8Char; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUTF8Char_BE(var Src: Pointer; Advance: Boolean): UTF8Char; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_GetUTF8Char_BE(Src: Pointer): UTF8Char; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
-Function Ptr_LoadUTF8Char(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UTF8Char; overload;
-Function Ptr_LoadUTF8Char(Src: Pointer; Endian: TEndian = endDefault): UTF8Char; overload;
+Function Ptr_GetUTF8Char(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UTF8Char; overload;
+Function Ptr_GetUTF8Char(Src: Pointer; Endian: TEndian = endDefault): UTF8Char; overload;
  
 //------------------------------------------------------------------------------
 
@@ -952,14 +959,14 @@ Function Ptr_ReadWideChar_BE(Src: Pointer; out Value: WideChar): TMemSize; overl
 Function Ptr_ReadWideChar(var Src: Pointer; out Value: WideChar; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_ReadWideChar(Src: Pointer; out Value: WideChar; Endian: TEndian = endDefault): TMemSize; overload;
 
-Function Ptr_LoadWideChar_LE(var Src: Pointer; Advance: Boolean): WideChar; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadWideChar_LE(Src: Pointer): WideChar; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetWideChar_LE(var Src: Pointer; Advance: Boolean): WideChar; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetWideChar_LE(Src: Pointer): WideChar; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadWideChar_BE(var Src: Pointer; Advance: Boolean): WideChar; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadWideChar_BE(Src: Pointer): WideChar; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetWideChar_BE(var Src: Pointer; Advance: Boolean): WideChar; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetWideChar_BE(Src: Pointer): WideChar; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadWideChar(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): WideChar; overload;
-Function Ptr_LoadWideChar(Src: Pointer; Endian: TEndian = endDefault): WideChar; overload;
+Function Ptr_GetWideChar(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): WideChar; overload;
+Function Ptr_GetWideChar(Src: Pointer; Endian: TEndian = endDefault): WideChar; overload;
  
 //------------------------------------------------------------------------------
 
@@ -972,14 +979,14 @@ Function Ptr_ReadUnicodeChar_BE(Src: Pointer; out Value: UnicodeChar): TMemSize;
 Function Ptr_ReadUnicodeChar(var Src: Pointer; out Value: UnicodeChar; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_ReadUnicodeChar(Src: Pointer; out Value: UnicodeChar; Endian: TEndian = endDefault): TMemSize; overload;
 
-Function Ptr_LoadUnicodeChar_LE(var Src: Pointer; Advance: Boolean): UnicodeChar; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadUnicodeChar_LE(Src: Pointer): UnicodeChar; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUnicodeChar_LE(var Src: Pointer; Advance: Boolean): UnicodeChar; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUnicodeChar_LE(Src: Pointer): UnicodeChar; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadUnicodeChar_BE(var Src: Pointer; Advance: Boolean): UnicodeChar; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadUnicodeChar_BE(Src: Pointer): UnicodeChar; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUnicodeChar_BE(var Src: Pointer; Advance: Boolean): UnicodeChar; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUnicodeChar_BE(Src: Pointer): UnicodeChar; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadUnicodeChar(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UnicodeChar; overload;
-Function Ptr_LoadUnicodeChar(Src: Pointer; Endian: TEndian = endDefault): UnicodeChar; overload;
+Function Ptr_GetUnicodeChar(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UnicodeChar; overload;
+Function Ptr_GetUnicodeChar(Src: Pointer; Endian: TEndian = endDefault): UnicodeChar; overload;
    
 //------------------------------------------------------------------------------
 
@@ -992,14 +999,14 @@ Function Ptr_ReadUCS4Char_BE(Src: Pointer; out Value: UCS4Char): TMemSize; overl
 Function Ptr_ReadUCS4Char(var Src: Pointer; out Value: UCS4Char; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_ReadUCS4Char(Src: Pointer; out Value: UCS4Char; Endian: TEndian = endDefault): TMemSize; overload;
 
-Function Ptr_LoadUCS4Char_LE(var Src: Pointer; Advance: Boolean): UCS4Char; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadUCS4Char_LE(Src: Pointer): UCS4Char; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUCS4Char_LE(var Src: Pointer; Advance: Boolean): UCS4Char; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUCS4Char_LE(Src: Pointer): UCS4Char; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadUCS4Char_BE(var Src: Pointer; Advance: Boolean): UCS4Char; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadUCS4Char_BE(Src: Pointer): UCS4Char; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUCS4Char_BE(var Src: Pointer; Advance: Boolean): UCS4Char; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUCS4Char_BE(Src: Pointer): UCS4Char; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadUCS4Char(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UCS4Char; overload;
-Function Ptr_LoadUCS4Char(Src: Pointer; Endian: TEndian = endDefault): UCS4Char; overload;
+Function Ptr_GetUCS4Char(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UCS4Char; overload;
+Function Ptr_GetUCS4Char(Src: Pointer; Endian: TEndian = endDefault): UCS4Char; overload;
     
 //------------------------------------------------------------------------------
 
@@ -1012,36 +1019,36 @@ Function Ptr_ReadChar_BE(Src: Pointer; out Value: Char): TMemSize; overload;{$IF
 Function Ptr_ReadChar(var Src: Pointer; out Value: Char; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function Ptr_ReadChar(Src: Pointer; out Value: Char; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadChar_LE(var Src: Pointer; Advance: Boolean): Char; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadChar_LE(Src: Pointer): Char; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetChar_LE(var Src: Pointer; Advance: Boolean): Char; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetChar_LE(Src: Pointer): Char; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadChar_BE(var Src: Pointer; Advance: Boolean): Char; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadChar_BE(Src: Pointer): Char; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetChar_BE(var Src: Pointer; Advance: Boolean): Char; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetChar_BE(Src: Pointer): Char; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadChar(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Char; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadChar(Src: Pointer; Endian: TEndian = endDefault): Char; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetChar(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Char; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetChar(Src: Pointer; Endian: TEndian = endDefault): Char; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
 {-------------------------------------------------------------------------------
     Strings
 -------------------------------------------------------------------------------}
 
-Function Ptr_ReadShortString_LE(var Src: Pointer; out Str: ShortString; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_ReadShortString_LE(Src: Pointer; out Str: ShortString): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_ReadShortString_LE(var Src: Pointer; out Str: ShortString; Advance: Boolean): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_ReadShortString_LE(Src: Pointer; out Str: ShortString): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
-Function Ptr_ReadShortString_BE(var Src: Pointer; out Str: ShortString; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_ReadShortString_BE(Src: Pointer; out Str: ShortString): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_ReadShortString_BE(var Src: Pointer; out Str: ShortString; Advance: Boolean): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_ReadShortString_BE(Src: Pointer; out Str: ShortString): TMemSize; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
 Function Ptr_ReadShortString(var Src: Pointer; out Str: ShortString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_ReadShortString(Src: Pointer; out Str: ShortString; Endian: TEndian = endDefault): TMemSize; overload;
 
-Function Ptr_LoadShortString_LE(var Src: Pointer; Advance: Boolean): ShortString; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadShortString_LE(Src: Pointer): ShortString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetShortString_LE(var Src: Pointer; Advance: Boolean): ShortString; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_GetShortString_LE(Src: Pointer): ShortString; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
-Function Ptr_LoadShortString_BE(var Src: Pointer; Advance: Boolean): ShortString; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadShortString_BE(Src: Pointer): ShortString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetShortString_BE(var Src: Pointer; Advance: Boolean): ShortString; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
+Function Ptr_GetShortString_BE(Src: Pointer): ShortString; overload;{$IFDEF CanInlineFPC} inline;{$ENDIF}
 
-Function Ptr_LoadShortString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): ShortString; overload;
-Function Ptr_LoadShortString(Src: Pointer; Endian: TEndian = endDefault): ShortString; overload;
+Function Ptr_GetShortString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): ShortString; overload;
+Function Ptr_GetShortString(Src: Pointer; Endian: TEndian = endDefault): ShortString; overload;
        
 //------------------------------------------------------------------------------
 
@@ -1054,14 +1061,14 @@ Function Ptr_ReadAnsiString_BE(Src: Pointer; out Str: AnsiString): TMemSize; ove
 Function Ptr_ReadAnsiString(var Src: Pointer; out Str: AnsiString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_ReadAnsiString(Src: Pointer; out Str: AnsiString; Endian: TEndian = endDefault): TMemSize; overload;
 
-Function Ptr_LoadAnsiString_LE(var Src: Pointer; Advance: Boolean): AnsiString; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadAnsiString_LE(Src: Pointer): AnsiString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetAnsiString_LE(var Src: Pointer; Advance: Boolean): AnsiString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetAnsiString_LE(Src: Pointer): AnsiString; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadAnsiString_BE(var Src: Pointer; Advance: Boolean): AnsiString; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadAnsiString_BE(Src: Pointer): AnsiString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetAnsiString_BE(var Src: Pointer; Advance: Boolean): AnsiString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetAnsiString_BE(Src: Pointer): AnsiString; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadAnsiString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): AnsiString; overload;
-Function Ptr_LoadAnsiString(Src: Pointer; Endian: TEndian = endDefault): AnsiString; overload;
+Function Ptr_GetAnsiString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): AnsiString; overload;
+Function Ptr_GetAnsiString(Src: Pointer; Endian: TEndian = endDefault): AnsiString; overload;
 
 //------------------------------------------------------------------------------
 
@@ -1074,14 +1081,14 @@ Function Ptr_ReadUTF8String_BE(Src: Pointer; out Str: UTF8String): TMemSize; ove
 Function Ptr_ReadUTF8String(var Src: Pointer; out Str: UTF8String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_ReadUTF8String(Src: Pointer; out Str: UTF8String; Endian: TEndian = endDefault): TMemSize; overload;
 
-Function Ptr_LoadUTF8String_LE(var Src: Pointer; Advance: Boolean): UTF8String; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadUTF8String_LE(Src: Pointer): UTF8String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUTF8String_LE(var Src: Pointer; Advance: Boolean): UTF8String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUTF8String_LE(Src: Pointer): UTF8String; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadUTF8String_BE(var Src: Pointer; Advance: Boolean): UTF8String; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadUTF8String_BE(Src: Pointer): UTF8String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUTF8String_BE(var Src: Pointer; Advance: Boolean): UTF8String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUTF8String_BE(Src: Pointer): UTF8String; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadUTF8String(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UTF8String; overload;
-Function Ptr_LoadUTF8String(Src: Pointer; Endian: TEndian = endDefault): UTF8String; overload;
+Function Ptr_GetUTF8String(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UTF8String; overload;
+Function Ptr_GetUTF8String(Src: Pointer; Endian: TEndian = endDefault): UTF8String; overload;
 
 //------------------------------------------------------------------------------
 
@@ -1094,14 +1101,14 @@ Function Ptr_ReadWideString_BE(Src: Pointer; out Str: WideString): TMemSize; ove
 Function Ptr_ReadWideString(var Src: Pointer; out Str: WideString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_ReadWideString(Src: Pointer; out Str: WideString; Endian: TEndian = endDefault): TMemSize; overload;
 
-Function Ptr_LoadWideString_LE(var Src: Pointer; Advance: Boolean): WideString; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadWideString_LE(Src: Pointer): WideString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetWideString_LE(var Src: Pointer; Advance: Boolean): WideString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetWideString_LE(Src: Pointer): WideString; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadWideString_BE(var Src: Pointer; Advance: Boolean): WideString; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadWideString_BE(Src: Pointer): WideString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetWideString_BE(var Src: Pointer; Advance: Boolean): WideString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetWideString_BE(Src: Pointer): WideString; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadWideString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): WideString; overload;
-Function Ptr_LoadWideString(Src: Pointer; Endian: TEndian = endDefault): WideString; overload;
+Function Ptr_GetWideString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): WideString; overload;
+Function Ptr_GetWideString(Src: Pointer; Endian: TEndian = endDefault): WideString; overload;
 
 //------------------------------------------------------------------------------
 
@@ -1114,14 +1121,14 @@ Function Ptr_ReadUnicodeString_BE(Src: Pointer; out Str: UnicodeString): TMemSiz
 Function Ptr_ReadUnicodeString(var Src: Pointer; out Str: UnicodeString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_ReadUnicodeString(Src: Pointer; out Str: UnicodeString; Endian: TEndian = endDefault): TMemSize; overload;
 
-Function Ptr_LoadUnicodeString_LE(var Src: Pointer; Advance: Boolean): UnicodeString; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadUnicodeString_LE(Src: Pointer): UnicodeString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUnicodeString_LE(var Src: Pointer; Advance: Boolean): UnicodeString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUnicodeString_LE(Src: Pointer): UnicodeString; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadUnicodeString_BE(var Src: Pointer; Advance: Boolean): UnicodeString; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadUnicodeString_BE(Src: Pointer): UnicodeString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUnicodeString_BE(var Src: Pointer; Advance: Boolean): UnicodeString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUnicodeString_BE(Src: Pointer): UnicodeString; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadUnicodeString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UnicodeString; overload;
-Function Ptr_LoadUnicodeString(Src: Pointer; Endian: TEndian = endDefault): UnicodeString; overload;
+Function Ptr_GetUnicodeString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UnicodeString; overload;
+Function Ptr_GetUnicodeString(Src: Pointer; Endian: TEndian = endDefault): UnicodeString; overload;
 
 //------------------------------------------------------------------------------
 
@@ -1134,14 +1141,14 @@ Function Ptr_ReadUCS4String_BE(Src: Pointer; out Str: UCS4String): TMemSize; ove
 Function Ptr_ReadUCS4String(var Src: Pointer; out Str: UCS4String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_ReadUCS4String(Src: Pointer; out Str: UCS4String; Endian: TEndian = endDefault): TMemSize; overload;
 
-Function Ptr_LoadUCS4String_LE(var Src: Pointer; Advance: Boolean): UCS4String; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadUCS4String_LE(Src: Pointer): UCS4String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUCS4String_LE(var Src: Pointer; Advance: Boolean): UCS4String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUCS4String_LE(Src: Pointer): UCS4String; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadUCS4String_BE(var Src: Pointer; Advance: Boolean): UCS4String; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadUCS4String_BE(Src: Pointer): UCS4String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUCS4String_BE(var Src: Pointer; Advance: Boolean): UCS4String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetUCS4String_BE(Src: Pointer): UCS4String; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadUCS4String(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UCS4String; overload;
-Function Ptr_LoadUCS4String(Src: Pointer; Endian: TEndian = endDefault): UCS4String; overload;
+Function Ptr_GetUCS4String(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UCS4String; overload;
+Function Ptr_GetUCS4String(Src: Pointer; Endian: TEndian = endDefault): UCS4String; overload;
       
 //------------------------------------------------------------------------------
 
@@ -1154,27 +1161,27 @@ Function Ptr_ReadString_BE(Src: Pointer; out Str: String): TMemSize; overload;{$
 Function Ptr_ReadString(var Src: Pointer; out Str: String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function Ptr_ReadString(Src: Pointer; out Str: String; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadString_LE(var Src: Pointer; Advance: Boolean): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadString_LE(Src: Pointer): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetString_LE(var Src: Pointer; Advance: Boolean): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetString_LE(Src: Pointer): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadString_BE(var Src: Pointer; Advance: Boolean): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadString_BE(Src: Pointer): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetString_BE(var Src: Pointer; Advance: Boolean): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetString_BE(Src: Pointer): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadString(Src: Pointer; Endian: TEndian = endDefault): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetString(Src: Pointer; Endian: TEndian = endDefault): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
 {-------------------------------------------------------------------------------
     General data buffers
 -------------------------------------------------------------------------------}
 
-Function Ptr_ReadBuffer_LE(var Src: Pointer; var Buffer; Size: TMemSize; Advance: Boolean): TMemSize; overload;
-Function Ptr_ReadBuffer_LE(Src: Pointer; var Buffer; Size: TMemSize): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_ReadBuffer_LE(var Src: Pointer; out Buffer; Size: TMemSize; Advance: Boolean): TMemSize; overload;
+Function Ptr_ReadBuffer_LE(Src: Pointer; out Buffer; Size: TMemSize): TMemSize; overload;
 
-Function Ptr_ReadBuffer_BE(var Src: Pointer; var Buffer; Size: TMemSize; Advance: Boolean): TMemSize; overload;
-Function Ptr_ReadBuffer_BE(Src: Pointer; var Buffer; Size: TMemSize): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_ReadBuffer_BE(var Src: Pointer; out Buffer; Size: TMemSize; Advance: Boolean): TMemSize; overload;
+Function Ptr_ReadBuffer_BE(Src: Pointer; out Buffer; Size: TMemSize): TMemSize; overload;
 
-Function Ptr_ReadBuffer(var Src: Pointer; var Buffer; Size: TMemSize; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
-Function Ptr_ReadBuffer(Src: Pointer; var Buffer; Size: TMemSize; Endian: TEndian = endDefault): TMemSize; overload;
+Function Ptr_ReadBuffer(var Src: Pointer; out Buffer; Size: TMemSize; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Ptr_ReadBuffer(Src: Pointer; out Buffer; Size: TMemSize; Endian: TEndian = endDefault): TMemSize; overload;
 
 {-------------------------------------------------------------------------------
     Variants
@@ -1189,14 +1196,14 @@ Function Ptr_ReadVariant_BE(Src: Pointer; out Value: Variant): TMemSize; overloa
 Function Ptr_ReadVariant(var Src: Pointer; out Value: Variant; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_ReadVariant(Src: Pointer; out Value: Variant; Endian: TEndian = endDefault): TMemSize; overload;
 
-Function Ptr_LoadVariant_LE(var Src: Pointer; Advance: Boolean): Variant; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadVariant_LE(Src: Pointer): Variant; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetVariant_LE(var Src: Pointer; Advance: Boolean): Variant; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetVariant_LE(Src: Pointer): Variant; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadVariant_BE(var Src: Pointer; Advance: Boolean): Variant; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function Ptr_LoadVariant_BE(Src: Pointer): Variant; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetVariant_BE(var Src: Pointer; Advance: Boolean): Variant; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetVariant_BE(Src: Pointer): Variant; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function Ptr_LoadVariant(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Variant; overload;
-Function Ptr_LoadVariant(Src: Pointer; Endian: TEndian = endDefault): Variant; overload;
+Function Ptr_GetVariant(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Variant; overload;
+Function Ptr_GetVariant(Src: Pointer; Endian: TEndian = endDefault): Variant; overload;
 
 
 {===============================================================================
@@ -1391,6 +1398,7 @@ Function Stream_ReadBuffer(Stream: TStream; var Buffer; Size: TMemSize; Advance:
 Function Stream_ReadVariant(Stream: TStream; out Value: Variant; Advance: Boolean = True): TMemSize; overload;
 Function Stream_ReadVariant(Stream: TStream; Advance: Boolean = True): Variant; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
+(*
 {===============================================================================
 --------------------------------------------------------------------------------
                                  TCustomStreamer
@@ -1590,12 +1598,12 @@ type
     constructor Create(Target: TStream);
     property Target: TStream read fTarget;
   end;
-
+*)
 implementation
 
 uses
-  Variants,
-  StrRect, StaticMemoryStream;
+  Variants
+  {$IFDEF FPC}, StrRect{$ENDIF};
 
 {$IFDEF FPC_DisableWarns}
   {$DEFINE FPCDWM}
@@ -1622,10 +1630,8 @@ end;
 
 procedure AdvanceStream(Advance: Boolean; Stream: TStream; Offset: TMemSize);{$IFDEF CanInline} inline;{$ENDIF}
 begin
-{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 If not Advance then
   Stream.Seek(-Int64(Offset),soCurrent);
-{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //==============================================================================
@@ -1641,6 +1647,14 @@ end;
 Function NumToBool(Val: UInt8): Boolean;{$IFDEF CanInline} inline;{$ENDIF}
 begin
 Result := Val <> 0;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure ClampStringLength(var StrLength: Int32);{$IFDEF CanInline} inline;{$ENDIF}
+begin
+If StrLength < 0 then
+  StrLength := 0;
 end;
 
 //==============================================================================
@@ -1675,36 +1689,21 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function SwapEndian(Value: Float32): Float32; overload;
-begin
-Int32Rec(Result).HiWord := SwapEndian(Int32Rec(Value).LoWord);
-Int32Rec(Result).LoWord := SwapEndian(Int32Rec(Value).HiWord);
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function SwapEndian(Value: Float64): Float64; overload; 
-begin
-Int64Rec(Result).Hi := SwapEndian(Int64Rec(Value).Lo);
-Int64Rec(Result).Lo := SwapEndian(Int64Rec(Value).Hi);
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function SwapEndian(Value: Float80): Float80; overload;
 type
-  TOverlay = packed array[0..9] of Byte;
+  TFloat80Overlay = packed array[0..9] of Byte;
+
+Function SwapEndian(Value: TFloat80Overlay): TFloat80Overlay; overload;
 begin
-TOverlay(Result)[0] := TOverlay(Value)[9];
-TOverlay(Result)[1] := TOverlay(Value)[8];
-TOverlay(Result)[2] := TOverlay(Value)[7];
-TOverlay(Result)[3] := TOverlay(Value)[6];
-TOverlay(Result)[4] := TOverlay(Value)[5];
-TOverlay(Result)[5] := TOverlay(Value)[4];
-TOverlay(Result)[6] := TOverlay(Value)[3];
-TOverlay(Result)[7] := TOverlay(Value)[2];
-TOverlay(Result)[8] := TOverlay(Value)[1];
-TOverlay(Result)[9] := TOverlay(Value)[0];
+Result[0] := Value[9];
+Result[1] := Value[8];
+Result[2] := Value[7];
+Result[3] := Value[6];
+Result[4] := Value[5];
+Result[5] := Value[4];
+Result[6] := Value[3];
+Result[7] := Value[2];
+Result[8] := Value[1];
+Result[9] := Value[0];
 end;
 
 //==============================================================================
@@ -1783,7 +1782,7 @@ For i := 1 to Length do
   begin
     Buff := SwapEndian(Data^);
     Stream.WriteBuffer(Buff,SizeOf(UInt16));
-    Inc(Result,TMemSize(SizeOf(UInt16)));
+    Inc(Result,SizeOf(UInt16));
     Inc(Data);
   end;
 end;
@@ -1800,48 +1799,46 @@ For i := 1 to Length do
   begin
     Buff := SwapEndian(Data^);
     Stream.WriteBuffer(Buff,SizeOf(UInt32));
-    Inc(Result,TMemSize(SizeOf(UInt32)));
+    Inc(Result,SizeOf(UInt32));
     Inc(Data);
   end;
 end;
 
 //------------------------------------------------------------------------------
 
-//{$IFDEF FPCDWM}{$PUSH}W5057{$ENDIF}
 Function Stream_ReadUTF16LE(Stream: TStream; Data: PUInt16; Length: TStrSize): TMemSize;
 var
   i:    TStrSize;
   Buff: UInt16;
 begin
 Result := 0;
+Buff := 0;
 For i := 1 to Length do
   begin
     Stream.ReadBuffer(Buff,SizeOf(UInt16));
-    Inc(Result,TMemSize(SizeOf(UInt16)));
+    Inc(Result,SizeOf(UInt16));
     Data^ := SwapEndian(Buff);
     Inc(Data);
   end;
 end;
-//{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
-//{$IFDEF FPCDWM}{$PUSH}W5057{$ENDIF}
 Function Stream_ReadUCS4LE(Stream: TStream; Data: PUInt32; Length: TStrSize): TMemSize;
 var
   i:    TStrSize;
   Buff: UInt32;
 begin
 Result := 0;
+Buff := 0;
 For i := 1 to Length do
   begin
     Stream.ReadBuffer(Buff,SizeOf(UInt32));
-    Inc(Result,TMemSize(SizeOf(UInt32)));
+    Inc(Result,SizeOf(UInt32));
     Data^ := SwapEndian(Buff);
     Inc(Data);
   end;
 end;
-//{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -1966,8 +1963,8 @@ end;
 Function ResolveEndian(Endian: TEndian): TEndian;
 begin
 case Endian of
-  endDefault: Result := endLittle;
   endSystem:  Result := SysEndian;
+  endDefault: Result := endLittle;  
 else
   Result := Endian;
 end;
@@ -2232,31 +2229,31 @@ else
     // simple type
     If VarType(Value) <> (varVariant or varByRef) then
       begin
-        case VarType(Value) and varTypeMask of
-          // +1 is for the variant type byte
-          varBoolean:   Result := StreamedSize_Boolean + 1;
-          varShortInt:  Result := StreamedSize_Int8 + 1;
-          varSmallint:  Result := StreamedSize_Int16 + 1;
-          varInteger:   Result := StreamedSize_Int32 + 1;
-          varInt64:     Result := StreamedSize_Int64 + 1;
-          varByte:      Result := StreamedSize_UInt8 + 1;
-          varWord:      Result := StreamedSize_UInt16 + 1;
-          varLongWord:  Result := StreamedSize_UInt32 + 1;
+        case VarType(Value) and varTypeMask of  
+          varBoolean:   Result := StreamedSize_Boolean;
+          varShortInt:  Result := StreamedSize_Int8;
+          varSmallint:  Result := StreamedSize_Int16;
+          varInteger:   Result := StreamedSize_Int32;
+          varInt64:     Result := StreamedSize_Int64;
+          varByte:      Result := StreamedSize_UInt8;
+          varWord:      Result := StreamedSize_UInt16;
+          varLongWord:  Result := StreamedSize_UInt32;
         {$IF Declared(varUInt64)}
-          varUInt64:    Result := StreamedSize_UInt64 + 1;
+          varUInt64:    Result := StreamedSize_UInt64;
         {$IFEND}
-          varSingle:    Result := StreamedSize_Float32 + 1;
-          varDouble:    Result := StreamedSize_Float64 + 1;
-          varCurrency:  Result := StreamedSize_Currency + 1;
-          varDate:      Result := StreamedSize_DateTime + 1;
-          varOleStr:    Result := StreamedSize_WideString(Value) + 1;
-          varString:    Result := StreamedSize_AnsiString(AnsiString(Value)) + 1;
+          varSingle:    Result := StreamedSize_Float32;
+          varDouble:    Result := StreamedSize_Float64;
+          varCurrency:  Result := StreamedSize_Currency;
+          varDate:      Result := StreamedSize_DateTime;
+          varOleStr:    Result := StreamedSize_WideString(Value);
+          varString:    Result := StreamedSize_AnsiString(AnsiString(Value));
         {$IF Declared(varUInt64)}
-          varUString:   Result := StreamedSize_UnicodeString(Value) + 1;
+          varUString:   Result := StreamedSize_UnicodeString(Value);
         {$IFEND}
         else
           raise EBSUnsupportedVarType.CreateFmt('StreamedSize_Variant: Cannot scan variant of this type (%d).',[VarType(Value) and varTypeMask]);
         end;
+        Inc(Result);  // for the variant type byte
       end
     else Result := StreamedSize_Variant(Variant(FindVarData(Value)^));
   end;
@@ -2933,7 +2930,11 @@ end;
 Function Ptr_WriteFloat32_LE(var Dest: Pointer; Value: Float32; Advance: Boolean): TMemSize;
 begin
 {$IFDEF ENDIAN_BIG}
-Float32(Dest^) := SwapEndian(Value);
+{
+  Casting to UInt32 is done to prevent invalid floating point operation when
+  assigning byte-swapped value, which can be SNaN or denormal.
+}
+UInt32(Dest^) := SwapEndian(UInt32(Addr(Value)^));
 {$ELSE}
 Float32(Dest^) := Value;
 {$ENDIF}
@@ -2958,7 +2959,7 @@ begin
 {$IFDEF ENDIAN_BIG}
 Float32(Dest^) := Value;
 {$ELSE}
-Float32(Dest^) := SwapEndian(Value);
+UInt32(Dest^) := SwapEndian(UInt32(Addr(Value)^));
 {$ENDIF}
 Result := SizeOf(Value);
 AdvancePointer(Advance,Dest,Result);
@@ -3002,7 +3003,7 @@ end;
 Function Ptr_WriteFloat64_LE(var Dest: Pointer; Value: Float64; Advance: Boolean): TMemSize;
 begin
 {$IFDEF ENDIAN_BIG}
-Float64(Dest^) := SwapEndian(Value);
+UInt64(Dest^) := SwapEndian(UInt64(Addr(Value)^));
 {$ELSE}
 Float64(Dest^) := Value;
 {$ENDIF}
@@ -3027,7 +3028,7 @@ begin
 {$IFDEF ENDIAN_BIG}
 Float64(Dest^) := Value;
 {$ELSE}
-Float64(Dest^) := SwapEndian(Value);
+UInt64(Dest^) := SwapEndian(UInt64(Addr(Value)^));
 {$ENDIF}
 Result := SizeOf(Value);
 AdvancePointer(Advance,Dest,Result);
@@ -3071,7 +3072,7 @@ end;
 Function Ptr_WriteFloat80_LE(var Dest: Pointer; Value: Float80; Advance: Boolean): TMemSize;
 begin
 {$IFDEF ENDIAN_BIG}
-Float80(Dest^) := SwapEndian(Value);
+TFloat80Overlay(Dest^) := SwapEndian(TFloat80Overlay(Value));
 {$ELSE}
 Float80(Dest^) := Value;
 {$ENDIF}
@@ -3096,7 +3097,7 @@ begin
 {$IFDEF ENDIAN_BIG}
 Float80(Dest^) := Value;
 {$ELSE}
-Float80(Dest^) := SwapEndian(Value);
+TFloat80Overlay(Dest^) := SwapEndian(TFloat80Overlay(Value));
 {$ENDIF}
 Result := SizeOf(Value);
 AdvancePointer(Advance,Dest,Result);
@@ -3181,7 +3182,7 @@ end;
 
 Function Ptr_WriteCurrency_LE(var Dest: Pointer; Value: Currency; Advance: Boolean): TMemSize;
 begin
-// prevent conversion of currency to other types
+// prevent implicit conversion of currency to other types
 {$IFDEF ENDIAN_BIG}
 UInt64(Dest^) := SwapEndian(UInt64(Addr(Value)^));
 {$ELSE}
@@ -4621,14 +4622,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadBool_LE(var Src: Pointer; Advance: Boolean): ByteBool;
+Function Ptr_GetBool_LE(var Src: Pointer; Advance: Boolean): ByteBool;
 begin
 _Ptr_ReadBool(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadBool_LE(Src: Pointer): ByteBool;
+Function Ptr_GetBool_LE(Src: Pointer): ByteBool;
 var
   Ptr:  Pointer;
 begin
@@ -4638,14 +4639,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadBool_BE(var Src: Pointer; Advance: Boolean): ByteBool;
+Function Ptr_GetBool_BE(var Src: Pointer; Advance: Boolean): ByteBool;
 begin
 _Ptr_ReadBool(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadBool_BE(Src: Pointer): ByteBool;
+Function Ptr_GetBool_BE(Src: Pointer): ByteBool;
 var
   Ptr:  Pointer;
 begin
@@ -4655,25 +4656,25 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadBool(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): ByteBool;
+Function Ptr_GetBool(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): ByteBool;
 begin
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadBool_BE(Src,Advance)
+  Result := Ptr_GetBool_BE(Src,Advance)
 else
-  Result := Ptr_LoadBool_LE(Src,Advance);
+  Result := Ptr_GetBool_LE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       
-Function Ptr_LoadBool(Src: Pointer; Endian: TEndian = endDefault): ByteBool;
+Function Ptr_GetBool(Src: Pointer; Endian: TEndian = endDefault): ByteBool;
 var
   Ptr:  Pointer;
 begin
 Ptr := Src;
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadBool_BE(Ptr,False)
+  Result := Ptr_GetBool_BE(Ptr,False)
 else
-  Result := Ptr_LoadBool_LE(Ptr,False);
+  Result := Ptr_GetBool_LE(Ptr,False);
 end;
 
 //==============================================================================
@@ -4738,44 +4739,44 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadBoolean_LE(var Src: Pointer; Advance: Boolean): Boolean;
+Function Ptr_GetBoolean_LE(var Src: Pointer; Advance: Boolean): Boolean;
 begin
-Result := Ptr_LoadBool_LE(Src,Advance);
+Result := Ptr_GetBool_LE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadBoolean_LE(Src: Pointer): Boolean;
+Function Ptr_GetBoolean_LE(Src: Pointer): Boolean;
 begin
-Result := Ptr_LoadBool_LE(Src);
+Result := Ptr_GetBool_LE(Src);
 end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadBoolean_BE(var Src: Pointer; Advance: Boolean): Boolean;
+Function Ptr_GetBoolean_BE(var Src: Pointer; Advance: Boolean): Boolean;
 begin
-Result := Ptr_LoadBool_BE(Src,Advance);
+Result := Ptr_GetBool_BE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadBoolean_BE(Src: Pointer): Boolean;
+Function Ptr_GetBoolean_BE(Src: Pointer): Boolean;
 begin
-Result := Ptr_LoadBool_BE(Src);
+Result := Ptr_GetBool_BE(Src);
 end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadBoolean(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Boolean;
+Function Ptr_GetBoolean(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Boolean;
 begin
-Result := Ptr_LoadBool(Src,Advance,Endian);
+Result := Ptr_GetBool(Src,Advance,Endian);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadBoolean(Src: Pointer; Endian: TEndian = endDefault): Boolean;
+Function Ptr_GetBoolean(Src: Pointer; Endian: TEndian = endDefault): Boolean;
 begin
-Result := Ptr_LoadBool(Src,Endian);
+Result := Ptr_GetBool(Src,Endian);
 end;
 
 {-------------------------------------------------------------------------------
@@ -4848,14 +4849,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadInt8_LE(var Src: Pointer; Advance: Boolean): Int8;
+Function Ptr_GetInt8_LE(var Src: Pointer; Advance: Boolean): Int8;
 begin
 _Ptr_ReadInt8(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadInt8_LE(Src: Pointer): Int8;
+Function Ptr_GetInt8_LE(Src: Pointer): Int8;
 var
   Ptr:  Pointer;
 begin
@@ -4865,14 +4866,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadInt8_BE(var Src: Pointer; Advance: Boolean): Int8;
+Function Ptr_GetInt8_BE(var Src: Pointer; Advance: Boolean): Int8;
 begin
 _Ptr_ReadInt8(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadInt8_BE(Src: Pointer): Int8;
+Function Ptr_GetInt8_BE(Src: Pointer): Int8;
 var
   Ptr:  Pointer;
 begin
@@ -4882,25 +4883,25 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadInt8(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Int8;
+Function Ptr_GetInt8(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Int8;
 begin
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadInt8_BE(Src,Advance)
+  Result := Ptr_GetInt8_BE(Src,Advance)
 else
-  Result := Ptr_LoadInt8_LE(Src,Advance);
+  Result := Ptr_GetInt8_LE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadInt8(Src: Pointer; Endian: TEndian = endDefault): Int8;
+Function Ptr_GetInt8(Src: Pointer; Endian: TEndian = endDefault): Int8;
 var
   Ptr:  Pointer;
 begin
 Ptr := Src;
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadInt8_BE(Ptr,False)
+  Result := Ptr_GetInt8_BE(Ptr,False)
 else
-  Result := Ptr_LoadInt8_LE(Ptr,False);
+  Result := Ptr_GetInt8_LE(Ptr,False);
 end;
 
 //==============================================================================
@@ -4971,14 +4972,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUInt8_LE(var Src: Pointer; Advance: Boolean): UInt8;
+Function Ptr_GetUInt8_LE(var Src: Pointer; Advance: Boolean): UInt8;
 begin
 _Ptr_ReadUInt8(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUInt8_LE(Src: Pointer): UInt8;
+Function Ptr_GetUInt8_LE(Src: Pointer): UInt8;
 var
   Ptr:  Pointer;
 begin
@@ -4988,14 +4989,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUInt8_BE(var Src: Pointer; Advance: Boolean): UInt8;
+Function Ptr_GetUInt8_BE(var Src: Pointer; Advance: Boolean): UInt8;
 begin
 _Ptr_ReadUInt8(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUInt8_BE(Src: Pointer): UInt8;
+Function Ptr_GetUInt8_BE(Src: Pointer): UInt8;
 var
   Ptr:  Pointer;
 begin
@@ -5005,25 +5006,25 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUInt8(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UInt8;
+Function Ptr_GetUInt8(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UInt8;
 begin
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadUInt8_BE(Src,Advance)
+  Result := Ptr_GetUInt8_BE(Src,Advance)
 else
-  Result := Ptr_LoadUInt8_LE(Src,Advance);
+  Result := Ptr_GetUInt8_LE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                
-Function Ptr_LoadUInt8(Src: Pointer; Endian: TEndian = endDefault): UInt8;
+Function Ptr_GetUInt8(Src: Pointer; Endian: TEndian = endDefault): UInt8;
 var
   Ptr:  Pointer;
 begin
 Ptr := Src;
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadUInt8_BE(Ptr,False)
+  Result := Ptr_GetUInt8_BE(Ptr,False)
 else
-  Result := Ptr_LoadUInt8_LE(Ptr,False);
+  Result := Ptr_GetUInt8_LE(Ptr,False);
 end;
 
 //==============================================================================
@@ -5097,14 +5098,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadInt16_LE(var Src: Pointer; Advance: Boolean): Int16;
+Function Ptr_GetInt16_LE(var Src: Pointer; Advance: Boolean): Int16;
 begin
 Ptr_ReadInt16_LE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadInt16_LE(Src: Pointer): Int16;
+Function Ptr_GetInt16_LE(Src: Pointer): Int16;
 var
   Ptr:  Pointer;
 begin
@@ -5114,14 +5115,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadInt16_BE(var Src: Pointer; Advance: Boolean): Int16;
+Function Ptr_GetInt16_BE(var Src: Pointer; Advance: Boolean): Int16;
 begin
 Ptr_ReadInt16_BE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadInt16_BE(Src: Pointer): Int16;
+Function Ptr_GetInt16_BE(Src: Pointer): Int16;
 var
   Ptr:  Pointer;
 begin
@@ -5131,25 +5132,25 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadInt16(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Int16;
+Function Ptr_GetInt16(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Int16;
 begin
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadInt16_BE(Src,Advance)
+  Result := Ptr_GetInt16_BE(Src,Advance)
 else
-  Result := Ptr_LoadInt16_LE(Src,Advance);
+  Result := Ptr_GetInt16_LE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadInt16(Src: Pointer; Endian: TEndian = endDefault): Int16;
+Function Ptr_GetInt16(Src: Pointer; Endian: TEndian = endDefault): Int16;
 var
   Ptr:  Pointer;
 begin
 Ptr := Src;
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadInt16_BE(Ptr,False)
+  Result := Ptr_GetInt16_BE(Ptr,False)
 else
-  Result := Ptr_LoadInt16_LE(Ptr,False);
+  Result := Ptr_GetInt16_LE(Ptr,False);
 end;
 
 //==============================================================================
@@ -5223,14 +5224,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUInt16_LE(var Src: Pointer; Advance: Boolean): UInt16;
+Function Ptr_GetUInt16_LE(var Src: Pointer; Advance: Boolean): UInt16;
 begin
 Ptr_ReadUInt16_LE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUInt16_LE(Src: Pointer): UInt16;
+Function Ptr_GetUInt16_LE(Src: Pointer): UInt16;
 var
   Ptr:  Pointer;
 begin
@@ -5240,14 +5241,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUInt16_BE(var Src: Pointer; Advance: Boolean): UInt16;
+Function Ptr_GetUInt16_BE(var Src: Pointer; Advance: Boolean): UInt16;
 begin
 Ptr_ReadUInt16_BE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUInt16_BE(Src: Pointer): UInt16;
+Function Ptr_GetUInt16_BE(Src: Pointer): UInt16;
 var
   Ptr:  Pointer;
 begin
@@ -5257,25 +5258,25 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUInt16(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UInt16;
+Function Ptr_GetUInt16(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UInt16;
 begin
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadUInt16_BE(Src,Advance)
+  Result := Ptr_GetUInt16_BE(Src,Advance)
 else
-  Result := Ptr_LoadUInt16_LE(Src,Advance);
+  Result := Ptr_GetUInt16_LE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUInt16(Src: Pointer; Endian: TEndian = endDefault): UInt16;
+Function Ptr_GetUInt16(Src: Pointer; Endian: TEndian = endDefault): UInt16;
 var
   Ptr:  Pointer;
 begin
 Ptr := Src;
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadUInt16_BE(Ptr,False)
+  Result := Ptr_GetUInt16_BE(Ptr,False)
 else
-  Result := Ptr_LoadUInt16_LE(Ptr,False);
+  Result := Ptr_GetUInt16_LE(Ptr,False);
 end;
 
 //==============================================================================
@@ -5349,14 +5350,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadInt32_LE(var Src: Pointer; Advance: Boolean): Int32;
+Function Ptr_GetInt32_LE(var Src: Pointer; Advance: Boolean): Int32;
 begin
 Ptr_ReadInt32_LE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadInt32_LE(Src: Pointer): Int32;
+Function Ptr_GetInt32_LE(Src: Pointer): Int32;
 var
   Ptr:  Pointer;
 begin
@@ -5366,14 +5367,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadInt32_BE(var Src: Pointer; Advance: Boolean): Int32;
+Function Ptr_GetInt32_BE(var Src: Pointer; Advance: Boolean): Int32;
 begin
 Ptr_ReadInt32_BE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadInt32_BE(Src: Pointer): Int32;
+Function Ptr_GetInt32_BE(Src: Pointer): Int32;
 var
   Ptr:  Pointer;
 begin
@@ -5383,25 +5384,25 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadInt32(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Int32;
+Function Ptr_GetInt32(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Int32;
 begin
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadInt32_BE(Src,Advance)
+  Result := Ptr_GetInt32_BE(Src,Advance)
 else
-  Result := Ptr_LoadInt32_LE(Src,Advance);
+  Result := Ptr_GetInt32_LE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadInt32(Src: Pointer; Endian: TEndian = endDefault): Int32;
+Function Ptr_GetInt32(Src: Pointer; Endian: TEndian = endDefault): Int32;
 var
   Ptr:  Pointer;
 begin
 Ptr := Src;
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadInt32_BE(Ptr,False)
+  Result := Ptr_GetInt32_BE(Ptr,False)
 else
-  Result := Ptr_LoadInt32_LE(Ptr,False);
+  Result := Ptr_GetInt32_LE(Ptr,False);
 end;
 
 //==============================================================================
@@ -5475,14 +5476,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUInt32_LE(var Src: Pointer; Advance: Boolean): UInt32;
+Function Ptr_GetUInt32_LE(var Src: Pointer; Advance: Boolean): UInt32;
 begin
 Ptr_ReadUInt32_LE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUInt32_LE(Src: Pointer): UInt32;
+Function Ptr_GetUInt32_LE(Src: Pointer): UInt32;
 var
   Ptr:  Pointer;
 begin
@@ -5492,14 +5493,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUInt32_BE(var Src: Pointer; Advance: Boolean): UInt32;
+Function Ptr_GetUInt32_BE(var Src: Pointer; Advance: Boolean): UInt32;
 begin
 Ptr_ReadUInt32_BE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUInt32_BE(Src: Pointer): UInt32;
+Function Ptr_GetUInt32_BE(Src: Pointer): UInt32;
 var
   Ptr:  Pointer;
 begin
@@ -5509,25 +5510,25 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUInt32(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UInt32;
+Function Ptr_GetUInt32(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UInt32;
 begin
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadUInt32_BE(Src,Advance)
+  Result := Ptr_GetUInt32_BE(Src,Advance)
 else
-  Result := Ptr_LoadUInt32_LE(Src,Advance);
+  Result := Ptr_GetUInt32_LE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUInt32(Src: Pointer; Endian: TEndian = endDefault): UInt32;
+Function Ptr_GetUInt32(Src: Pointer; Endian: TEndian = endDefault): UInt32;
 var
   Ptr:  Pointer;
 begin
 Ptr := Src;
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadUInt32_BE(Ptr,False)
+  Result := Ptr_GetUInt32_BE(Ptr,False)
 else
-  Result := Ptr_LoadUInt32_LE(Ptr,False);
+  Result := Ptr_GetUInt32_LE(Ptr,False);
 end;
  
 //==============================================================================
@@ -5601,14 +5602,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadInt64_LE(var Src: Pointer; Advance: Boolean): Int64;
+Function Ptr_GetInt64_LE(var Src: Pointer; Advance: Boolean): Int64;
 begin
 Ptr_ReadInt64_LE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadInt64_LE(Src: Pointer): Int64;
+Function Ptr_GetInt64_LE(Src: Pointer): Int64;
 var
   Ptr:  Pointer;
 begin
@@ -5618,14 +5619,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadInt64_BE(var Src: Pointer; Advance: Boolean): Int64;
+Function Ptr_GetInt64_BE(var Src: Pointer; Advance: Boolean): Int64;
 begin
 Ptr_ReadInt64_BE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadInt64_BE(Src: Pointer): Int64;
+Function Ptr_GetInt64_BE(Src: Pointer): Int64;
 var
   Ptr:  Pointer;
 begin
@@ -5635,25 +5636,25 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadInt64(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Int64;
+Function Ptr_GetInt64(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Int64;
 begin
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadInt64_BE(Src,Advance)
+  Result := Ptr_GetInt64_BE(Src,Advance)
 else
-  Result := Ptr_LoadInt64_LE(Src,Advance);
+  Result := Ptr_GetInt64_LE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadInt64(Src: Pointer; Endian: TEndian = endDefault): Int64;
+Function Ptr_GetInt64(Src: Pointer; Endian: TEndian = endDefault): Int64;
 var
   Ptr:  Pointer;
 begin
 Ptr := Src;
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadInt64_BE(Ptr,False)
+  Result := Ptr_GetInt64_BE(Ptr,False)
 else
-  Result := Ptr_LoadInt64_LE(Ptr,False);
+  Result := Ptr_GetInt64_LE(Ptr,False);
 end;
 
 //==============================================================================
@@ -5727,14 +5728,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUInt64_LE(var Src: Pointer; Advance: Boolean): UInt64;
+Function Ptr_GetUInt64_LE(var Src: Pointer; Advance: Boolean): UInt64;
 begin
 Ptr_ReadUInt64_LE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUInt64_LE(Src: Pointer): UInt64;
+Function Ptr_GetUInt64_LE(Src: Pointer): UInt64;
 var
   Ptr:  Pointer;
 begin
@@ -5744,14 +5745,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUInt64_BE(var Src: Pointer; Advance: Boolean): UInt64;
+Function Ptr_GetUInt64_BE(var Src: Pointer; Advance: Boolean): UInt64;
 begin
 Ptr_ReadUInt64_BE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUInt64_BE(Src: Pointer): UInt64;
+Function Ptr_GetUInt64_BE(Src: Pointer): UInt64;
 var
   Ptr:  Pointer;
 begin
@@ -5761,25 +5762,25 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUInt64(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UInt64;
+Function Ptr_GetUInt64(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UInt64;
 begin
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadUInt64_BE(Src,Advance)
+  Result := Ptr_GetUInt64_BE(Src,Advance)
 else
-  Result := Ptr_LoadUInt64_LE(Src,Advance);
+  Result := Ptr_GetUInt64_LE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUInt64(Src: Pointer; Endian: TEndian = endDefault): UInt64;
+Function Ptr_GetUInt64(Src: Pointer; Endian: TEndian = endDefault): UInt64;
 var
   Ptr:  Pointer;
 begin
 Ptr := Src;
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadUInt64_BE(Ptr,False)
+  Result := Ptr_GetUInt64_BE(Ptr,False)
 else
-  Result := Ptr_LoadUInt64_LE(Ptr,False);
+  Result := Ptr_GetUInt64_LE(Ptr,False);
 end;
 
 {-------------------------------------------------------------------------------
@@ -5789,7 +5790,7 @@ end;
 Function Ptr_ReadFloat32_LE(var Src: Pointer; out Value: Float32; Advance: Boolean): TMemSize;
 begin
 {$IFDEF ENDIAN_BIG}
-Value := SwapEndian(Float32(Src^));
+UInt32(Addr(Value)^) := SwapEndian(UInt32(Src^));
 {$ELSE}
 Value := Float32(Src^);
 {$ENDIF}
@@ -5814,7 +5815,7 @@ begin
 {$IFDEF ENDIAN_BIG}
 Value := Float32(Src^);
 {$ELSE}
-Value := SwapEndian(Float32(Src^));
+UInt32(Addr(Value)^) := SwapEndian(UInt32(Src^));
 {$ENDIF}
 Result := SizeOf(Value);
 AdvancePointer(Advance,Src,Result);
@@ -5855,14 +5856,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadFloat32_LE(var Src: Pointer; Advance: Boolean): Float32;
+Function Ptr_GetFloat32_LE(var Src: Pointer; Advance: Boolean): Float32;
 begin
 Ptr_ReadFloat32_LE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadFloat32_LE(Src: Pointer): Float32;
+Function Ptr_GetFloat32_LE(Src: Pointer): Float32;
 var
   Ptr:  Pointer;
 begin
@@ -5872,14 +5873,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadFloat32_BE(var Src: Pointer; Advance: Boolean): Float32;
+Function Ptr_GetFloat32_BE(var Src: Pointer; Advance: Boolean): Float32;
 begin
 Ptr_ReadFloat32_BE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadFloat32_BE(Src: Pointer): Float32;
+Function Ptr_GetFloat32_BE(Src: Pointer): Float32;
 var
   Ptr:  Pointer;
 begin
@@ -5889,25 +5890,25 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadFloat32(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Float32;
+Function Ptr_GetFloat32(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Float32;
 begin
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadFloat32_BE(Src,Advance)
+  Result := Ptr_GetFloat32_BE(Src,Advance)
 else
-  Result := Ptr_LoadFloat32_LE(Src,Advance);
+  Result := Ptr_GetFloat32_LE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                  
-Function Ptr_LoadFloat32(Src: Pointer; Endian: TEndian = endDefault): Float32;
+Function Ptr_GetFloat32(Src: Pointer; Endian: TEndian = endDefault): Float32;
 var
   Ptr:  Pointer;
 begin
 Ptr := Src;
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadFloat32_BE(Ptr,False)
+  Result := Ptr_GetFloat32_BE(Ptr,False)
 else
-  Result := Ptr_LoadFloat32_LE(Ptr,False);
+  Result := Ptr_GetFloat32_LE(Ptr,False);
 end;
 
 //==============================================================================
@@ -5915,7 +5916,7 @@ end;
 Function Ptr_ReadFloat64_LE(var Src: Pointer; out Value: Float64; Advance: Boolean): TMemSize;
 begin
 {$IFDEF ENDIAN_BIG}
-Value := SwapEndian(Float64(Src^));
+UInt64(Addr(Value)^) := SwapEndian(UInt64(Src^));
 {$ELSE}
 Value := Float64(Src^);
 {$ENDIF}
@@ -5940,7 +5941,7 @@ begin
 {$IFDEF ENDIAN_BIG}
 Value := Float64(Src^);
 {$ELSE}
-Value := SwapEndian(Float64(Src^));
+UInt64(Addr(Value)^) := SwapEndian(UInt64(Src^));
 {$ENDIF}
 Result := SizeOf(Value);
 AdvancePointer(Advance,Src,Result);
@@ -5981,14 +5982,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadFloat64_LE(var Src: Pointer; Advance: Boolean): Float64;
+Function Ptr_GetFloat64_LE(var Src: Pointer; Advance: Boolean): Float64;
 begin
 Ptr_ReadFloat64_LE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadFloat64_LE(Src: Pointer): Float64;
+Function Ptr_GetFloat64_LE(Src: Pointer): Float64;
 var
   Ptr:  Pointer;
 begin
@@ -5998,14 +5999,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadFloat64_BE(var Src: Pointer; Advance: Boolean): Float64;
+Function Ptr_GetFloat64_BE(var Src: Pointer; Advance: Boolean): Float64;
 begin
 Ptr_ReadFloat64_BE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadFloat64_BE(Src: Pointer): Float64;
+Function Ptr_GetFloat64_BE(Src: Pointer): Float64;
 var
   Ptr:  Pointer;
 begin
@@ -6015,25 +6016,25 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadFloat64(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Float64;
+Function Ptr_GetFloat64(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Float64;
 begin
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadFloat64_BE(Src,Advance)
+  Result := Ptr_GetFloat64_BE(Src,Advance)
 else
-  Result := Ptr_LoadFloat64_LE(Src,Advance);
+  Result := Ptr_GetFloat64_LE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                  
-Function Ptr_LoadFloat64(Src: Pointer; Endian: TEndian = endDefault): Float64;
+Function Ptr_GetFloat64(Src: Pointer; Endian: TEndian = endDefault): Float64;
 var
   Ptr:  Pointer;
 begin
 Ptr := Src;
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadFloat64_BE(Ptr,False)
+  Result := Ptr_GetFloat64_BE(Ptr,False)
 else
-  Result := Ptr_LoadFloat64_LE(Ptr,False);
+  Result := Ptr_GetFloat64_LE(Ptr,False);
 end;
 
 //==============================================================================
@@ -6041,7 +6042,7 @@ end;
 Function Ptr_ReadFloat80_LE(var Src: Pointer; out Value: Float80; Advance: Boolean): TMemSize;
 begin
 {$IFDEF ENDIAN_BIG}
-Value := SwapEndian(Float80(Src^));
+TFloat80Overlay(Addr(Value)^) := SwapEndian(TFloat80Overlay(Src^));
 {$ELSE}
 Value := Float80(Src^);
 {$ENDIF}
@@ -6066,7 +6067,7 @@ begin
 {$IFDEF ENDIAN_BIG}
 Value := Float80(Src^);
 {$ELSE}
-Value := SwapEndian(Float80(Src^));
+TFloat80Overlay(Addr(Value)^) := SwapEndian(TFloat80Overlay(Src^));
 {$ENDIF}
 Result := SizeOf(Value);
 AdvancePointer(Advance,Src,Result);
@@ -6107,14 +6108,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadFloat80_LE(var Src: Pointer; Advance: Boolean): Float80;
+Function Ptr_GetFloat80_LE(var Src: Pointer; Advance: Boolean): Float80;
 begin
 Ptr_ReadFloat80_LE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadFloat80_LE(Src: Pointer): Float80;
+Function Ptr_GetFloat80_LE(Src: Pointer): Float80;
 var
   Ptr:  Pointer;
 begin
@@ -6124,14 +6125,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadFloat80_BE(var Src: Pointer; Advance: Boolean): Float80;
+Function Ptr_GetFloat80_BE(var Src: Pointer; Advance: Boolean): Float80;
 begin
 Ptr_ReadFloat80_BE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadFloat80_BE(Src: Pointer): Float80;
+Function Ptr_GetFloat80_BE(Src: Pointer): Float80;
 var
   Ptr:  Pointer;
 begin
@@ -6141,25 +6142,25 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadFloat80(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Float80;
+Function Ptr_GetFloat80(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Float80;
 begin
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadFloat80_BE(Src,Advance)
+  Result := Ptr_GetFloat80_BE(Src,Advance)
 else
-  Result := Ptr_LoadFloat80_LE(Src,Advance);
+  Result := Ptr_GetFloat80_LE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                  
-Function Ptr_LoadFloat80(Src: Pointer; Endian: TEndian = endDefault): Float80;
+Function Ptr_GetFloat80(Src: Pointer; Endian: TEndian = endDefault): Float80;
 var
   Ptr:  Pointer;
 begin
 Ptr := Src;
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadFloat80_BE(Ptr,False)
+  Result := Ptr_GetFloat80_BE(Ptr,False)
 else
-  Result := Ptr_LoadFloat80_LE(Ptr,False);
+  Result := Ptr_GetFloat80_LE(Ptr,False);
 end;
 
 //==============================================================================
@@ -6206,44 +6207,44 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadDateTime_LE(var Src: Pointer; Advance: Boolean): TDateTime;
+Function Ptr_GetDateTime_LE(var Src: Pointer; Advance: Boolean): TDateTime;
 begin
-Result := Ptr_LoadFloat64_LE(Src,Advance);
+Result := Ptr_GetFloat64_LE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadDateTime_LE(Src: Pointer): TDateTime;
+Function Ptr_GetDateTime_LE(Src: Pointer): TDateTime;
 begin
-Result := Ptr_LoadFloat64_LE(Src);
+Result := Ptr_GetFloat64_LE(Src);
 end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadDateTime_BE(var Src: Pointer; Advance: Boolean): TDateTime;
+Function Ptr_GetDateTime_BE(var Src: Pointer; Advance: Boolean): TDateTime;
 begin
-Result := Ptr_LoadFloat64_BE(Src,Advance);
+Result := Ptr_GetFloat64_BE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadDateTime_BE(Src: Pointer): TDateTime;
+Function Ptr_GetDateTime_BE(Src: Pointer): TDateTime;
 begin
-Result := Ptr_LoadFloat64_BE(Src);
+Result := Ptr_GetFloat64_BE(Src);
 end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadDateTime(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): TDateTime;
+Function Ptr_GetDateTime(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): TDateTime;
 begin
-Result := Ptr_LoadFloat64(Src,Advance,Endian);
+Result := Ptr_GetFloat64(Src,Advance,Endian);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadDateTime(Src: Pointer; Endian: TEndian = endDefault): TDateTime;
+Function Ptr_GetDateTime(Src: Pointer; Endian: TEndian = endDefault): TDateTime;
 begin
-Result := Ptr_LoadFloat64(Src,Endian);
+Result := Ptr_GetFloat64(Src,Endian);
 end;
 
 //==============================================================================
@@ -6325,14 +6326,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadCurrency_LE(var Src: Pointer; Advance: Boolean): Currency;
+Function Ptr_GetCurrency_LE(var Src: Pointer; Advance: Boolean): Currency;
 begin
 Ptr_ReadCurrency_LE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadCurrency_LE(Src: Pointer): Currency;
+Function Ptr_GetCurrency_LE(Src: Pointer): Currency;
 var
   Ptr:  Pointer;
 begin
@@ -6342,14 +6343,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadCurrency_BE(var Src: Pointer; Advance: Boolean): Currency;
+Function Ptr_GetCurrency_BE(var Src: Pointer; Advance: Boolean): Currency;
 begin
 Ptr_ReadCurrency_BE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadCurrency_BE(Src: Pointer): Currency;
+Function Ptr_GetCurrency_BE(Src: Pointer): Currency;
 var
   Ptr:  Pointer;
 begin
@@ -6359,25 +6360,25 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadCurrency(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Currency;
+Function Ptr_GetCurrency(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Currency;
 begin
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadCurrency_BE(Src,Advance)
+  Result := Ptr_GetCurrency_BE(Src,Advance)
 else
-  Result := Ptr_LoadCurrency_LE(Src,Advance);
+  Result := Ptr_GetCurrency_LE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadCurrency(Src: Pointer; Endian: TEndian = endDefault): Currency;
+Function Ptr_GetCurrency(Src: Pointer; Endian: TEndian = endDefault): Currency;
 var
   Ptr:  Pointer;
 begin
 Ptr := Src;
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadCurrency_BE(Ptr,False)
+  Result := Ptr_GetCurrency_BE(Ptr,False)
 else
-  Result := Ptr_LoadCurrency_LE(Ptr,False);
+  Result := Ptr_GetCurrency_LE(Ptr,False);
 end;
 
 {-------------------------------------------------------------------------------
@@ -6450,14 +6451,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadAnsiChar_LE(var Src: Pointer; Advance: Boolean): AnsiChar;
+Function Ptr_GetAnsiChar_LE(var Src: Pointer; Advance: Boolean): AnsiChar;
 begin
 _Ptr_ReadAnsiChar(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadAnsiChar_LE(Src: Pointer): AnsiChar;
+Function Ptr_GetAnsiChar_LE(Src: Pointer): AnsiChar;
 var
   Ptr:  Pointer;
 begin
@@ -6467,14 +6468,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadAnsiChar_BE(var Src: Pointer; Advance: Boolean): AnsiChar;
+Function Ptr_GetAnsiChar_BE(var Src: Pointer; Advance: Boolean): AnsiChar;
 begin
 _Ptr_ReadAnsiChar(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadAnsiChar_BE(Src: Pointer): AnsiChar;
+Function Ptr_GetAnsiChar_BE(Src: Pointer): AnsiChar;
 var
   Ptr:  Pointer;
 begin
@@ -6484,25 +6485,25 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadAnsiChar(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): AnsiChar;
+Function Ptr_GetAnsiChar(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): AnsiChar;
 begin
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadAnsiChar_BE(Src,Advance)
+  Result := Ptr_GetAnsiChar_BE(Src,Advance)
 else
-  Result := Ptr_LoadAnsiChar_LE(Src,Advance);
+  Result := Ptr_GetAnsiChar_LE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadAnsiChar(Src: Pointer; Endian: TEndian = endDefault): AnsiChar;
+Function Ptr_GetAnsiChar(Src: Pointer; Endian: TEndian = endDefault): AnsiChar;
 var
   Ptr:  Pointer;
 begin
 Ptr := Src;
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadAnsiChar_BE(Ptr,False)
+  Result := Ptr_GetAnsiChar_BE(Ptr,False)
 else
-  Result := Ptr_LoadAnsiChar_LE(Ptr,False);
+  Result := Ptr_GetAnsiChar_LE(Ptr,False);
 end;
 
 //==============================================================================
@@ -6573,14 +6574,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUTF8Char_LE(var Src: Pointer; Advance: Boolean): UTF8Char;
+Function Ptr_GetUTF8Char_LE(var Src: Pointer; Advance: Boolean): UTF8Char;
 begin
 _Ptr_ReadUTF8Char(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUTF8Char_LE(Src: Pointer): UTF8Char;
+Function Ptr_GetUTF8Char_LE(Src: Pointer): UTF8Char;
 var
   Ptr:  Pointer;
 begin
@@ -6590,14 +6591,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUTF8Char_BE(var Src: Pointer; Advance: Boolean): UTF8Char;
+Function Ptr_GetUTF8Char_BE(var Src: Pointer; Advance: Boolean): UTF8Char;
 begin
 _Ptr_ReadUTF8Char(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUTF8Char_BE(Src: Pointer): UTF8Char;
+Function Ptr_GetUTF8Char_BE(Src: Pointer): UTF8Char;
 var
   Ptr:  Pointer;
 begin
@@ -6607,25 +6608,25 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUTF8Char(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UTF8Char;
+Function Ptr_GetUTF8Char(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UTF8Char;
 begin
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadUTF8Char_BE(Src,Advance)
+  Result := Ptr_GetUTF8Char_BE(Src,Advance)
 else
-  Result := Ptr_LoadUTF8Char_LE(Src,Advance);
+  Result := Ptr_GetUTF8Char_LE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUTF8Char(Src: Pointer; Endian: TEndian = endDefault): UTF8Char;
+Function Ptr_GetUTF8Char(Src: Pointer; Endian: TEndian = endDefault): UTF8Char;
 var
   Ptr:  Pointer;
 begin
 Ptr := Src;
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadUTF8Char_BE(Ptr,False)
+  Result := Ptr_GetUTF8Char_BE(Ptr,False)
 else
-  Result := Ptr_LoadUTF8Char_LE(Ptr,False);
+  Result := Ptr_GetUTF8Char_LE(Ptr,False);
 end;
 
 //==============================================================================
@@ -6699,14 +6700,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadWideChar_LE(var Src: Pointer; Advance: Boolean): WideChar;
+Function Ptr_GetWideChar_LE(var Src: Pointer; Advance: Boolean): WideChar;
 begin
 Ptr_ReadWideChar_LE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadWideChar_LE(Src: Pointer): WideChar;
+Function Ptr_GetWideChar_LE(Src: Pointer): WideChar;
 var
   Ptr:  Pointer;
 begin
@@ -6716,14 +6717,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadWideChar_BE(var Src: Pointer; Advance: Boolean): WideChar;
+Function Ptr_GetWideChar_BE(var Src: Pointer; Advance: Boolean): WideChar;
 begin
 Ptr_ReadWideChar_BE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadWideChar_BE(Src: Pointer): WideChar;
+Function Ptr_GetWideChar_BE(Src: Pointer): WideChar;
 var
   Ptr:  Pointer;
 begin
@@ -6733,25 +6734,25 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadWideChar(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): WideChar;
+Function Ptr_GetWideChar(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): WideChar;
 begin
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadWideChar_BE(Src,Advance)
+  Result := Ptr_GetWideChar_BE(Src,Advance)
 else
-  Result := Ptr_LoadWideChar_LE(Src,Advance);
+  Result := Ptr_GetWideChar_LE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadWideChar(Src: Pointer; Endian: TEndian = endDefault): WideChar;
+Function Ptr_GetWideChar(Src: Pointer; Endian: TEndian = endDefault): WideChar;
 var
   Ptr:  Pointer;
 begin
 Ptr := Src;
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadWideChar_BE(Ptr,False)
+  Result := Ptr_GetWideChar_BE(Ptr,False)
 else
-  Result := Ptr_LoadWideChar_LE(Ptr,False);
+  Result := Ptr_GetWideChar_LE(Ptr,False);
 end;
 
 //==============================================================================
@@ -6825,14 +6826,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUnicodeChar_LE(var Src: Pointer; Advance: Boolean): UnicodeChar;
+Function Ptr_GetUnicodeChar_LE(var Src: Pointer; Advance: Boolean): UnicodeChar;
 begin
 Ptr_ReadUnicodeChar_LE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUnicodeChar_LE(Src: Pointer): UnicodeChar;
+Function Ptr_GetUnicodeChar_LE(Src: Pointer): UnicodeChar;
 var
   Ptr:  Pointer;
 begin
@@ -6842,14 +6843,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUnicodeChar_BE(var Src: Pointer; Advance: Boolean): UnicodeChar;
+Function Ptr_GetUnicodeChar_BE(var Src: Pointer; Advance: Boolean): UnicodeChar;
 begin
 Ptr_ReadUnicodeChar_BE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUnicodeChar_BE(Src: Pointer): UnicodeChar;
+Function Ptr_GetUnicodeChar_BE(Src: Pointer): UnicodeChar;
 var
   Ptr:  Pointer;
 begin
@@ -6859,25 +6860,25 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUnicodeChar(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UnicodeChar;
+Function Ptr_GetUnicodeChar(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UnicodeChar;
 begin
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadUnicodeChar_BE(Src,Advance)
+  Result := Ptr_GetUnicodeChar_BE(Src,Advance)
 else
-  Result := Ptr_LoadUnicodeChar_LE(Src,Advance);
+  Result := Ptr_GetUnicodeChar_LE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUnicodeChar(Src: Pointer; Endian: TEndian = endDefault): UnicodeChar;
+Function Ptr_GetUnicodeChar(Src: Pointer; Endian: TEndian = endDefault): UnicodeChar;
 var
   Ptr:  Pointer;
 begin
 Ptr := Src;
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadUnicodeChar_BE(Ptr,False)
+  Result := Ptr_GetUnicodeChar_BE(Ptr,False)
 else
-  Result := Ptr_LoadUnicodeChar_LE(Ptr,False);
+  Result := Ptr_GetUnicodeChar_LE(Ptr,False);
 end;
 
 //==============================================================================
@@ -6951,14 +6952,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUCS4Char_LE(var Src: Pointer; Advance: Boolean): UCS4Char;
+Function Ptr_GetUCS4Char_LE(var Src: Pointer; Advance: Boolean): UCS4Char;
 begin
 Ptr_ReadUCS4Char_LE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUCS4Char_LE(Src: Pointer): UCS4Char;
+Function Ptr_GetUCS4Char_LE(Src: Pointer): UCS4Char;
 var
   Ptr:  Pointer;
 begin
@@ -6968,14 +6969,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUCS4Char_BE(var Src: Pointer; Advance: Boolean): UCS4Char;
+Function Ptr_GetUCS4Char_BE(var Src: Pointer; Advance: Boolean): UCS4Char;
 begin
 Ptr_ReadUCS4Char_BE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUCS4Char_BE(Src: Pointer): UCS4Char;
+Function Ptr_GetUCS4Char_BE(Src: Pointer): UCS4Char;
 var
   Ptr:  Pointer;
 begin
@@ -6985,25 +6986,25 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUCS4Char(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UCS4Char;
+Function Ptr_GetUCS4Char(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UCS4Char;
 begin
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadUCS4Char_BE(Src,Advance)
+  Result := Ptr_GetUCS4Char_BE(Src,Advance)
 else
-  Result := Ptr_LoadUCS4Char_LE(Src,Advance);
+  Result := Ptr_GetUCS4Char_LE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUCS4Char(Src: Pointer; Endian: TEndian = endDefault): UCS4Char;
+Function Ptr_GetUCS4Char(Src: Pointer; Endian: TEndian = endDefault): UCS4Char;
 var
   Ptr:  Pointer;
 begin
 Ptr := Src;
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadUCS4Char_BE(Ptr,False)
+  Result := Ptr_GetUCS4Char_BE(Ptr,False)
 else
-  Result := Ptr_LoadUCS4Char_LE(Ptr,False);
+  Result := Ptr_GetUCS4Char_LE(Ptr,False);
 end;
 
 //==============================================================================
@@ -7068,44 +7069,44 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadChar_LE(var Src: Pointer; Advance: Boolean): Char;
+Function Ptr_GetChar_LE(var Src: Pointer; Advance: Boolean): Char;
 begin
-Result := Char(Ptr_LoadUInt16_LE(Src,Advance));
+Result := Char(Ptr_GetUInt16_LE(Src,Advance));
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadChar_LE(Src: Pointer): Char;
+Function Ptr_GetChar_LE(Src: Pointer): Char;
 begin
-Result := Char(Ptr_LoadUInt16_LE(Src));
+Result := Char(Ptr_GetUInt16_LE(Src));
 end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadChar_BE(var Src: Pointer; Advance: Boolean): Char;
+Function Ptr_GetChar_BE(var Src: Pointer; Advance: Boolean): Char;
 begin
-Result := Char(Ptr_LoadUInt16_BE(Src,Advance));
+Result := Char(Ptr_GetUInt16_BE(Src,Advance));
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadChar_BE(Src: Pointer): Char;
+Function Ptr_GetChar_BE(Src: Pointer): Char;
 begin
-Result := Char(Ptr_LoadUInt16_BE(Src));
+Result := Char(Ptr_GetUInt16_BE(Src));
 end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadChar(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Char;
+Function Ptr_GetChar(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Char;
 begin
-Result := Char(Ptr_LoadUInt16(Src,Advance,Endian));
+Result := Char(Ptr_GetUInt16(Src,Advance,Endian));
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadChar(Src: Pointer; Endian: TEndian = endDefault): Char;
+Function Ptr_GetChar(Src: Pointer; Endian: TEndian = endDefault): Char;
 begin
-Result := Char(Ptr_LoadUInt16(Src,Endian));
+Result := Char(Ptr_GetUInt16(Src,Endian));
 end;
 
 {-------------------------------------------------------------------------------
@@ -7120,7 +7121,8 @@ begin
 WorkPtr := Src;
 Result := Ptr_ReadUInt8_LE(WorkPtr,StrLength,True);
 SetLength(Str,StrLength);
-Inc(Result,Ptr_ReadBuffer_LE(WorkPtr,Addr(Str[1])^,StrLength,True));
+If StrLength > 0 then
+  Inc(Result,Ptr_ReadBuffer_LE(WorkPtr,Addr(Str[1])^,StrLength,True));
 If Advance then
   Src := WorkPtr;
 end;
@@ -7129,7 +7131,7 @@ end;
 
 Function Ptr_ReadShortString_LE(var Src: Pointer; out Str: ShortString; Advance: Boolean): TMemSize;
 begin
-Result := _Ptr_ReadShortString(Src,Str,False);
+Result := _Ptr_ReadShortString(Src,Str,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -7146,7 +7148,7 @@ end;
 
 Function Ptr_ReadShortString_BE(var Src: Pointer; out Str: ShortString; Advance: Boolean): TMemSize;
 begin
-Result := _Ptr_ReadShortString(Src,Str,False);
+Result := _Ptr_ReadShortString(Src,Str,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -7184,14 +7186,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadShortString_LE(var Src: Pointer; Advance: Boolean): ShortString;
+Function Ptr_GetShortString_LE(var Src: Pointer; Advance: Boolean): ShortString;
 begin
 _Ptr_ReadShortString(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadShortString_LE(Src: Pointer): ShortString;
+Function Ptr_GetShortString_LE(Src: Pointer): ShortString;
 var
   Ptr:  Pointer;
 begin
@@ -7201,14 +7203,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadShortString_BE(var Src: Pointer; Advance: Boolean): ShortString;
+Function Ptr_GetShortString_BE(var Src: Pointer; Advance: Boolean): ShortString;
 begin
 _Ptr_ReadShortString(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadShortString_BE(Src: Pointer): ShortString;
+Function Ptr_GetShortString_BE(Src: Pointer): ShortString;
 var
   Ptr:  Pointer;
 begin
@@ -7218,25 +7220,25 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadShortString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): ShortString;
+Function Ptr_GetShortString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): ShortString;
 begin
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadShortString_BE(Src,Advance)
+  Result := Ptr_GetShortString_BE(Src,Advance)
 else
-  Result := Ptr_LoadShortString_LE(Src,Advance);
+  Result := Ptr_GetShortString_LE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadShortString(Src: Pointer; Endian: TEndian = endDefault): ShortString;
+Function Ptr_GetShortString(Src: Pointer; Endian: TEndian = endDefault): ShortString;
 var
   Ptr:  Pointer;
 begin
 Ptr := Src;
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadShortString_BE(Ptr,False)
+  Result := Ptr_GetShortString_BE(Ptr,False)
 else
-  Result := Ptr_LoadShortString_LE(Ptr,False);
+  Result := Ptr_GetShortString_LE(Ptr,False);
 end;
 
 //==============================================================================
@@ -7248,8 +7250,10 @@ var
 begin
 WorkPtr := Src;
 Result := Ptr_ReadInt32_LE(WorkPtr,StrLength,True);
+ClampStringLength(StrLength);
 SetLength(Str,StrLength);
-Inc(Result,Ptr_ReadBuffer_LE(WorkPtr,PAnsiChar(Str)^,StrLength * SizeOf(AnsiChar),True));
+If StrLength > 0 then
+  Inc(Result,Ptr_ReadBuffer_LE(WorkPtr,PAnsiChar(Str)^,StrLength * SizeOf(AnsiChar),True));
 If Advance then
   Src := WorkPtr;
 end;
@@ -7273,8 +7277,10 @@ var
 begin
 WorkPtr := Src;
 Result := Ptr_ReadInt32_BE(WorkPtr,StrLength,True);
+ClampStringLength(StrLength);
 SetLength(Str,StrLength);
-Inc(Result,Ptr_ReadBuffer_BE(WorkPtr,PAnsiChar(Str)^,StrLength * SizeOf(AnsiChar),True));
+If StrLength > 0 then
+  Inc(Result,Ptr_ReadBuffer_BE(WorkPtr,PAnsiChar(Str)^,StrLength * SizeOf(AnsiChar),True));
 If Advance then
   Src := WorkPtr;
 end;
@@ -7314,14 +7320,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadAnsiString_LE(var Src: Pointer; Advance: Boolean): AnsiString;
+Function Ptr_GetAnsiString_LE(var Src: Pointer; Advance: Boolean): AnsiString;
 begin
 Ptr_ReadAnsiString_LE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadAnsiString_LE(Src: Pointer): AnsiString;
+Function Ptr_GetAnsiString_LE(Src: Pointer): AnsiString;
 var
   Ptr:  Pointer;
 begin
@@ -7331,14 +7337,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadAnsiString_BE(var Src: Pointer; Advance: Boolean): AnsiString;
+Function Ptr_GetAnsiString_BE(var Src: Pointer; Advance: Boolean): AnsiString;
 begin
 Ptr_ReadAnsiString_BE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadAnsiString_BE(Src: Pointer): AnsiString;
+Function Ptr_GetAnsiString_BE(Src: Pointer): AnsiString;
 var
   Ptr:  Pointer;
 begin
@@ -7348,25 +7354,25 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadAnsiString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): AnsiString;
+Function Ptr_GetAnsiString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): AnsiString;
 begin
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadAnsiString_BE(Src,Advance)
+  Result := Ptr_GetAnsiString_BE(Src,Advance)
 else
-  Result := Ptr_LoadAnsiString_LE(Src,Advance);
+  Result := Ptr_GetAnsiString_LE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadAnsiString(Src: Pointer; Endian: TEndian = endDefault): AnsiString;
+Function Ptr_GetAnsiString(Src: Pointer; Endian: TEndian = endDefault): AnsiString;
 var
   Ptr:  Pointer;
 begin
 Ptr := Src;
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadAnsiString_BE(Ptr,False)
+  Result := Ptr_GetAnsiString_BE(Ptr,False)
 else
-  Result := Ptr_LoadAnsiString_LE(Ptr,False);
+  Result := Ptr_GetAnsiString_LE(Ptr,False);
 end;
 
 //==============================================================================
@@ -7378,8 +7384,10 @@ var
 begin
 WorkPtr := Src;
 Result := Ptr_ReadInt32_LE(WorkPtr,StrLength,True);
+ClampStringLength(StrLength);
 SetLength(Str,StrLength);
-Inc(Result,Ptr_ReadBuffer_LE(WorkPtr,PUTF8Char(Str)^,StrLength * SizeOf(UTF8Char),True));
+If StrLength > 0 then
+  Inc(Result,Ptr_ReadBuffer_LE(WorkPtr,PUTF8Char(Str)^,StrLength * SizeOf(UTF8Char),True));
 If Advance then
   Src := WorkPtr;
 end;
@@ -7403,8 +7411,10 @@ var
 begin
 WorkPtr := Src;
 Result := Ptr_ReadInt32_BE(WorkPtr,StrLength,True);
+ClampStringLength(StrLength);
 SetLength(Str,StrLength);
-Inc(Result,Ptr_ReadBuffer_BE(WorkPtr,PUTF8Char(Str)^,StrLength * SizeOf(UTF8Char),True));
+If StrLength > 0 then
+  Inc(Result,Ptr_ReadBuffer_BE(WorkPtr,PUTF8Char(Str)^,StrLength * SizeOf(UTF8Char),True));
 If Advance then
   Src := WorkPtr;
 end;
@@ -7444,14 +7454,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUTF8String_LE(var Src: Pointer; Advance: Boolean): UTF8String;
+Function Ptr_GetUTF8String_LE(var Src: Pointer; Advance: Boolean): UTF8String;
 begin
 Ptr_ReadUTF8String_LE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUTF8String_LE(Src: Pointer): UTF8String;
+Function Ptr_GetUTF8String_LE(Src: Pointer): UTF8String;
 var
   Ptr:  Pointer;
 begin
@@ -7461,14 +7471,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUTF8String_BE(var Src: Pointer; Advance: Boolean): UTF8String;
+Function Ptr_GetUTF8String_BE(var Src: Pointer; Advance: Boolean): UTF8String;
 begin
 Ptr_ReadUTF8String_BE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUTF8String_BE(Src: Pointer): UTF8String;
+Function Ptr_GetUTF8String_BE(Src: Pointer): UTF8String;
 var
   Ptr:  Pointer;
 begin
@@ -7478,25 +7488,25 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUTF8String(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UTF8String;
+Function Ptr_GetUTF8String(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UTF8String;
 begin
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadUTF8String_BE(Src,Advance)
+  Result := Ptr_GetUTF8String_BE(Src,Advance)
 else
-  Result := Ptr_LoadUTF8String_LE(Src,Advance);
+  Result := Ptr_GetUTF8String_LE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUTF8String(Src: Pointer; Endian: TEndian = endDefault): UTF8String;
+Function Ptr_GetUTF8String(Src: Pointer; Endian: TEndian = endDefault): UTF8String;
 var
   Ptr:  Pointer;
 begin
 Ptr := Src;
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadUTF8String_BE(Ptr,False)
+  Result := Ptr_GetUTF8String_BE(Ptr,False)
 else
-  Result := Ptr_LoadUTF8String_LE(Ptr,False);
+  Result := Ptr_GetUTF8String_LE(Ptr,False);
 end;
 
 //==============================================================================
@@ -7508,11 +7518,13 @@ var
 begin
 WorkPtr := Src;
 Result := Ptr_ReadInt32_LE(WorkPtr,StrLength,True);
+ClampStringLength(StrLength);
 SetLength(Str,StrLength);
+If StrLength > 0 then
 {$IFDEF ENDIAN_BIG}
-Inc(Result,Ptr_ReadUInt16Arr_SE(PUInt16(WorkPtr),PUInt16(PWideChar(Str)),StrLength));
+  Inc(Result,Ptr_ReadUInt16Arr_SE(PUInt16(WorkPtr),PUInt16(PWideChar(Str)),StrLength));
 {$ELSE}
-Inc(Result,Ptr_ReadBuffer_LE(WorkPtr,PWideChar(Str)^,StrLength * SizeOf(WideChar),True));
+  Inc(Result,Ptr_ReadBuffer_LE(WorkPtr,PWideChar(Str)^,StrLength * SizeOf(WideChar),True));
 {$ENDIF}
 If Advance then
   Src := WorkPtr;
@@ -7537,11 +7549,13 @@ var
 begin
 WorkPtr := Src;
 Result := Ptr_ReadInt32_BE(WorkPtr,StrLength,True);
+ClampStringLength(StrLength);
 SetLength(Str,StrLength);
+If StrLength > 0 then
 {$IFDEF ENDIAN_BIG}
-Inc(Result,Ptr_ReadBuffer_BE(WorkPtr,PWideChar(Str)^,StrLength * SizeOf(WideChar),True));
+  Inc(Result,Ptr_ReadBuffer_BE(WorkPtr,PWideChar(Str)^,StrLength * SizeOf(WideChar),True));
 {$ELSE}
-Inc(Result,Ptr_ReadUInt16Arr_SE(PUInt16(WorkPtr),PUInt16(PWideChar(Str)),StrLength));
+  Inc(Result,Ptr_ReadUInt16Arr_SE(PUInt16(WorkPtr),PUInt16(PWideChar(Str)),StrLength));
 {$ENDIF}
 If Advance then
   Src := WorkPtr;
@@ -7582,14 +7596,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadWideString_LE(var Src: Pointer; Advance: Boolean): WideString;
+Function Ptr_GetWideString_LE(var Src: Pointer; Advance: Boolean): WideString;
 begin
 Ptr_ReadWideString_LE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadWideString_LE(Src: Pointer): WideString;
+Function Ptr_GetWideString_LE(Src: Pointer): WideString;
 var
   Ptr:  Pointer;
 begin
@@ -7599,14 +7613,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadWideString_BE(var Src: Pointer; Advance: Boolean): WideString;
+Function Ptr_GetWideString_BE(var Src: Pointer; Advance: Boolean): WideString;
 begin
 Ptr_ReadWideString_BE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadWideString_BE(Src: Pointer): WideString;
+Function Ptr_GetWideString_BE(Src: Pointer): WideString;
 var
   Ptr:  Pointer;
 begin
@@ -7616,25 +7630,25 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadWideString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): WideString;
+Function Ptr_GetWideString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): WideString;
 begin
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadWideString_BE(Src,Advance)
+  Result := Ptr_GetWideString_BE(Src,Advance)
 else
-  Result := Ptr_LoadWideString_LE(Src,Advance);
+  Result := Ptr_GetWideString_LE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadWideString(Src: Pointer; Endian: TEndian = endDefault): WideString;
+Function Ptr_GetWideString(Src: Pointer; Endian: TEndian = endDefault): WideString;
 var
   Ptr:  Pointer;
 begin
 Ptr := Src;
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadWideString_BE(Ptr,False)
+  Result := Ptr_GetWideString_BE(Ptr,False)
 else
-  Result := Ptr_LoadWideString_LE(Ptr,False);
+  Result := Ptr_GetWideString_LE(Ptr,False);
 end;
 
 //==============================================================================
@@ -7646,11 +7660,13 @@ var
 begin
 WorkPtr := Src;
 Result := Ptr_ReadInt32_LE(WorkPtr,StrLength,True);
+ClampStringLength(StrLength);
 SetLength(Str,StrLength);
+If StrLength > 0 then
 {$IFDEF ENDIAN_BIG}
-Inc(Result,Ptr_ReadUInt16Arr_SE(PUInt16(WorkPtr),PUInt16(PUnicodeChar(Str)),StrLength));
+  Inc(Result,Ptr_ReadUInt16Arr_SE(PUInt16(WorkPtr),PUInt16(PUnicodeChar(Str)),StrLength));
 {$ELSE}
-Inc(Result,Ptr_ReadBuffer_LE(WorkPtr,PUnicodeChar(Str)^,StrLength * SizeOf(UnicodeChar),True));
+  Inc(Result,Ptr_ReadBuffer_LE(WorkPtr,PUnicodeChar(Str)^,StrLength * SizeOf(UnicodeChar),True));
 {$ENDIF}
 If Advance then
   Src := WorkPtr;
@@ -7675,11 +7691,13 @@ var
 begin
 WorkPtr := Src;
 Result := Ptr_ReadInt32_BE(WorkPtr,StrLength,True);
+ClampStringLength(StrLength);
 SetLength(Str,StrLength);
+If StrLength > 0 then
 {$IFDEF ENDIAN_BIG}
-Inc(Result,Ptr_ReadBuffer_BE(WorkPtr,PUnicodeChar(Str)^,StrLength * SizeOf(UnicodeChar),True));
+  Inc(Result,Ptr_ReadBuffer_BE(WorkPtr,PUnicodeChar(Str)^,StrLength * SizeOf(UnicodeChar),True));
 {$ELSE}
-Inc(Result,Ptr_ReadUInt16Arr_SE(PUInt16(WorkPtr),PUInt16(PUnicodeChar(Str)),StrLength));
+  Inc(Result,Ptr_ReadUInt16Arr_SE(PUInt16(WorkPtr),PUInt16(PUnicodeChar(Str)),StrLength));
 {$ENDIF}
 If Advance then
   Src := WorkPtr;
@@ -7720,14 +7738,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUnicodeString_LE(var Src: Pointer; Advance: Boolean): UnicodeString;
+Function Ptr_GetUnicodeString_LE(var Src: Pointer; Advance: Boolean): UnicodeString;
 begin
 Ptr_ReadUnicodeString_LE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUnicodeString_LE(Src: Pointer): UnicodeString;
+Function Ptr_GetUnicodeString_LE(Src: Pointer): UnicodeString;
 var
   Ptr:  Pointer;
 begin
@@ -7737,14 +7755,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUnicodeString_BE(var Src: Pointer; Advance: Boolean): UnicodeString;
+Function Ptr_GetUnicodeString_BE(var Src: Pointer; Advance: Boolean): UnicodeString;
 begin
 Ptr_ReadUnicodeString_BE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUnicodeString_BE(Src: Pointer): UnicodeString;
+Function Ptr_GetUnicodeString_BE(Src: Pointer): UnicodeString;
 var
   Ptr:  Pointer;
 begin
@@ -7754,25 +7772,25 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUnicodeString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UnicodeString;
+Function Ptr_GetUnicodeString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UnicodeString;
 begin
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadUnicodeString_BE(Src,Advance)
+  Result := Ptr_GetUnicodeString_BE(Src,Advance)
 else
-  Result := Ptr_LoadUnicodeString_LE(Src,Advance);
+  Result := Ptr_GetUnicodeString_LE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUnicodeString(Src: Pointer; Endian: TEndian = endDefault): UnicodeString;
+Function Ptr_GetUnicodeString(Src: Pointer; Endian: TEndian = endDefault): UnicodeString;
 var
   Ptr:  Pointer;
 begin
 Ptr := Src;
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadUnicodeString_BE(Ptr,False)
+  Result := Ptr_GetUnicodeString_BE(Ptr,False)
 else
-  Result := Ptr_LoadUnicodeString_LE(Ptr,False);
+  Result := Ptr_GetUnicodeString_LE(Ptr,False);
 end;
 
 //==============================================================================
@@ -7784,12 +7802,14 @@ var
 begin
 WorkPtr := Src;
 Result := Ptr_ReadInt32_LE(WorkPtr,StrLength,True);
+ClampStringLength(StrLength);
 SetLength(Str,StrLength + 1);
 Str[High(Str)] := 0;
+If StrLength > 0 then
 {$IFDEF ENDIAN_BIG}
-Inc(Result,Ptr_ReadUInt32Arr_SE(PUInt32(WorkPtr),PUInt32(Addr(Str[0])),StrLength));
+  Inc(Result,Ptr_ReadUInt32Arr_SE(PUInt32(WorkPtr),PUInt32(Addr(Str[0])),StrLength));
 {$ELSE}
-Inc(Result,Ptr_ReadBuffer_LE(WorkPtr,Addr(Str[0])^,StrLength * SizeOf(UCS4Char),True));
+  Inc(Result,Ptr_ReadBuffer_LE(WorkPtr,Addr(Str[0])^,StrLength * SizeOf(UCS4Char),True));
 {$ENDIF}
 If Advance then
   Src := WorkPtr;
@@ -7814,12 +7834,14 @@ var
 begin
 WorkPtr := Src;
 Result := Ptr_ReadInt32_BE(WorkPtr,StrLength,True);
+ClampStringLength(StrLength);
 SetLength(Str,StrLength + 1);
 Str[High(Str)] := 0;
+If StrLength > 0 then
 {$IFDEF ENDIAN_BIG}
-Inc(Result,Ptr_ReadBuffer_BE(WorkPtr,Addr(Str[0])^,StrLength * SizeOf(UCS4Char),True));
+  Inc(Result,Ptr_ReadBuffer_BE(WorkPtr,Addr(Str[0])^,StrLength * SizeOf(UCS4Char),True));
 {$ELSE}
-Inc(Result,Ptr_ReadUInt32Arr_SE(PUInt32(WorkPtr),PUInt32(Addr(Str[0])),StrLength));
+  Inc(Result,Ptr_ReadUInt32Arr_SE(PUInt32(WorkPtr),PUInt32(Addr(Str[0])),StrLength));
 {$ENDIF}
 If Advance then
   Src := WorkPtr;
@@ -7860,14 +7882,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUCS4String_LE(var Src: Pointer; Advance: Boolean): UCS4String;
+Function Ptr_GetUCS4String_LE(var Src: Pointer; Advance: Boolean): UCS4String;
 begin
 Ptr_ReadUCS4String_LE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUCS4String_LE(Src: Pointer): UCS4String;
+Function Ptr_GetUCS4String_LE(Src: Pointer): UCS4String;
 var
   Ptr:  Pointer;
 begin
@@ -7877,14 +7899,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUCS4String_BE(var Src: Pointer; Advance: Boolean): UCS4String;
+Function Ptr_GetUCS4String_BE(var Src: Pointer; Advance: Boolean): UCS4String;
 begin
 Ptr_ReadUCS4String_BE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUCS4String_BE(Src: Pointer): UCS4String;
+Function Ptr_GetUCS4String_BE(Src: Pointer): UCS4String;
 var
   Ptr:  Pointer;
 begin
@@ -7894,25 +7916,25 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadUCS4String(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UCS4String;
+Function Ptr_GetUCS4String(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UCS4String;
 begin
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadUCS4String_BE(Src,Advance)
+  Result := Ptr_GetUCS4String_BE(Src,Advance)
 else
-  Result := Ptr_LoadUCS4String_LE(Src,Advance);
+  Result := Ptr_GetUCS4String_LE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadUCS4String(Src: Pointer; Endian: TEndian = endDefault): UCS4String;
+Function Ptr_GetUCS4String(Src: Pointer; Endian: TEndian = endDefault): UCS4String;
 var
   Ptr:  Pointer;
 begin
 Ptr := Src;
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadUCS4String_BE(Ptr,False)
+  Result := Ptr_GetUCS4String_BE(Ptr,False)
 else
-  Result := Ptr_LoadUCS4String_LE(Ptr,False);
+  Result := Ptr_GetUCS4String_LE(Ptr,False);
 end;
 
 //==============================================================================
@@ -7977,67 +7999,71 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadString_LE(var Src: Pointer; Advance: Boolean): String;
+Function Ptr_GetString_LE(var Src: Pointer; Advance: Boolean): String;
 begin
-Result := UTF8ToStr(Ptr_LoadUTF8String_LE(Src,Advance));
+Result := UTF8ToStr(Ptr_GetUTF8String_LE(Src,Advance));
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadString_LE(Src: Pointer): String;
+Function Ptr_GetString_LE(Src: Pointer): String;
 begin
-Result := UTF8ToStr(Ptr_LoadUTF8String_LE(Src));
+Result := UTF8ToStr(Ptr_GetUTF8String_LE(Src));
 end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadString_BE(var Src: Pointer; Advance: Boolean): String;
+Function Ptr_GetString_BE(var Src: Pointer; Advance: Boolean): String;
 begin
-Result := UTF8ToStr(Ptr_LoadUTF8String_BE(Src,Advance));
+Result := UTF8ToStr(Ptr_GetUTF8String_BE(Src,Advance));
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadString_BE(Src: Pointer): String;
+Function Ptr_GetString_BE(Src: Pointer): String;
 begin
-Result := UTF8ToStr(Ptr_LoadUTF8String_BE(Src));
+Result := UTF8ToStr(Ptr_GetUTF8String_BE(Src));
 end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): String;
+Function Ptr_GetString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): String;
 begin
-Result := UTF8ToStr(Ptr_LoadUTF8String(Src,Advance,Endian));
+Result := UTF8ToStr(Ptr_GetUTF8String(Src,Advance,Endian));
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadString(Src: Pointer; Endian: TEndian = endDefault): String;
+Function Ptr_GetString(Src: Pointer; Endian: TEndian = endDefault): String;
 begin
-Result := UTF8ToStr(Ptr_LoadUTF8String(Src,Endian));
+Result := UTF8ToStr(Ptr_GetUTF8String(Src,Endian));
 end;
 
 {-------------------------------------------------------------------------------
     General data buffers
 -------------------------------------------------------------------------------}
 
-Function _Ptr_ReadBuffer(var Src: Pointer; var Buffer; Size: TMemSize; Advance: Boolean): TMemSize;
+Function _Ptr_ReadBuffer(var Src: Pointer; out Buffer; Size: TMemSize; Advance: Boolean): TMemSize;
 begin
-Move(Src^,Buffer,Size);
-Result := Size;
-AdvancePointer(Advance,Src,Result);
+If Size > 0 then
+  begin
+    Move(Src^,Addr(Buffer)^,Size);
+    Result := Size;
+    AdvancePointer(Advance,Src,Result);
+  end
+else Result := 0;
 end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_ReadBuffer_LE(var Src: Pointer; var Buffer; Size: TMemSize; Advance: Boolean): TMemSize;
+Function Ptr_ReadBuffer_LE(var Src: Pointer; out Buffer; Size: TMemSize; Advance: Boolean): TMemSize;
 begin
 Result := _Ptr_ReadBuffer(Src,Buffer,Size,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_ReadBuffer_LE(Src: Pointer; var Buffer; Size: TMemSize): TMemSize;
+Function Ptr_ReadBuffer_LE(Src: Pointer; out Buffer; Size: TMemSize): TMemSize;
 var
   Ptr:  Pointer;
 begin
@@ -8047,14 +8073,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_ReadBuffer_BE(var Src: Pointer; var Buffer; Size: TMemSize; Advance: Boolean): TMemSize;
+Function Ptr_ReadBuffer_BE(var Src: Pointer; out Buffer; Size: TMemSize; Advance: Boolean): TMemSize;
 begin
 Result := _Ptr_ReadBuffer(Src,Buffer,Size,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_ReadBuffer_BE(Src: Pointer; var Buffer; Size: TMemSize): TMemSize;
+Function Ptr_ReadBuffer_BE(Src: Pointer; out Buffer; Size: TMemSize): TMemSize;
 var
   Ptr:  Pointer;
 begin
@@ -8064,7 +8090,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_ReadBuffer(var Src: Pointer; var Buffer; Size: TMemSize; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+Function Ptr_ReadBuffer(var Src: Pointer; out Buffer; Size: TMemSize; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
 begin
 If ResolveEndian(Endian) = endBig then
   Result := Ptr_ReadBuffer_BE(Src,Buffer,Size,Advance)
@@ -8074,7 +8100,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_ReadBuffer(Src: Pointer; var Buffer; Size: TMemSize; Endian: TEndian = endDefault): TMemSize;
+Function Ptr_ReadBuffer(Src: Pointer; out Buffer; Size: TMemSize; Endian: TEndian = endDefault): TMemSize;
 var
   Ptr:  Pointer;
 begin
@@ -8121,18 +8147,18 @@ var
 
 begin
 Ptr := Src;
-VariantTypeInt := Ptr_LoadUInt8_LE(Ptr,True);
+VariantTypeInt := Ptr_GetUInt8_LE(Ptr,True);
 If VariantTypeInt and BS_VARTYPENUM_ARRAY <> 0 then
   begin
     // array
-    Dimensions := Ptr_LoadInt32_LE(Ptr,True);
+    Dimensions := Ptr_GetInt32_LE(Ptr,True);
     Result := 5 + (Dimensions * 8);
     If Dimensions > 0 then
       begin
         // read indices bounds
         SetLength(IndicesBounds,Dimensions * 2);
         For i := Low(IndicesBounds) to High(IndicesBounds) do
-          IndicesBounds[i] := PtrInt(Ptr_LoadInt32_LE(Ptr,True));
+          IndicesBounds[i] := PtrInt(Ptr_GetInt32_LE(Ptr,True));
         // create the array
         Value := VarArrayCreate(IndicesBounds,IntToVarType(VariantTypeInt and BS_VARTYPENUM_TYPEMASK));
         // read individual dimensions/items
@@ -8146,7 +8172,7 @@ else
     TVarData(Value).vType := IntToVarType(VariantTypeInt);
     case VariantTypeInt and BS_VARTYPENUM_TYPEMASK of
       BS_VARTYPENUM_BOOLEN:   begin
-                                TVarData(Value).vBoolean := Ptr_LoadBool_LE(Ptr,True);
+                                TVarData(Value).vBoolean := Ptr_GetBool_LE(Ptr,True);
                                 // +1 is for the already read variable type byte
                                 Result := StreamedSize_Bool + 1;
                               end;
@@ -8192,7 +8218,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_ReadVariant_LE(Src: Pointer; out Value: Variant): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_ReadVariant_LE(Src: Pointer; out Value: Variant): TMemSize; overload;
 var
   Ptr:  Pointer;
 begin
@@ -8234,18 +8260,18 @@ var
 
 begin
 Ptr := Src;
-VariantTypeInt := Ptr_LoadUInt8_BE(Ptr,True);
+VariantTypeInt := Ptr_GetUInt8_BE(Ptr,True);
 If VariantTypeInt and BS_VARTYPENUM_ARRAY <> 0 then
   begin
     // array
-    Dimensions := Ptr_LoadInt32_BE(Ptr,True);
+    Dimensions := Ptr_GetInt32_BE(Ptr,True);
     Result := 5 + (Dimensions * 8);
     If Dimensions > 0 then
       begin
         // read indices bounds
         SetLength(IndicesBounds,Dimensions * 2);
         For i := Low(IndicesBounds) to High(IndicesBounds) do
-          IndicesBounds[i] := PtrInt(Ptr_LoadInt32_BE(Ptr,True));
+          IndicesBounds[i] := PtrInt(Ptr_GetInt32_BE(Ptr,True));
         // create the array
         Value := VarArrayCreate(IndicesBounds,IntToVarType(VariantTypeInt and BS_VARTYPENUM_TYPEMASK));
         // read individual dimensions/items
@@ -8259,7 +8285,7 @@ else
     TVarData(Value).vType := IntToVarType(VariantTypeInt);
     case VariantTypeInt and BS_VARTYPENUM_TYPEMASK of
       BS_VARTYPENUM_BOOLEN:   begin
-                                TVarData(Value).vBoolean := Ptr_LoadBool_BE(Ptr,True);
+                                TVarData(Value).vBoolean := Ptr_GetBool_BE(Ptr,True);
                                 // +1 is for the already read variable type byte
                                 Result := StreamedSize_Bool + 1;
                               end;
@@ -8305,7 +8331,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_ReadVariant_BE(Src: Pointer; out Value: Variant): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_ReadVariant_BE(Src: Pointer; out Value: Variant): TMemSize; overload;
 var
   Ptr:  Pointer;
 begin
@@ -8338,14 +8364,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadVariant_LE(var Src: Pointer; Advance: Boolean): Variant;
+Function Ptr_GetVariant_LE(var Src: Pointer; Advance: Boolean): Variant;
 begin
 Ptr_ReadVariant_LE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadVariant_LE(Src: Pointer): Variant;
+Function Ptr_GetVariant_LE(Src: Pointer): Variant;
 var
   Ptr:  Pointer;
 begin
@@ -8355,14 +8381,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadVariant_BE(var Src: Pointer; Advance: Boolean): Variant;
+Function Ptr_GetVariant_BE(var Src: Pointer; Advance: Boolean): Variant;
 begin
 Ptr_ReadVariant_BE(Src,Result,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadVariant_BE(Src: Pointer): Variant;
+Function Ptr_GetVariant_BE(Src: Pointer): Variant;
 var
   Ptr:  Pointer;
 begin
@@ -8372,25 +8398,25 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Ptr_LoadVariant(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Variant;
+Function Ptr_GetVariant(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): Variant;
 begin
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadVariant_BE(Src,Advance)
+  Result := Ptr_GetVariant_BE(Src,Advance)
 else
-  Result := Ptr_LoadVariant_LE(Src,Advance);
+  Result := Ptr_GetVariant_LE(Src,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Ptr_LoadVariant(Src: Pointer; Endian: TEndian = endDefault): Variant;
+Function Ptr_GetVariant(Src: Pointer; Endian: TEndian = endDefault): Variant;
 var
   Ptr:  Pointer;
 begin
 Ptr := Src;
 If ResolveEndian(Endian) = endBig then
-  Result := Ptr_LoadVariant_BE(Ptr,False)
+  Result := Ptr_GetVariant_BE(Ptr,False)
 else
-  Result := Ptr_LoadVariant_LE(Ptr,False);
+  Result := Ptr_GetVariant_LE(Ptr,False);
 end;
 
 
@@ -9322,6 +9348,7 @@ var
   StrLength:  Int32;
 begin
 Result := Stream_ReadInt32(Stream,StrLength,True);
+ClampStringLength(StrLength);
 SetLength(Str,StrLength);
 Inc(Result,Stream_ReadBuffer(Stream,PAnsiChar(Str)^,StrLength * SizeOf(AnsiChar),True));
 If not Advance then
@@ -9342,6 +9369,7 @@ var
   StrLength:  Int32;
 begin
 Result := Stream_ReadInt32(Stream,StrLength,True);
+ClampStringLength(StrLength);
 SetLength(Str,StrLength);
 Inc(Result,Stream_ReadBuffer(Stream,PUTF8Char(Str)^,StrLength * SizeOf(UTF8Char),True));
 If not Advance then
@@ -9362,6 +9390,7 @@ var
   StrLength:  Int32;
 begin
 Result := Stream_ReadInt32(Stream,StrLength,True);
+ClampStringLength(StrLength);
 SetLength(Str,StrLength);
 {$IFDEF ENDIAN_BIG}
 Inc(Result,Stream_ReadUTF16LE(Stream,PUInt16(PWideChar(Str)),StrLength));
@@ -9386,6 +9415,7 @@ var
   StrLength:  Int32;
 begin
 Result := Stream_ReadInt32(Stream,StrLength,True);
+ClampStringLength(StrLength);
 SetLength(Str,StrLength);
 {$IFDEF ENDIAN_BIG}
 Inc(Result,Stream_ReadUTF16LE(Stream,PUInt16(PUnicodeChar(Str)),StrLength));
@@ -9410,6 +9440,7 @@ var
   StrLength:  Int32;
 begin
 Result := Stream_ReadInt32(Stream,StrLength,True);
+ClampStringLength(StrLength);
 SetLength(Str,StrLength + 1);
 Str[High(Str)] := 0;
 {$IFDEF ENDIAN_BIG}
@@ -9575,7 +9606,7 @@ end;
 {-------------------------------------------------------------------------------
     TCustomStreamer - protected methods
 -------------------------------------------------------------------------------}
-
+(*
 Function TCustomStreamer.GetCapacity: Integer;
 begin
 Result := Length(fBookmarks);
@@ -10665,6 +10696,6 @@ begin
 inherited Create;
 Initialize(Target);
 end;
-
+*)
 end.
 
