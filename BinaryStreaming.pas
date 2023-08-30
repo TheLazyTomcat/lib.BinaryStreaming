@@ -126,6 +126,13 @@ unit BinaryStreaming;
 {$ENDIF}
 {$H+}
 
+//------------------------------------------------------------------------------
+// do not change following defines
+
+{$UNDEF BS_INC_W} // writing (reading is inferred when not defined)
+{$UNDEF BS_INC_M} // memory (stream is inferred when not defined)
+{$UNDEF BS_INC_L} // little endian (big endian inferred when not defined)
+
 interface
 
 uses
@@ -5030,91 +5037,9 @@ end;
 -------------------------------------------------------------------------------}
 
 Function Ptr_WriteVariant_LE(var Dest: Pointer; const Value: Variant; Advance: Boolean): TMemSize;
-var
-  Ptr:        Pointer;
-  Dimensions: Integer;
-  i:          Integer;       
-  Indices:    array of Integer;
-
-  Function WriteVarArrayDimension(Dimension: Integer): TMemSize;
-  var
-    Index:  Integer;
-  begin
-    Result := 0;
-    For Index := VarArrayLowBound(Value,Dimension) to VarArrayHighBound(Value,Dimension) do
-      begin
-        Indices[Pred(Dimension)] := Index;
-        If Dimension >= Dimensions then
-          Inc(Result,Ptr_WriteVariant_LE(Ptr,VarArrayGet(Value,Indices),True))
-        else
-          Inc(Result,WriteVarArrayDimension(Succ(Dimension)));
-      end;
-  end;
-
-begin
-Ptr := Dest;
-If VarIsArray(Value) then
-  begin
-    // array type
-    Result := Ptr_WriteUInt8_LE(Ptr,VarTypeToInt(VarType(Value)),True);
-    Dimensions := VarArrayDimCount(Value);
-    // write number of dimensions
-    Inc(Result,Ptr_WriteInt32_LE(Ptr,Dimensions,True));
-    // write indices bounds (pairs of integers - low and high bound) for each dimension
-    For i := 1 to Dimensions do
-      begin
-        Inc(Result,Ptr_WriteInt32_LE(Ptr,VarArrayLowBound(Value,i),True));
-        Inc(Result,Ptr_WriteInt32_LE(Ptr,VarArrayHighBound(Value,i),True));
-      end;
-  {
-    Now (recursively :P) write data if any exist.
-
-    Btw. I know about VarArrayLock/VarArrayUnlock and pointer directly to the
-    data, but I want it to be fool proof, therefore using VarArrayGet instead
-    of direct access,
-  }
-    If Dimensions > 0 then
-      begin
-        SetLength(Indices,Dimensions);
-        Inc(Result,WriteVarArrayDimension(1));
-      end;
-  end
-else
-  begin
-    // simple type
-    If VarType(Value) <> (varVariant or varByRef) then
-      begin
-        Result := Ptr_WriteUInt8_LE(Ptr,VarTypeToInt(VarType(Value)),True);
-        case VarType(Value) and varTypeMask of
-          varBoolean:   Inc(Result,Ptr_WriteBool_LE(Ptr,VarToBool(Value),True));
-          varShortInt:  Inc(Result,Ptr_WriteInt8_LE(Ptr,Value,True));
-          varSmallint:  Inc(Result,Ptr_WriteInt16_LE(Ptr,Value,True));
-          varInteger:   Inc(Result,Ptr_WriteInt32_LE(Ptr,Value,True));
-          varInt64:     Inc(Result,Ptr_WriteInt64_LE(Ptr,VarToInt64(Value),True));
-          varByte:      Inc(Result,Ptr_WriteUInt8_LE(Ptr,Value,True));
-          varWord:      Inc(Result,Ptr_WriteUInt16_LE(Ptr,Value,True));
-          varLongWord:  Inc(Result,Ptr_WriteUInt32_LE(Ptr,Value,True));
-        {$IF Declared(varUInt64)}
-          varUInt64:    Inc(Result,Ptr_WriteUInt64_LE(Ptr,VarToUInt64(Value),True));
-        {$IFEND}
-          varSingle:    Inc(Result,Ptr_WriteFloat32_LE(Ptr,Value,True));
-          varDouble:    Inc(Result,Ptr_WriteFloat64_LE(Ptr,Value,True));
-          varCurrency:  Inc(Result,Ptr_WriteCurrency_LE(Ptr,Value,True));
-          varDate:      Inc(Result,Ptr_WriteDateTime_LE(Ptr,Value,True));
-          varOleStr:    Inc(Result,Ptr_WriteWideString_LE(Ptr,Value,True));
-          varString:    Inc(Result,Ptr_WriteAnsiString_LE(Ptr,AnsiString(Value),True));
-        {$IF Declared(varUString)}
-          varUString:   Inc(Result,Ptr_WriteUnicodeString_LE(Ptr,Value,True));
-        {$IFEND}
-        else
-          raise EBSUnsupportedVarType.CreateFmt('Ptr_WriteVariant_LE: Cannot write variant of this type (%d).',[VarType(Value) and varTypeMask]);
-        end;
-      end
-    else Result := Ptr_WriteVariant_LE(Ptr,Variant(FindVarData(Value)^),True);
-  end;
-If Advance then
-  Dest := Ptr;
-end;
+{$DEFINE BS_INC_W}{$DEFINE BS_INC_M}{$DEFINE BS_INC_L}
+  {$INCLUDE '.\BinaryStreaming.inc'}
+{$UNDEF BS_INC_W}{$UNDEF BS_INC_M}{$UNDEF BS_INC_L}
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -5129,80 +5054,9 @@ end;
 //------------------------------------------------------------------------------
 
 Function Ptr_WriteVariant_BE(var Dest: Pointer; const Value: Variant; Advance: Boolean): TMemSize;
-var
-  Ptr:        Pointer;
-  Dimensions: Integer;
-  i:          Integer;       
-  Indices:    array of Integer;
-
-  Function WriteVarArrayDimension(Dimension: Integer): TMemSize;
-  var
-    Index:  Integer;
-  begin
-    Result := 0;
-    For Index := VarArrayLowBound(Value,Dimension) to VarArrayHighBound(Value,Dimension) do
-      begin
-        Indices[Pred(Dimension)] := Index;
-        If Dimension >= Dimensions then
-          Inc(Result,Ptr_WriteVariant_BE(Ptr,VarArrayGet(Value,Indices),True))
-        else
-          Inc(Result,WriteVarArrayDimension(Succ(Dimension)));
-      end;
-  end;
-
-begin
-Ptr := Dest;
-If VarIsArray(Value) then
-  begin
-    Result := Ptr_WriteUInt8_BE(Ptr,VarTypeToInt(VarType(Value)),True);
-    Dimensions := VarArrayDimCount(Value);
-    Inc(Result,Ptr_WriteInt32_BE(Ptr,Dimensions,True));
-    For i := 1 to Dimensions do
-      begin
-        Inc(Result,Ptr_WriteInt32_BE(Ptr,VarArrayLowBound(Value,i),True));
-        Inc(Result,Ptr_WriteInt32_BE(Ptr,VarArrayHighBound(Value,i),True));
-      end;
-    If Dimensions > 0 then
-      begin
-        SetLength(Indices,Dimensions);
-        Inc(Result,WriteVarArrayDimension(1));
-      end;
-  end
-else
-  begin
-    If VarType(Value) <> (varVariant or varByRef) then
-      begin
-        Result := Ptr_WriteUInt8_BE(Ptr,VarTypeToInt(VarType(Value)),True);
-        case VarType(Value) and varTypeMask of
-          varBoolean:   Inc(Result,Ptr_WriteBool_BE(Ptr,VarToBool(Value),True));
-          varShortInt:  Inc(Result,Ptr_WriteInt8_BE(Ptr,Value,True));
-          varSmallint:  Inc(Result,Ptr_WriteInt16_BE(Ptr,Value,True));
-          varInteger:   Inc(Result,Ptr_WriteInt32_BE(Ptr,Value,True));
-          varInt64:     Inc(Result,Ptr_WriteInt64_BE(Ptr,VarToInt64(Value),True));
-          varByte:      Inc(Result,Ptr_WriteUInt8_BE(Ptr,Value,True));
-          varWord:      Inc(Result,Ptr_WriteUInt16_BE(Ptr,Value,True));
-          varLongWord:  Inc(Result,Ptr_WriteUInt32_BE(Ptr,Value,True));
-        {$IF Declared(varUInt64)}
-          varUInt64:    Inc(Result,Ptr_WriteUInt64_BE(Ptr,VarToUInt64(Value),True));
-        {$IFEND}
-          varSingle:    Inc(Result,Ptr_WriteFloat32_BE(Ptr,Value,True));
-          varDouble:    Inc(Result,Ptr_WriteFloat64_BE(Ptr,Value,True));
-          varCurrency:  Inc(Result,Ptr_WriteCurrency_BE(Ptr,Value,True));
-          varDate:      Inc(Result,Ptr_WriteDateTime_BE(Ptr,Value,True));
-          varOleStr:    Inc(Result,Ptr_WriteWideString_BE(Ptr,Value,True));
-          varString:    Inc(Result,Ptr_WriteAnsiString_BE(Ptr,AnsiString(Value),True));
-        {$IF Declared(varUString)}
-          varUString:   Inc(Result,Ptr_WriteUnicodeString_BE(Ptr,Value,True));
-        {$IFEND}
-        else
-          raise EBSUnsupportedVarType.CreateFmt('Ptr_WriteVariant_BE: Cannot write variant of this type (%d).',[VarType(Value) and varTypeMask]);
-        end;
-      end
-    else Result := Ptr_WriteVariant_BE(Ptr,Variant(FindVarData(Value)^),True);
-  end;
-If Advance then
-  Dest := Ptr;
-end;
+{$DEFINE BS_INC_W}{$DEFINE BS_INC_M}
+  {$INCLUDE '.\BinaryStreaming.inc'}
+{$UNDEF BS_INC_W}{$UNDEF BS_INC_M}
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -8804,105 +8658,9 @@ end;
 -------------------------------------------------------------------------------}
 
 Function Ptr_ReadVariant_LE(var Src: Pointer; out Value: Variant; Advance: Boolean): TMemSize;
-var
-  Ptr:            Pointer;
-  VariantTypeInt: UInt8;
-  Dimensions:     Integer;
-  i:              Integer;
-  IndicesBounds:  array of PtrInt;
-  Indices:        array of Integer;
-  WideStrTemp:    WideString;
-  AnsiStrTemp:    AnsiString;
-  UnicodeStrTemp: UnicodeString;
-
-  Function ReadVarArrayDimension(Dimension: Integer): TMemSize;
-  var
-    Index:    Integer;
-    TempVar:  Variant;
-  begin
-    Result := 0;
-    For Index := VarArrayLowBound(Value,Dimension) to VarArrayHighBound(Value,Dimension) do
-      begin
-        Indices[Pred(Dimension)] := Index;
-        If Dimension >= Dimensions then
-          begin
-            Inc(Result,Ptr_ReadVariant_LE(Ptr,TempVar,True));
-            VarArrayPut(Value,TempVar,Indices);
-          end
-        else Inc(Result,ReadVarArrayDimension(Succ(Dimension)));
-      end;
-  end;
-
-begin
-Ptr := Src;
-VariantTypeInt := Ptr_GetUInt8_LE(Ptr,True);
-If VariantTypeInt and BS_VARTYPENUM_ARRAY <> 0 then
-  begin
-    // array
-    Dimensions := Ptr_GetInt32_LE(Ptr,True);
-    Result := 5 + (Dimensions * 8);
-    If Dimensions > 0 then
-      begin
-        // read indices bounds
-        SetLength(IndicesBounds,Dimensions * 2);
-        For i := Low(IndicesBounds) to High(IndicesBounds) do
-          IndicesBounds[i] := PtrInt(Ptr_GetInt32_LE(Ptr,True));
-        // create the array
-        Value := VarArrayCreate(IndicesBounds,IntToVarType(VariantTypeInt and BS_VARTYPENUM_TYPEMASK));
-        // read individual dimensions/items
-        SetLength(Indices,Dimensions);
-        Inc(Result,ReadVarArrayDimension(1));
-      end;
-  end
-else
-  begin
-    // simple type
-    TVarData(Value).vType := IntToVarType(VariantTypeInt);
-    case VariantTypeInt and BS_VARTYPENUM_TYPEMASK of
-      BS_VARTYPENUM_BOOLEN:   begin
-                                TVarData(Value).vBoolean := Ptr_GetBool_LE(Ptr,True);
-                                // +1 is for the already read variable type byte
-                                Result := StreamedSize_Bool + 1;
-                              end;
-      BS_VARTYPENUM_SHORTINT: Result := Ptr_ReadInt8_LE(Ptr,TVarData(Value).vShortInt,True) + 1;
-      BS_VARTYPENUM_SMALLINT: Result := Ptr_ReadInt16_LE(Ptr,TVarData(Value).vSmallInt,True) + 1;
-      BS_VARTYPENUM_INTEGER:  Result := Ptr_ReadInt32_LE(Ptr,TVarData(Value).vInteger,True) + 1;
-      BS_VARTYPENUM_INT64:    Result := Ptr_ReadInt64_LE(Ptr,TVarData(Value).vInt64,True) + 1;
-      BS_VARTYPENUM_BYTE:     Result := Ptr_ReadUInt8_LE(Ptr,TVarData(Value).vByte,True) + 1;
-      BS_VARTYPENUM_WORD:     Result := Ptr_ReadUInt16_LE(Ptr,TVarData(Value).vWord,True) + 1;
-      BS_VARTYPENUM_LONGWORD: Result := Ptr_ReadUInt32_LE(Ptr,TVarData(Value).vLongWord,True) + 1;
-      BS_VARTYPENUM_UINT64: {$IF Declared(varUInt64)}
-                              Result := Ptr_ReadUInt64_LE(Ptr,TVarData(Value).{$IFDEF FPC}vQWord{$ELSE}vUInt64{$ENDIF},True) + 1;
-                            {$ELSE}
-                              Result := Ptr_ReadUInt64_LE(Ptr,UInt64(TVarData(Value).vInt64),True) + 1;
-                            {$IFEND}
-      BS_VARTYPENUM_SINGLE:   Result := Ptr_ReadFloat32_LE(Ptr,TVarData(Value).vSingle,True) + 1;
-      BS_VARTYPENUM_DOUBLE:   Result := Ptr_ReadFloat64_LE(Ptr,TVarData(Value).vDouble,True) + 1;
-      BS_VARTYPENUM_CURRENCY: Result := Ptr_ReadCurrency_LE(Ptr,TVarData(Value).vCurrency,True) + 1;
-      BS_VARTYPENUM_DATE:     Result := Ptr_ReadDateTime_LE(Ptr,TVarData(Value).vDate,True) + 1;
-      BS_VARTYPENUM_OLESTR:   begin
-                                Result := Ptr_ReadWideString_LE(Ptr,WideStrTemp,True) + 1;
-                                Value := VarAsType(WideStrTemp,varOleStr);
-                              end;
-      BS_VARTYPENUM_STRING:   begin
-                                Result := Ptr_ReadAnsiString_LE(Ptr,AnsiStrTemp,True) + 1;
-                                Value := VarAsType(AnsiStrTemp,varString);
-                              end;
-      BS_VARTYPENUM_USTRING:  begin
-                                Result := Ptr_ReadUnicodeString_LE(Ptr,UnicodeStrTemp,True) + 1;
-                              {$IF Declared(varUString)}
-                                Value := VarAsType(UnicodeStrTemp,varUString);
-                              {$ELSE}
-                                Value := VarAsType(UnicodeStrTemp,varOleStr);
-                              {$IFEND}
-                              end;
-    else
-      raise EBSUnsupportedVarType.CreateFmt('Ptr_ReadVariant_LE: Cannot read variant of this type number (%d).',[VariantTypeInt and BS_VARTYPENUM_TYPEMASK]);
-    end;
-  end;
-If Advance then
-  Src := Ptr;
-end;
+{$DEFINE BS_INC_M}{$DEFINE BS_INC_L}
+  {$INCLUDE '.\BinaryStreaming.inc'}
+{$UNDEF BS_INC_M}{$UNDEF BS_INC_L}
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -8917,105 +8675,9 @@ end;
 //------------------------------------------------------------------------------
 
 Function Ptr_ReadVariant_BE(var Src: Pointer; out Value: Variant; Advance: Boolean): TMemSize;
-var
-  Ptr:            Pointer;
-  VariantTypeInt: UInt8;
-  Dimensions:     Integer;
-  i:              Integer;
-  IndicesBounds:  array of PtrInt;
-  Indices:        array of Integer;
-  WideStrTemp:    WideString;
-  AnsiStrTemp:    AnsiString;
-  UnicodeStrTemp: UnicodeString;
-
-  Function ReadVarArrayDimension(Dimension: Integer): TMemSize;
-  var
-    Index:    Integer;
-    TempVar:  Variant;
-  begin
-    Result := 0;
-    For Index := VarArrayLowBound(Value,Dimension) to VarArrayHighBound(Value,Dimension) do
-      begin
-        Indices[Pred(Dimension)] := Index;
-        If Dimension >= Dimensions then
-          begin
-            Inc(Result,Ptr_ReadVariant_BE(Ptr,TempVar,True));
-            VarArrayPut(Value,TempVar,Indices);
-          end
-        else Inc(Result,ReadVarArrayDimension(Succ(Dimension)));
-      end;
-  end;
-
-begin
-Ptr := Src;
-VariantTypeInt := Ptr_GetUInt8_BE(Ptr,True);
-If VariantTypeInt and BS_VARTYPENUM_ARRAY <> 0 then
-  begin
-    // array
-    Dimensions := Ptr_GetInt32_BE(Ptr,True);
-    Result := 5 + (Dimensions * 8);
-    If Dimensions > 0 then
-      begin
-        // read indices bounds
-        SetLength(IndicesBounds,Dimensions * 2);
-        For i := Low(IndicesBounds) to High(IndicesBounds) do
-          IndicesBounds[i] := PtrInt(Ptr_GetInt32_BE(Ptr,True));
-        // create the array
-        Value := VarArrayCreate(IndicesBounds,IntToVarType(VariantTypeInt and BS_VARTYPENUM_TYPEMASK));
-        // read individual dimensions/items
-        SetLength(Indices,Dimensions);
-        Inc(Result,ReadVarArrayDimension(1));
-      end;
-  end
-else
-  begin
-    // simple type
-    TVarData(Value).vType := IntToVarType(VariantTypeInt);
-    case VariantTypeInt and BS_VARTYPENUM_TYPEMASK of
-      BS_VARTYPENUM_BOOLEN:   begin
-                                TVarData(Value).vBoolean := Ptr_GetBool_BE(Ptr,True);
-                                // +1 is for the already read variable type byte
-                                Result := StreamedSize_Bool + 1;
-                              end;
-      BS_VARTYPENUM_SHORTINT: Result := Ptr_ReadInt8_BE(Ptr,TVarData(Value).vShortInt,True) + 1;
-      BS_VARTYPENUM_SMALLINT: Result := Ptr_ReadInt16_BE(Ptr,TVarData(Value).vSmallInt,True) + 1;
-      BS_VARTYPENUM_INTEGER:  Result := Ptr_ReadInt32_BE(Ptr,TVarData(Value).vInteger,True) + 1;
-      BS_VARTYPENUM_INT64:    Result := Ptr_ReadInt64_BE(Ptr,TVarData(Value).vInt64,True) + 1;
-      BS_VARTYPENUM_BYTE:     Result := Ptr_ReadUInt8_BE(Ptr,TVarData(Value).vByte,True) + 1;
-      BS_VARTYPENUM_WORD:     Result := Ptr_ReadUInt16_BE(Ptr,TVarData(Value).vWord,True) + 1;
-      BS_VARTYPENUM_LONGWORD: Result := Ptr_ReadUInt32_BE(Ptr,TVarData(Value).vLongWord,True) + 1;
-      BS_VARTYPENUM_UINT64: {$IF Declared(varUInt64)}
-                              Result := Ptr_ReadUInt64_BE(Ptr,TVarData(Value).{$IFDEF FPC}vQWord{$ELSE}vUInt64{$ENDIF},True) + 1;
-                            {$ELSE}
-                              Result := Ptr_ReadUInt64_BE(Ptr,UInt64(TVarData(Value).vInt64),True) + 1;
-                            {$IFEND}
-      BS_VARTYPENUM_SINGLE:   Result := Ptr_ReadFloat32_BE(Ptr,TVarData(Value).vSingle,True) + 1;
-      BS_VARTYPENUM_DOUBLE:   Result := Ptr_ReadFloat64_BE(Ptr,TVarData(Value).vDouble,True) + 1;
-      BS_VARTYPENUM_CURRENCY: Result := Ptr_ReadCurrency_BE(Ptr,TVarData(Value).vCurrency,True) + 1;
-      BS_VARTYPENUM_DATE:     Result := Ptr_ReadDateTime_BE(Ptr,TVarData(Value).vDate,True) + 1;
-      BS_VARTYPENUM_OLESTR:   begin
-                                Result := Ptr_ReadWideString_BE(Ptr,WideStrTemp,True) + 1;
-                                Value := VarAsType(WideStrTemp,varOleStr);
-                              end;
-      BS_VARTYPENUM_STRING:   begin
-                                Result := Ptr_ReadAnsiString_BE(Ptr,AnsiStrTemp,True) + 1;
-                                Value := VarAsType(AnsiStrTemp,varString);
-                              end;
-      BS_VARTYPENUM_USTRING:  begin
-                                Result := Ptr_ReadUnicodeString_BE(Ptr,UnicodeStrTemp,True) + 1;
-                              {$IF Declared(varUString)}
-                                Value := VarAsType(UnicodeStrTemp,varUString);
-                              {$ELSE}
-                                Value := VarAsType(UnicodeStrTemp,varOleStr);
-                              {$IFEND}
-                              end;
-    else
-      raise EBSUnsupportedVarType.CreateFmt('Ptr_ReadVariant_BE: Cannot read variant of this type number (%d).',[VariantTypeInt and BS_VARTYPENUM_TYPEMASK]);
-    end;
-  end;
-If Advance then
-  Src := Ptr;
-end;
+{$DEFINE BS_INC_M}
+  {$INCLUDE '.\BinaryStreaming.inc'}
+{$UNDEF BS_INC_M}
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -10508,152 +10170,16 @@ end;
 -------------------------------------------------------------------------------}
 
 Function Stream_WriteVariant_LE(Stream: TStream; const Value: Variant; Advance: Boolean = True): TMemSize;
-var
-  Dimensions: Integer;
-  i:          Integer;       
-  Indices:    array of Integer;
-
-  Function WriteVarArrayDimension(Dimension: Integer): TMemSize;
-  var
-    Index:  Integer;
-  begin
-    Result := 0;
-    For Index := VarArrayLowBound(Value,Dimension) to VarArrayHighBound(Value,Dimension) do
-      begin
-        Indices[Pred(Dimension)] := Index;
-        If Dimension >= Dimensions then
-          Inc(Result,Stream_WriteVariant_LE(Stream,VarArrayGet(Value,Indices),True))
-        else
-          Inc(Result,WriteVarArrayDimension(Succ(Dimension)));
-      end;
-  end;
-
-begin
-If VarIsArray(Value) then
-  begin
-    Result := Stream_WriteUInt8_LE(Stream,VarTypeToInt(VarType(Value)),True);
-    Dimensions := VarArrayDimCount(Value);
-    Inc(Result,Stream_WriteInt32_LE(Stream,Dimensions,True));
-    For i := 1 to Dimensions do
-      begin
-        Inc(Result,Stream_WriteInt32_LE(Stream,VarArrayLowBound(Value,i),True));
-        Inc(Result,Stream_WriteInt32_LE(Stream,VarArrayHighBound(Value,i),True));
-      end;
-    If Dimensions > 0 then
-      begin
-        SetLength(Indices,Dimensions);
-        Inc(Result,WriteVarArrayDimension(1));
-      end;
-  end
-else
-  begin
-    If VarType(Value) <> (varVariant or varByRef) then
-      begin
-        Result := Stream_WriteUInt8_LE(Stream,VarTypeToInt(VarType(Value)),True);
-        case VarType(Value) and varTypeMask of
-          varBoolean:   Inc(Result,Stream_WriteBool_LE(Stream,VarToBool(Value),True));
-          varShortInt:  Inc(Result,Stream_WriteInt8_LE(Stream,Value,True));
-          varSmallint:  Inc(Result,Stream_WriteInt16_LE(Stream,Value,True));
-          varInteger:   Inc(Result,Stream_WriteInt32_LE(Stream,Value,True));
-          varInt64:     Inc(Result,Stream_WriteInt64_LE(Stream,VarToInt64(Value),True));
-          varByte:      Inc(Result,Stream_WriteUInt8_LE(Stream,Value,True));
-          varWord:      Inc(Result,Stream_WriteUInt16_LE(Stream,Value,True));
-          varLongWord:  Inc(Result,Stream_WriteUInt32_LE(Stream,Value,True));
-        {$IF Declared(varUInt64)}
-          varUInt64:    Inc(Result,Stream_WriteUInt64_LE(Stream,VarToUInt64(Value),True));
-        {$IFEND}
-          varSingle:    Inc(Result,Stream_WriteFloat32_LE(Stream,Value,True));
-          varDouble:    Inc(Result,Stream_WriteFloat64_LE(Stream,Value,True));
-          varCurrency:  Inc(Result,Stream_WriteCurrency_LE(Stream,Value,True));
-          varDate:      Inc(Result,Stream_WriteDateTime_LE(Stream,Value,True));
-          varOleStr:    Inc(Result,Stream_WriteWideString_LE(Stream,Value,True));
-          varString:    Inc(Result,Stream_WriteAnsiString_LE(Stream,AnsiString(Value),True));
-        {$IF Declared(varUString)}
-          varUString:   Inc(Result,Stream_WriteUnicodeString_LE(Stream,Value,True));
-        {$IFEND}
-        else
-          raise EBSUnsupportedVarType.CreateFmt('Stream_WriteVariant_LE: Cannot write variant of this type (%d).',[VarType(Value) and varTypeMask]);
-        end;
-      end
-    else Result := Stream_WriteVariant_LE(Stream,Variant(FindVarData(Value)^),True);
-  end;
-AdvanceStream(Advance,Stream,Result);
-end;
+{$DEFINE BS_INC_W}{$DEFINE BS_INC_L}
+  {$INCLUDE '.\BinaryStreaming.inc'}
+{$UNDEF BS_INC_W}{$UNDEF BS_INC_L}
 
 //------------------------------------------------------------------------------
 
 Function Stream_WriteVariant_BE(Stream: TStream; const Value: Variant; Advance: Boolean = True): TMemSize;
-var
-  Dimensions: Integer;
-  i:          Integer;       
-  Indices:    array of Integer;
-
-  Function WriteVarArrayDimension(Dimension: Integer): TMemSize;
-  var
-    Index:  Integer;
-  begin
-    Result := 0;
-    For Index := VarArrayLowBound(Value,Dimension) to VarArrayHighBound(Value,Dimension) do
-      begin
-        Indices[Pred(Dimension)] := Index;
-        If Dimension >= Dimensions then
-          Inc(Result,Stream_WriteVariant_BE(Stream,VarArrayGet(Value,Indices),True))
-        else
-          Inc(Result,WriteVarArrayDimension(Succ(Dimension)));
-      end;
-  end;
-
-begin
-If VarIsArray(Value) then
-  begin
-    Result := Stream_WriteUInt8_BE(Stream,VarTypeToInt(VarType(Value)),True);
-    Dimensions := VarArrayDimCount(Value);
-    Inc(Result,Stream_WriteInt32_BE(Stream,Dimensions,True));
-    For i := 1 to Dimensions do
-      begin
-        Inc(Result,Stream_WriteInt32_BE(Stream,VarArrayLowBound(Value,i),True));
-        Inc(Result,Stream_WriteInt32_BE(Stream,VarArrayHighBound(Value,i),True));
-      end;
-    If Dimensions > 0 then
-      begin
-        SetLength(Indices,Dimensions);
-        Inc(Result,WriteVarArrayDimension(1));
-      end;
-  end
-else
-  begin
-    If VarType(Value) <> (varVariant or varByRef) then
-      begin
-        Result := Stream_WriteUInt8_BE(Stream,VarTypeToInt(VarType(Value)),True);
-        case VarType(Value) and varTypeMask of
-          varBoolean:   Inc(Result,Stream_WriteBool_BE(Stream,VarToBool(Value),True));
-          varShortInt:  Inc(Result,Stream_WriteInt8_BE(Stream,Value,True));
-          varSmallint:  Inc(Result,Stream_WriteInt16_BE(Stream,Value,True));
-          varInteger:   Inc(Result,Stream_WriteInt32_BE(Stream,Value,True));
-          varInt64:     Inc(Result,Stream_WriteInt64_BE(Stream,VarToInt64(Value),True));
-          varByte:      Inc(Result,Stream_WriteUInt8_BE(Stream,Value,True));
-          varWord:      Inc(Result,Stream_WriteUInt16_BE(Stream,Value,True));
-          varLongWord:  Inc(Result,Stream_WriteUInt32_BE(Stream,Value,True));
-        {$IF Declared(varUInt64)}
-          varUInt64:    Inc(Result,Stream_WriteUInt64_BE(Stream,VarToUInt64(Value),True));
-        {$IFEND}
-          varSingle:    Inc(Result,Stream_WriteFloat32_BE(Stream,Value,True));
-          varDouble:    Inc(Result,Stream_WriteFloat64_BE(Stream,Value,True));
-          varCurrency:  Inc(Result,Stream_WriteCurrency_BE(Stream,Value,True));
-          varDate:      Inc(Result,Stream_WriteDateTime_BE(Stream,Value,True));
-          varOleStr:    Inc(Result,Stream_WriteWideString_BE(Stream,Value,True));
-          varString:    Inc(Result,Stream_WriteAnsiString_BE(Stream,AnsiString(Value),True));
-        {$IF Declared(varUString)}
-          varUString:   Inc(Result,Stream_WriteUnicodeString_BE(Stream,Value,True));
-        {$IFEND}
-        else
-          raise EBSUnsupportedVarType.CreateFmt('Stream_WriteVariant_BE: Cannot write variant of this type (%d).',[VarType(Value) and varTypeMask]);
-        end;
-      end
-    else Result := Stream_WriteVariant_BE(Stream,Variant(FindVarData(Value)^),True);
-  end;
-AdvanceStream(Advance,Stream,Result);
-end;
+{$DEFINE BS_INC_W}
+  {$INCLUDE '.\BinaryStreaming.inc'}
+{$UNDEF BS_INC_W}
 
 //------------------------------------------------------------------------------
 
@@ -12936,192 +12462,14 @@ end;
 -------------------------------------------------------------------------------}
 
 Function Stream_ReadVariant_LE(Stream: TStream; out Value: Variant; Advance: Boolean = True): TMemSize;
-var
-  VariantTypeInt: UInt8;
-  Dimensions:     Integer;
-  i:              Integer;
-  IndicesBounds:  array of PtrInt;
-  Indices:        array of Integer;
-  WideStrTemp:    WideString;
-  AnsiStrTemp:    AnsiString;
-  UnicodeStrTemp: UnicodeString;
-
-  Function ReadVarArrayDimension(Dimension: Integer): TMemSize;
-  var
-    Index:    Integer;
-    TempVar:  Variant;
-  begin
-    Result := 0;
-    For Index := VarArrayLowBound(Value,Dimension) to VarArrayHighBound(Value,Dimension) do
-      begin
-        Indices[Pred(Dimension)] := Index;
-        If Dimension >= Dimensions then
-          begin
-            Inc(Result,Stream_ReadVariant_LE(Stream,TempVar,True));
-            VarArrayPut(Value,TempVar,Indices);
-          end
-        else Inc(Result,ReadVarArrayDimension(Succ(Dimension)));
-      end;
-  end;
-
-begin
-VariantTypeInt := Stream_GetUInt8_LE(Stream,True);
-If VariantTypeInt and BS_VARTYPENUM_ARRAY <> 0 then
-  begin
-    Dimensions := Stream_GetInt32_LE(Stream,True);
-    Result := 5 + (Dimensions * 8);
-    If Dimensions > 0 then
-      begin
-        SetLength(IndicesBounds,Dimensions * 2);
-        For i := Low(IndicesBounds) to High(IndicesBounds) do
-          IndicesBounds[i] := PtrInt(Stream_GetInt32_LE(Stream,True));
-        Value := VarArrayCreate(IndicesBounds,IntToVarType(VariantTypeInt and BS_VARTYPENUM_TYPEMASK));
-        SetLength(Indices,Dimensions);
-        Inc(Result,ReadVarArrayDimension(1));
-      end;
-  end
-else
-  begin
-    // simple type
-    TVarData(Value).vType := IntToVarType(VariantTypeInt);
-    case VariantTypeInt and BS_VARTYPENUM_TYPEMASK of
-      BS_VARTYPENUM_BOOLEN:   begin
-                                TVarData(Value).vBoolean := Stream_GetBool_LE(Stream,True);
-                                Result := StreamedSize_Bool + 1;
-                              end;
-      BS_VARTYPENUM_SHORTINT: Result := Stream_ReadInt8_LE(Stream,TVarData(Value).vShortInt,True) + 1;
-      BS_VARTYPENUM_SMALLINT: Result := Stream_ReadInt16_LE(Stream,TVarData(Value).vSmallInt,True) + 1;
-      BS_VARTYPENUM_INTEGER:  Result := Stream_ReadInt32_LE(Stream,TVarData(Value).vInteger,True) + 1;
-      BS_VARTYPENUM_INT64:    Result := Stream_ReadInt64_LE(Stream,TVarData(Value).vInt64,True) + 1;
-      BS_VARTYPENUM_BYTE:     Result := Stream_ReadUInt8_LE(Stream,TVarData(Value).vByte,True) + 1;
-      BS_VARTYPENUM_WORD:     Result := Stream_ReadUInt16_LE(Stream,TVarData(Value).vWord,True) + 1;
-      BS_VARTYPENUM_LONGWORD: Result := Stream_ReadUInt32_LE(Stream,TVarData(Value).vLongWord,True) + 1;
-      BS_VARTYPENUM_UINT64: {$IF Declared(varUInt64)}
-                              Result := Stream_ReadUInt64_LE(Stream,TVarData(Value).{$IFDEF FPC}vQWord{$ELSE}vUInt64{$ENDIF},True) + 1;
-                            {$ELSE}
-                              Result := Stream_ReadUInt64_LE(Stream,UInt64(TVarData(Value).vInt64),True) + 1;
-                            {$IFEND}
-      BS_VARTYPENUM_SINGLE:   Result := Stream_ReadFloat32_LE(Stream,TVarData(Value).vSingle,True) + 1;
-      BS_VARTYPENUM_DOUBLE:   Result := Stream_ReadFloat64_LE(Stream,TVarData(Value).vDouble,True) + 1;
-      BS_VARTYPENUM_CURRENCY: Result := Stream_ReadCurrency_LE(Stream,TVarData(Value).vCurrency,True) + 1;
-      BS_VARTYPENUM_DATE:     Result := Stream_ReadDateTime_LE(Stream,TVarData(Value).vDate,True) + 1;
-      BS_VARTYPENUM_OLESTR:   begin
-                                Result := Stream_ReadWideString_LE(Stream,WideStrTemp,True) + 1;
-                                Value := VarAsType(WideStrTemp,varOleStr);
-                              end;
-      BS_VARTYPENUM_STRING:   begin
-                                Result := Stream_ReadAnsiString_LE(Stream,AnsiStrTemp,True) + 1;
-                                Value := VarAsType(AnsiStrTemp,varString);
-                              end;
-      BS_VARTYPENUM_USTRING:  begin
-                                Result := Stream_ReadUnicodeString_LE(Stream,UnicodeStrTemp,True) + 1;
-                              {$IF Declared(varUString)}
-                                Value := VarAsType(UnicodeStrTemp,varUString);
-                              {$ELSE}
-                                Value := VarAsType(UnicodeStrTemp,varOleStr);
-                              {$IFEND}
-                              end;
-    else
-      raise EBSUnsupportedVarType.CreateFmt('Stream_ReadVariant_LE: Cannot read variant of this type number (%d).',[VariantTypeInt and BS_VARTYPENUM_TYPEMASK]);
-    end;
-  end;
-AdvanceStream(Advance,Stream,Result);
-end;
+{$DEFINE BS_INC_L}
+  {$INCLUDE '.\BinaryStreaming.inc'}
+{$UNDEF BS_INC_L}
 
 //------------------------------------------------------------------------------
 
 Function Stream_ReadVariant_BE(Stream: TStream; out Value: Variant; Advance: Boolean = True): TMemSize;
-var
-  VariantTypeInt: UInt8;
-  Dimensions:     Integer;
-  i:              Integer;
-  IndicesBounds:  array of PtrInt;
-  Indices:        array of Integer;
-  WideStrTemp:    WideString;
-  AnsiStrTemp:    AnsiString;
-  UnicodeStrTemp: UnicodeString;
-
-  Function ReadVarArrayDimension(Dimension: Integer): TMemSize;
-  var
-    Index:    Integer;
-    TempVar:  Variant;
-  begin
-    Result := 0;
-    For Index := VarArrayLowBound(Value,Dimension) to VarArrayHighBound(Value,Dimension) do
-      begin
-        Indices[Pred(Dimension)] := Index;
-        If Dimension >= Dimensions then
-          begin
-            Inc(Result,Stream_ReadVariant_BE(Stream,TempVar,True));
-            VarArrayPut(Value,TempVar,Indices);
-          end
-        else Inc(Result,ReadVarArrayDimension(Succ(Dimension)));
-      end;
-  end;
-
-begin
-VariantTypeInt := Stream_GetUInt8_BE(Stream,True);
-If VariantTypeInt and BS_VARTYPENUM_ARRAY <> 0 then
-  begin
-    Dimensions := Stream_GetInt32_BE(Stream,True);
-    Result := 5 + (Dimensions * 8);
-    If Dimensions > 0 then
-      begin
-        SetLength(IndicesBounds,Dimensions * 2);
-        For i := Low(IndicesBounds) to High(IndicesBounds) do
-          IndicesBounds[i] := PtrInt(Stream_GetInt32_BE(Stream,True));
-        Value := VarArrayCreate(IndicesBounds,IntToVarType(VariantTypeInt and BS_VARTYPENUM_TYPEMASK));
-        SetLength(Indices,Dimensions);
-        Inc(Result,ReadVarArrayDimension(1));
-      end;
-  end
-else
-  begin
-    // simple type
-    TVarData(Value).vType := IntToVarType(VariantTypeInt);
-    case VariantTypeInt and BS_VARTYPENUM_TYPEMASK of
-      BS_VARTYPENUM_BOOLEN:   begin
-                                TVarData(Value).vBoolean := Stream_GetBool_BE(Stream,True);
-                                Result := StreamedSize_Bool + 1;
-                              end;
-      BS_VARTYPENUM_SHORTINT: Result := Stream_ReadInt8_BE(Stream,TVarData(Value).vShortInt,True) + 1;
-      BS_VARTYPENUM_SMALLINT: Result := Stream_ReadInt16_BE(Stream,TVarData(Value).vSmallInt,True) + 1;
-      BS_VARTYPENUM_INTEGER:  Result := Stream_ReadInt32_BE(Stream,TVarData(Value).vInteger,True) + 1;
-      BS_VARTYPENUM_INT64:    Result := Stream_ReadInt64_BE(Stream,TVarData(Value).vInt64,True) + 1;
-      BS_VARTYPENUM_BYTE:     Result := Stream_ReadUInt8_BE(Stream,TVarData(Value).vByte,True) + 1;
-      BS_VARTYPENUM_WORD:     Result := Stream_ReadUInt16_BE(Stream,TVarData(Value).vWord,True) + 1;
-      BS_VARTYPENUM_LONGWORD: Result := Stream_ReadUInt32_BE(Stream,TVarData(Value).vLongWord,True) + 1;
-      BS_VARTYPENUM_UINT64: {$IF Declared(varUInt64)}
-                              Result := Stream_ReadUInt64_BE(Stream,TVarData(Value).{$IFDEF FPC}vQWord{$ELSE}vUInt64{$ENDIF},True) + 1;
-                            {$ELSE}
-                              Result := Stream_ReadUInt64_BE(Stream,UInt64(TVarData(Value).vInt64),True) + 1;
-                            {$IFEND}
-      BS_VARTYPENUM_SINGLE:   Result := Stream_ReadFloat32_BE(Stream,TVarData(Value).vSingle,True) + 1;
-      BS_VARTYPENUM_DOUBLE:   Result := Stream_ReadFloat64_BE(Stream,TVarData(Value).vDouble,True) + 1;
-      BS_VARTYPENUM_CURRENCY: Result := Stream_ReadCurrency_BE(Stream,TVarData(Value).vCurrency,True) + 1;
-      BS_VARTYPENUM_DATE:     Result := Stream_ReadDateTime_BE(Stream,TVarData(Value).vDate,True) + 1;
-      BS_VARTYPENUM_OLESTR:   begin
-                                Result := Stream_ReadWideString_BE(Stream,WideStrTemp,True) + 1;
-                                Value := VarAsType(WideStrTemp,varOleStr);
-                              end;
-      BS_VARTYPENUM_STRING:   begin
-                                Result := Stream_ReadAnsiString_BE(Stream,AnsiStrTemp,True) + 1;
-                                Value := VarAsType(AnsiStrTemp,varString);
-                              end;
-      BS_VARTYPENUM_USTRING:  begin
-                                Result := Stream_ReadUnicodeString_BE(Stream,UnicodeStrTemp,True) + 1;
-                              {$IF Declared(varUString)}
-                                Value := VarAsType(UnicodeStrTemp,varUString);
-                              {$ELSE}
-                                Value := VarAsType(UnicodeStrTemp,varOleStr);
-                              {$IFEND}
-                              end;
-    else
-      raise EBSUnsupportedVarType.CreateFmt('Stream_ReadVariant_BE: Cannot read variant of this type number (%d).',[VariantTypeInt and BS_VARTYPENUM_TYPEMASK]);
-    end;
-  end;
-AdvanceStream(Advance,Stream,Result);
-end;
+{$INCLUDE '.\BinaryStreaming.inc'}
 
 //------------------------------------------------------------------------------
 
