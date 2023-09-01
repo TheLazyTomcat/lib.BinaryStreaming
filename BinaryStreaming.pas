@@ -114,6 +114,7 @@ unit BinaryStreaming;
 
 {$IFDEF FPC}
   {$MODE ObjFPC}
+  {$MODESWITCH DuplicateLocals+}
   {$INLINE ON}
   {$DEFINE CanInline}
   {$DEFINE CanInlineFPC}
@@ -133,6 +134,8 @@ unit BinaryStreaming;
 {$UNDEF BS_INC_M} // memory (stream is inferred when not defined)
 {$UNDEF BS_INC_L} // little endian (big endian inferred when not defined)
 
+{$UNDEF BS_OverflowChecks}
+
 interface
 
 uses
@@ -145,8 +148,11 @@ uses
 type
   EBSException = class(Exception);
 
-  EBSIndexOutOfBounds   = class(EBSException);
   EBSUnsupportedVarType = class(EBSException);
+  EBSIndexOutOfBounds   = class(EBSException);
+  EBSInvalidValue       = class(EBSException);
+  EBSDuplicateItem      = class(EBSException);
+  EBSUnknownItem        = class(EBSException);
 
 {===============================================================================
     Endianess - declaration
@@ -2016,18 +2022,19 @@ Function Stream_GetVariant(Stream: TStream; Advance: Boolean; Endian: TEndian = 
 Function Stream_GetVariant(Stream: TStream; Endian: TEndian = endDefault): Variant; overload;
 
 
-(*
 {===============================================================================
 --------------------------------------------------------------------------------
                                  TCustomStreamer
 --------------------------------------------------------------------------------
 ===============================================================================}
 type
-  // TValueType is only used internally
-  TValueType = (vtShortString,vtAnsiString,vtUTF8String,vtWideString,
-                vtUnicodeString,vtUCS4String,vtString,vtFillBytes,vtBytes,
-                vtPrimitive1B,vtPrimitive2B,vtPrimitive4B,vtPrimitive8B,
-                vtPrimitive10B,vtVariant);
+  TBSBookmarkID = type Integer;
+
+  TBSBookmarkData = record
+    ID:       TBSBookmarkID;
+    Position: Int64;
+  end;
+  PBSBookmarkData = ^TBSBookmarkData;
 
 {===============================================================================
     TCustomStreamer - class declaration
@@ -2035,37 +2042,81 @@ type
 type
   TCustomStreamer = class(TCustomListObject)
   protected
-    fBookmarks:       array of Int64;
-    fCount:           Integer;
-    fStartPosition:   Int64;
-    fEndian:          TEndian;
+    fEndian:            TEndian;
+    fStart:             Int64;
+    fBookmarks:         array of TBSBookmarkData;
+    fBookmarkCount:     Integer;
+    fChanged:           Boolean;
+    fChangingCounter:   Integer;
+    fOnChangeEvent:     TNotifyEvent;
+    fOnChangeCallback:  TNotifyCallback;
+    Function GetPosition: Int64; virtual; abstract;
+    procedure SetPosition(NewPosition: Int64); virtual; abstract;
+    Function GetOffset: Int64; virtual;
+    procedure SetOffset(NewOffset: Int64); virtual;
+    Function GetBookmark(Index: Integer): TBSBookmarkData; virtual;
+    procedure SetBookmark(Index: Integer; Value: TBSBookmarkData); virtual;
+    Function GetBookmarkPtr(Index: Integer): PBSBookmarkData; virtual;
     Function GetCapacity: Integer; override;
     procedure SetCapacity(Value: Integer); override;
     Function GetCount: Integer; override;
     procedure SetCount(Value: Integer); override;
-    Function GetBookmark(Index: Integer): Int64; virtual;
-    procedure SetBookmark(Index: Integer; Value: Int64); virtual;
-    Function GetCurrentPosition: Int64; virtual; abstract;
-    procedure SetCurrentPosition(NewPosition: Int64); virtual; abstract;
-    Function GetDistance: Int64; virtual;
-    Function WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; ValueType: TValueType): TMemSize; virtual; abstract;
-    Function ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; ValueType: TValueType): TMemSize; virtual; abstract;
+    Function WriteValue(ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize; virtual; abstract;
+    Function ReadValue(ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize; virtual; abstract;
+    procedure DoChange; virtual;
     procedure Initialize; virtual;
     procedure Finalize; virtual;
   public
     destructor Destroy; override;
+    // bookmark list methods
+    Function BeginUpdate: Integer; virtual;
+    Function EndUpdate: Integer; virtual;
     Function LowIndex: Integer; override;
     Function HighIndex: Integer; override;
-    procedure MoveToStart; virtual;
-    procedure MoveToBookmark(Index: Integer); virtual;
-    procedure MoveBy(Offset: Int64); virtual;
-    // bookmarks methods
-    Function IndexOfBookmark(Position: Int64): Integer; virtual;
-    Function AddBookmark: Integer; overload; virtual;
-    Function AddBookmark(Position: Int64): Integer; overload; virtual;
-    Function RemoveBookmark(Position: Int64; RemoveAll: Boolean = True): Integer; virtual;
-    procedure DeleteBookmark(Index: Integer); virtual;
-    procedure ClearBookmark; virtual;
+    Function BookmarkLowIndex: Integer; virtual;
+    Function BookmarkHighIndex: Integer; virtual;
+    Function BookmarkCheckIndex(Index: Integer): Boolean; virtual;
+    Function BookmarkIndexOf(ID: TBSBookmarkID): Integer; virtual;
+    Function BookmarkFind(ID: TBSBookmarkID; out Index: Integer): Boolean; virtual;
+    Function BookmarkAdd(ID: TBSBookmarkID; Position: Int64): Integer; overload; virtual;
+    Function BookmarkAdd(ID: TBSBookmarkID): Integer; overload; virtual;
+    procedure BookmarkInsert(Index: Integer; ID: TBSBookmarkID; Position: Int64); overload; virtual;
+    procedure BookmarkInsert(Index: Integer; ID: TBSBookmarkID); overload; virtual;
+    procedure BookmarkMove(SrcIndex,DstIndex: Integer); virtual;
+    procedure BookmarkExchange(Index1,Index2: Integer); virtual;
+    Function BookmarkExtract(ID: TBSBookmarkID): TBSBookmarkData; virtual;
+    Function BookmarkRemove(ID: TBSBookmarkID): Integer; virtual;
+    procedure BookmarkDelete(Index: Integer); virtual;
+    procedure BookmarkClear; virtual;
+    // bookmark information access
+    Function BookmarkGetPosition(ID: TBSBookmarkID): Int64; virtual;
+    procedure BookmarkSetPosition(ID: TBSBookmarkID; NewPosition: Int64); virtual;
+    // position manipulation methods
+    procedure MoveTo(Position: Int64); overload; virtual;
+    procedure MoveToOffset(Offset: Int64); virtual;
+    procedure MoveBy(Delta: Int64); virtual;
+    procedure MoveAtStart; virtual;
+    procedure MoveAt(ID: TBSBookmarkID); virtual;
+    procedure MoveAtIndex(Index: Integer); virtual;
+  (*
+    Write*
+    Write*To(Position); overload;
+    Write*ToOffset(Offset)
+    Write*At(ID)
+    Write*AtIndex(Index)
+
+    Read*
+    Read*From(Position); overload;
+    Read*FromOfffset(Offset)
+    Read*At(ID)
+    Read*AtIndex(Index)
+
+    Get*
+    Get*From(Position); overload;
+    Get*FromOfffset(Offset)
+    Get*At(ID)
+    Get*AtIndex(Index)
+    *)
     // write methods
     Function WriteBool(Value: ByteBool; Advance: Boolean = True): TMemSize; virtual;
     Function WriteBoolean(Value: Boolean; Advance: Boolean = True): TMemSize; virtual;
@@ -2097,74 +2148,80 @@ type
     Function WriteString(const Value: String; Advance: Boolean = True): TMemSize; virtual;
     Function WriteBuffer(const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; virtual;
     Function WriteBytes(const Value: array of UInt8; Advance: Boolean = True): TMemSize; virtual;
-    Function FillBytes(ByteCount: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize; virtual;
+    Function FillBytes(Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize; virtual;
     Function WriteVariant(const Value: Variant; Advance: Boolean = True): TMemSize; virtual;
     // read methods
     Function ReadBool(out Value: ByteBool; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadBool(Advance: Boolean = True): ByteBool; virtual;
     Function ReadBoolean(out Value: Boolean; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadBoolean(Advance: Boolean = True): Boolean; virtual;
     Function ReadInt8(out Value: Int8; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadInt8(Advance: Boolean = True): Int8; virtual;
     Function ReadUInt8(out Value: UInt8; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadUInt8(Advance: Boolean = True): UInt8; virtual;
     Function ReadInt16(out Value: Int16; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadInt16(Advance: Boolean = True): Int16; virtual;
     Function ReadUInt16(out Value: UInt16; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadUInt16(Advance: Boolean = True): UInt16; virtual;
     Function ReadInt32(out Value: Int32; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadInt32(Advance: Boolean = True): Int32; virtual;
     Function ReadUInt32(out Value: UInt32; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadUInt32(Advance: Boolean = True): UInt32; virtual;
     Function ReadInt64(out Value: Int64; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadInt64(Advance: Boolean = True): Int64; virtual;
     Function ReadUInt64(out Value: UInt64; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadUInt64(Advance: Boolean = True): UInt64; virtual;
     Function ReadFloat32(out Value: Float32; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadFloat32(Advance: Boolean = True): Float32; virtual;
     Function ReadFloat64(out Value: Float64; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadFloat64(Advance: Boolean = True): Float64; virtual;
     Function ReadFloat80(out Value: Float80; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadFloat80(Advance: Boolean = True): Float80; virtual;
     Function ReadDateTime(out Value: TDateTime; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadDateTime(Advance: Boolean = True): TDateTime; virtual;
     Function ReadCurrency(out Value: Currency; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadCurrency(Advance: Boolean = True): Currency; virtual;
     Function ReadAnsiChar(out Value: AnsiChar; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadAnsiChar(Advance: Boolean = True): AnsiChar; virtual;
     Function ReadUTF8Char(out Value: UTF8Char; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadUTF8Char(Advance: Boolean = True): UTF8Char; virtual;
     Function ReadWideChar(out Value: WideChar; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadWideChar(Advance: Boolean = True): WideChar; virtual;
     Function ReadUnicodeChar(out Value: UnicodeChar; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadUnicodeChar(Advance: Boolean = True): UnicodeChar; virtual;
     Function ReadUCS4Char(out Value: UCS4Char; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadUCS4Char(Advance: Boolean = True): UCS4Char; virtual;
     Function ReadChar(out Value: Char; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadChar(Advance: Boolean = True): Char; virtual;
     Function ReadShortString(out Value: ShortString; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadShortString(Advance: Boolean = True): ShortString; virtual;
     Function ReadAnsiString(out Value: AnsiString; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadAnsiString(Advance: Boolean = True): AnsiString; virtual;
     Function ReadUTF8String(out Value: UTF8String; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadUTF8String(Advance: Boolean = True): UTF8String; virtual;
     Function ReadWideString(out Value: WideString; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadWideString(Advance: Boolean = True): WideString; virtual;
     Function ReadUnicodeString(out Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadUnicodeString(Advance: Boolean = True): UnicodeString; virtual;
     Function ReadUCS4String(out Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadUCS4String(Advance: Boolean = True): UCS4String; virtual;
     Function ReadString(out Value: String; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadString(Advance: Boolean = True): String; virtual;
-    Function ReadBuffer(var Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadBuffer(out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; virtual;
     Function ReadVariant(out Value: Variant; Advance: Boolean = True): TMemSize; virtual;
-    Function LoadVariant(Advance: Boolean = True): Variant; virtual;
+    // reading into result
+    Function GetBool(Advance: Boolean = True): ByteBool; virtual;
+    Function GetBoolean(Advance: Boolean = True): Boolean; virtual;
+    Function GetInt8(Advance: Boolean = True): Int8; virtual;
+    Function GetUInt8(Advance: Boolean = True): UInt8; virtual;
+    Function GetInt16(Advance: Boolean = True): Int16; virtual;
+    Function GetUInt16(Advance: Boolean = True): UInt16; virtual;
+    Function GetInt32(Advance: Boolean = True): Int32; virtual;
+    Function GetUInt32(Advance: Boolean = True): UInt32; virtual;
+    Function GetInt64(Advance: Boolean = True): Int64; virtual;
+    Function GetUInt64(Advance: Boolean = True): UInt64; virtual;
+    Function GetFloat32(Advance: Boolean = True): Float32; virtual;
+    Function GetFloat64(Advance: Boolean = True): Float64; virtual;
+    Function GetFloat80(Advance: Boolean = True): Float80; virtual;
+    Function GetDateTime(Advance: Boolean = True): TDateTime; virtual;
+    Function GetCurrency(Advance: Boolean = True): Currency; virtual;
+    Function GetAnsiChar(Advance: Boolean = True): AnsiChar; virtual;
+    Function GetUTF8Char(Advance: Boolean = True): UTF8Char; virtual;
+    Function GetWideChar(Advance: Boolean = True): WideChar; virtual;
+    Function GetUnicodeChar(Advance: Boolean = True): UnicodeChar; virtual;
+    Function GetUCS4Char(Advance: Boolean = True): UCS4Char; virtual;
+    Function GetChar(Advance: Boolean = True): Char; virtual;
+    Function GetShortString(Advance: Boolean = True): ShortString; virtual;
+    Function GetAnsiString(Advance: Boolean = True): AnsiString; virtual;
+    Function GetUTF8String(Advance: Boolean = True): UTF8String; virtual;
+    Function GetWideString(Advance: Boolean = True): WideString; virtual;
+    Function GetUnicodeString(Advance: Boolean = True): UnicodeString; virtual;
+    Function GetUCS4String(Advance: Boolean = True): UCS4String; virtual;
+    Function GetString(Advance: Boolean = True): String; virtual;
+    Function GetVariant(Advance: Boolean = True): Variant; virtual;
     // properties
-    property Bookmarks[Index: Integer]: Int64 read GetBookmark write SetBookmark;
-    property CurrentPosition: Int64 read GetCurrentPosition write SetCurrentPosition;
-    property StartPosition: Int64 read fStartPosition;
-    property Distance: Int64 read GetDistance;
     property Endian: TEndian read fEndian write fEndian;
+    property Start: Int64 read fStart;
+    property Position: Int64 read GetPosition write SetPosition;
+    property Offset: Int64 read GetOffset write SetOffset;
+    property Bookmarks[Index: Integer]: TBSBookmarkData read GetBookmark write SetBookmark; default;
+    property BookmarkPtrs[Index: Integer]: PBSBookmarkData read GetBookmarkPtr;
+    property BookmarkCount: Integer read GetCount;
+    property OnChange: TNotifyEvent read fOnChangeEvent write fOnChangeEvent;
+    property OnChangeEvent: TNotifyEvent read fOnChangeEvent write fOnChangeEvent;
+    property OnChangeCallback: TNotifyCallback read fOnChangeCallback write fOnChangeCallback;    
   end;
 
 {===============================================================================
@@ -2178,22 +2235,29 @@ type
 type
   TMemoryStreamer = class(TCustomStreamer)
   protected
-    fCurrentPtr:  Pointer;
-    Function GetStartPtr: Pointer; virtual;
-    procedure SetBookmark(Index: Integer; Value: Int64); override;
-    Function GetCurrentPosition: Int64; override;
-    procedure SetCurrentPosition(NewPosition: Int64); override;
-    Function WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; ValueType: TValueType): TMemSize; override;
-    Function ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; ValueType: TValueType): TMemSize; override;
+    fPositionAddress: Pointer;
+    Function GetStartAddress: Pointer; virtual;
+    Function GetPosition: Int64; override;
+    procedure SetPosition(NewPosition: Int64); override;
+    Function WriteValue(ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize; override;
+    Function ReadValue(ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize; override;
     procedure Initialize(Memory: Pointer); reintroduce; virtual;
   public
     constructor Create(Memory: Pointer); overload;
-    Function IndexOfBookmark(Position: Int64): Integer; override;
-    Function AddBookmark(Position: Int64): Integer; override;
-    Function RemoveBookmark(Position: Int64; RemoveAll: Boolean = True): Integer; override;
-    property CurrentPtr: Pointer read fCurrentPtr write fCurrentPtr;
-    property StartPtr: Pointer read GetStartPtr;
+    procedure MoveTo(Address: Pointer); overload; virtual;
+    Function BookmarkAdd(ID: TBSBookmarkID; Address: Pointer): Integer; overload; virtual;
+    procedure BookmarkInsert(Index: Integer; ID: TBSBookmarkID; Address: Pointer); overload; virtual;
+    Function BookmarkGetAddress(ID: TBSBookmarkID): Pointer; virtual;
+    procedure BookmarkSetAddress(ID: TBSBookmarkID; NewAddress: Pointer); virtual;
+  {
+    WriteTo(Address)
+    ReadFrom(Address)
+    GetFrom(Address)
+  }
+    property StartAddress: Pointer read GetStartAddress;
+    property PositionAddress: Pointer read fPositionAddress write fPositionAddress;
   end;
+
 
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -2207,16 +2271,16 @@ type
   TStreamStreamer = class(TCustomStreamer)
   protected
     fTarget:  TStream;
-    Function GetCurrentPosition: Int64; override;
-    procedure SetCurrentPosition(NewPosition: Int64); override;
-    Function WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; ValueType: TValueType): TMemSize; override;
-    Function ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; ValueType: TValueType): TMemSize; override;
+    Function GetPosition: Int64; override;
+    procedure SetPosition(NewPosition: Int64); override;
+    Function WriteValue(ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize; override;
+    Function ReadValue(ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize; override;
     procedure Initialize(Target: TStream); reintroduce; virtual;
   public
     constructor Create(Target: TStream);
     property Target: TStream read fTarget;
   end;
-*)
+
 implementation
 
 uses
@@ -12531,13 +12595,79 @@ end;
                                  TCustomStreamer
 --------------------------------------------------------------------------------
 ===============================================================================}
+const
+  BS_VALTYPE_NUM_1       = 0;
+  BS_VALTYPE_NUM_2       = 1;
+  BS_VALTYPE_NUM_4       = 2;
+  BS_VALTYPE_NUM_8       = 3;
+  BS_VALTYPE_NUM_10      = 4;
+  BS_VALTYPE_STR_SHORT   = 5;
+  BS_VALTYPE_STR_ANSI    = 6;
+  BS_VALTYPE_STR_UTF8    = 7;
+  BS_VALTYPE_STR_WIDE    = 8;
+  BS_VALTYPE_STR_UNICODE = 9;
+  BS_VALTYPE_STR_UCS4    = 10;
+  BS_VALTYPE_STR         = 11;
+  BS_VALTYPE_BUFFER      = 12;
+  BS_VALTYPE_FILL        = 13;
+  BS_VALTYPE_VARIANT     = 14;
+
+//------------------------------------------------------------------------------
 {===============================================================================
     TCustomStreamer - class implementation
 ===============================================================================}
 {-------------------------------------------------------------------------------
     TCustomStreamer - protected methods
 -------------------------------------------------------------------------------}
-(*
+
+{$IFOPT Q+}{$DEFINE BS_OverflowChecks}{$Q-}{$ENDIF}
+
+Function TCustomStreamer.GetOffset: Int64;
+begin
+Result := Position - fStart;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TCustomStreamer.SetOffset(NewOffset: Int64);
+begin
+Position := fStart + NewOffset;
+end;
+
+{$IFDEF BS_OverflowChecks}{$UNDEF BS_OverflowChecks}{$Q+}{$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetBookmark(Index: Integer): TBSBookmarkData;
+begin
+If BookmarkCheckIndex(Index) then
+  Result := fBookmarks[Index]
+else
+  raise EBSIndexOutOfBounds.CreateFmt('TCustomStreamer.GetBookmark: Index (%d) out of bounds.',[Index]);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TCustomStreamer.SetBookmark(Index: Integer; Value: TBSBookmarkData);
+begin
+If BookmarkCheckIndex(Index) then
+  fBookmarks[Index] := Value
+else
+  raise EBSIndexOutOfBounds.CreateFmt('TCustomStreamer.SetBookmark: Index (%d) out of bounds.',[Index]);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetBookmarkPtr(Index: Integer): PBSBookmarkData;
+begin
+If BookmarkCheckIndex(Index) then
+  Result := Addr(fBookmarks[Index])
+else
+  raise EBSIndexOutOfBounds.CreateFmt('TCustomStreamer.GetBookmarkPtr: Index (%d) out of bounds.',[Index]);
+end;
+
+//------------------------------------------------------------------------------
+
 Function TCustomStreamer.GetCapacity: Integer;
 begin
 Result := Length(fBookmarks);
@@ -12547,19 +12677,23 @@ end;
 
 procedure TCustomStreamer.SetCapacity(Value: Integer);
 begin
-If Value <> Length(fBookmarks) then
+If Value >= 0 then
   begin
-    SetLength(fBookMarks,Value);
-    If Value < fCount then
-      fCount := Value;
-  end;
+    If Value <> Length(fBookmarks) then
+      begin
+        SetLength(fBookMarks,Value);
+        If Value < fBookmarkCount then
+          fBookmarkCount := Value;
+      end;
+  end
+else raise EBSInvalidValue.CreateFmt('TCustomStreamer.SetCapacity: Invalid capacity (%d).',[Value]);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetCount: Integer;
 begin
-Result := fCount;
+Result := fBookmarkCount;
 end;
 
 //------------------------------------------------------------------------------
@@ -12573,46 +12707,41 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TCustomStreamer.GetBookmark(Index: Integer): Int64;
+procedure TCustomStreamer.DoChange;
 begin
-If CheckIndex(Index) then
-  Result := fBookmarks[Index]
-else
-  raise EBSIndexOutOfBounds.CreateFmt('TCustomStreamer.GetBookmark: Index (%d) out of bounds.',[Index]);
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TCustomStreamer.SetBookmark(Index: Integer; Value: Int64);
-begin
-If CheckIndex(Index) then
-  fBookmarks[Index] := Value
-else
-  raise EBSIndexOutOfBounds.CreateFmt('TCustomStreamer.SetBookmark: Index (%d) out of bounds.',[Index]);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.GetDistance: Int64;
-begin
-Result := CurrentPosition - StartPosition;
+If fChangingCounter <= 0 then
+  begin
+    If Assigned(fOnChangeEvent) then
+      fOnChangeEvent(Self)
+    else If Assigned(fOnChangeCallback) then
+      fOnChangeCallback(Self);
+    fChanged := False;  
+  end
+else fChanged := True;
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TCustomStreamer.Initialize;
 begin
-SetLength(fBookmarks,0);
-fCount := 0;
-fStartPosition := 0;
 fEndian := endDefault;
+fStart := 0;
+SetLength(fBookmarks,0);
+fBookmarkCount := 0; 
+fChanged := False;
+fChangingCounter := 0;
+fOnChangeEvent := nil;
+fOnChangeCallback := nil;
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TCustomStreamer.Finalize;
 begin
-// nothing to do
+// prevent events firing
+fOnChangeEvent := nil;
+fOnChangeCallback := nil;
+BookmarkClear;
 end;
 
 {-------------------------------------------------------------------------------
@@ -12627,6 +12756,28 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TCustomStreamer.BeginUpdate: Integer;
+begin
+Inc(fChangingCounter);
+Result := fChangingCounter;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.EndUpdate: Integer;
+begin
+Dec(fChangingCounter);
+If fChangingCounter <= 0 then
+  begin
+    fChangingCounter := 0;
+    If fChanged then
+      DoChange; // sets fChanged to false
+  end;
+Result := fChangingCounter;
+end;
+
+//------------------------------------------------------------------------------
+
 Function TCustomStreamer.LowIndex: Integer;
 begin
 Result := Low(fBookmarks);
@@ -12636,98 +12787,277 @@ end;
 
 Function TCustomStreamer.HighIndex: Integer;
 begin
-Result := Pred(fCount);
+Result := Pred(fBookmarkCount);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TCustomStreamer.MoveToStart;
+Function TCustomStreamer.BookmarkLowIndex: Integer;
 begin
-CurrentPosition := StartPosition;
+Result := LowIndex;
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TCustomStreamer.MoveToBookmark(Index: Integer);
+Function TCustomStreamer.BookmarkHighIndex: Integer;
 begin
-If CheckIndex(Index) then
-  CurrentPosition := fBookmarks[Index]
-else
-  raise EBSIndexOutOfBounds.CreateFmt('TCustomStreamer.MoveToBookmark: Index (%d) out of bounds.',[Index]);
+Result := highIndex;
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TCustomStreamer.MoveBy(Offset: Int64);
+Function TCustomStreamer.BookmarkCheckIndex(Index: Integer): Boolean;
 begin
-CurrentPosition := CurrentPosition + Offset;
+Result := CheckIndex(Index);
 end;
 
 //------------------------------------------------------------------------------
- 
-Function TCustomStreamer.IndexOfBookmark(Position: Int64): Integer;
+
+Function TCustomStreamer.BookmarkIndexOf(ID: TBSBookmarkID): Integer;
 var
   i:  Integer;
 begin
 Result := -1;
-For i := LowIndex to HighIndex do
-  If fBookmarks[i] = Position then
+For i := BookmarkLowIndex to BookmarkHighIndex do
+  If fBookmarks[i].ID = ID then
     begin
       Result := i;
-      Break;
+      Break{For i};
     end;
 end;
 
 //------------------------------------------------------------------------------
 
-Function TCustomStreamer.AddBookmark: Integer;
+Function TCustomStreamer.BookmarkFind(ID: TBSBookmarkID; out Index: Integer): Boolean;
 begin
-Result := AddBookmark(CurrentPosition);
+Index := BookmarkIndexOf(ID);
+Result := BookmarkCheckIndex(Index);
 end;
 
 //------------------------------------------------------------------------------
 
-Function TCustomStreamer.AddBookmark(Position: Int64): Integer;
+Function TCustomStreamer.BookmarkAdd(ID: TBSBookmarkID; Position: Int64): Integer;
 begin
-Grow;
-Result := fCount;
-fBookmarks[Result] := Position;
-Inc(fCount);
+If not BookmarkFind(ID,Result) then
+  begin
+    Grow;
+    Result := fBookmarkCount;
+    fBookmarks[Result].ID := ID;
+    fBookmarks[Result].Position := Position;
+    Inc(fBookmarkCount);
+    DoChange;
+  end
+else raise EBSDuplicateItem.CreateFmt('TCustomStreamer.BookmarkAdd: Bookmark %d already exists.',[ID]);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TCustomStreamer.BookmarkAdd(ID: TBSBookmarkID): Integer;
+begin
+Result := BookmarkAdd(ID,Position);
 end;
 
 //------------------------------------------------------------------------------
 
-Function TCustomStreamer.RemoveBookmark(Position: Int64; RemoveAll: Boolean = True): Integer;
-begin
-repeat
-  Result := IndexOfBookmark(Position);
-  If CheckIndex(Result) then
-    DeleteBookMark(Result);
-until not CheckIndex(Result) or not RemoveAll;
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TCustomStreamer.DeleteBookmark(Index: Integer);
+procedure TCustomStreamer.BookmarkInsert(Index: Integer; ID: TBSBookmarkID; Position: Int64);
 var
   i:  Integer;
 begin
-If CheckIndex(Index) then
+If not BookmarkFind(ID,i) then
   begin
-    For i := Index to Pred(High(fBookmarks)) do
-      fBookmarks[i] := fBookMarks[i + 1];
-    Dec(fCount);
-    Shrink;
+    If CheckIndex(Index) then
+      begin
+        Grow;
+        For i := BookmarkHighIndex downto Index do
+          fBookmarks[i + 1] := fBookmarks[i];
+        fBookmarks[Index].ID := ID;
+        fBookmarks[Index].Position := Position;
+        Inc(fBookmarkCount);
+        DoChange;
+      end
+    else If Index = BookmarkCount then
+      BookmarkAdd(ID,Position)
+    else
+      raise EBSIndexOutOfBounds.CreateFmt('TCustomStreamer.BookmarkInsert: Index (%d) out of bounds.',[Index]);
   end
-else raise EBSIndexOutOfBounds.CreateFmt('TCustomStreamer.DeleteBookmark: Index (%d) out of bounds.',[Index]);
+else raise EBSDuplicateItem.CreateFmt('TCustomStreamer.BookmarkInsert: Bookmark %d already exists.',[ID]);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TCustomStreamer.BookmarkInsert(Index: Integer; ID: TBSBookmarkID);
+begin
+BookmarkInsert(Index,ID,Position);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TCustomStreamer.ClearBookmark;
+procedure TCustomStreamer.BookmarkMove(SrcIndex,DstIndex: Integer);
+var
+  Temp: TBSBookmarkData;
+  i:    Integer;
 begin
-fCount := 0;
-Shrink;
+If not CheckIndex(SrcIndex) then
+  raise EBSIndexOutOfBounds.CreateFmt('TCustomStreamer.BookmarkInsert: Source index (%d) out of bounds.',[SrcIndex]);
+If not CheckIndex(DstIndex) then
+  raise EBSIndexOutOfBounds.CreateFmt('TCustomStreamer.BookmarkInsert: Destination index (%d) out of bounds.',[DstIndex]);
+If SrcIndex <> DstIndex then
+  begin
+    Temp := fBookmarks[SrcIndex];
+    If SrcIndex < DstIndex then
+      For i := SrcIndex to Pred(DstIndex) do
+        fBookmarks[i] := fBookmarks[i + 1]
+    else
+      For i := SrcIndex downto Succ(DstIndex) do
+        fBookmarks[i] := fBookmarks[i - 1];
+    fBookmarks[DstIndex] := Temp;
+    DoChange;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TCustomStreamer.BookmarkExchange(Index1,Index2: Integer);
+var
+  Temp: TBSBookmarkData;
+begin
+If not CheckIndex(Index1) then
+  raise EBSIndexOutOfBounds.CreateFmt('TCustomStreamer.BookmarkInsert: Index 1 (%d) out of bounds.',[Index1]);
+If not CheckIndex(Index2) then
+  raise EBSIndexOutOfBounds.CreateFmt('TCustomStreamer.BookmarkInsert: Index 2 (%d) out of bounds.',[Index2]);
+If Index1 <> Index2 then
+  begin
+    Temp := fBookmarks[Index1];
+    fBookmarks[Index1] := fBookmarks[Index2];
+    fBookmarks[Index2] := Temp;
+    DoChange;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.BookmarkExtract(ID: TBSBookmarkID): TBSBookmarkData;
+var
+  Index:  Integer;
+begin
+If BookmarkFind(ID,Index) then
+  begin
+    Result := fBookmarks[Index];
+    BookmarkDelete(Index);
+  end
+else raise EBSUnknownItem.CreateFmt('TCustomStreamer.BookmarkExtract: Item %d not found.',[ID]);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.BookmarkRemove(ID: TBSBookmarkID): Integer;
+begin
+If BookmarkFind(ID,Result) then
+  BookmarkDelete(Result)
+else
+  Result := -1;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TCustomStreamer.BookmarkDelete(Index: Integer);
+var
+  i:  Integer;
+begin
+If BookmarkCheckIndex(Index) then
+  begin
+    For i := Index to Pred(BookmarkHighIndex) do
+      fBookmarks[i] := fBookmarks[i + 1];
+    Dec(fBookmarkCount);
+    Shrink;
+    DoChange;
+  end
+else raise EBSIndexOutOfBounds.CreateFmt('TCustomStreamer.BookmarkDelete: Index (%d) out of bounds.',[Index]);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TCustomStreamer.BookmarkClear;
+begin
+SetLength(fBookmarks,0);
+fBookmarkCount := 0;
+DoChange;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.BookmarkGetPosition(ID: TBSBookmarkID): Int64;
+var
+  Index:  Integer;
+begin
+If BookmarkFind(ID,Index) then
+  Result := fBookmarks[Index].Position
+else
+  raise EBSUnknownItem.CreateFmt('TCustomStreamer.BookmarkGetPosition: Item %d not found.',[ID]);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TCustomStreamer.BookmarkSetPosition(ID: TBSBookmarkID; NewPosition: Int64);
+var
+  Index:  Integer;
+begin
+If BookmarkFind(ID,Index) then
+  fBookmarks[Index].Position := NewPosition
+else
+  raise EBSUnknownItem.CreateFmt('TCustomStreamer.BookmarkSetPosition: Item %d not found.',[ID]);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TCustomStreamer.MoveTo(Position: Int64);
+begin
+Self.Position := Position;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TCustomStreamer.MoveToOffset(Offset: Int64);
+begin
+Self.Offset := Offset;
+end;
+
+//------------------------------------------------------------------------------
+
+{$IFOPT Q+}{$DEFINE BS_OverflowChecks}{$Q-}{$ENDIF}
+procedure TCustomStreamer.MoveBy(Delta: Int64);
+begin
+Position := Position + Delta;
+end;
+{$IFDEF BS_OverflowChecks}{$UNDEF BS_OverflowChecks}{$Q+}{$ENDIF}
+
+//------------------------------------------------------------------------------
+
+procedure TCustomStreamer.MoveAtStart;
+begin
+Position := fStart;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TCustomStreamer.MoveAt(ID: TBSBookmarkID);
+var
+  Index:  Integer;
+begin
+If BookmarkFind(ID,Index) then
+  Position := fBookmarks[Index].Position
+else
+  raise EBSUnknownItem.CreateFmt('TCustomStreamer.MoveAt: Item %d not found.',[ID]);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TCustomStreamer.MoveAtIndex(Index: Integer);
+begin
+If BookmarkCheckIndex(Index) then
+  Position := fBookmarks[Index].Position
+else
+  raise EBSIndexOutOfBounds.CreateFmt('TCustomStreamer.MoveAtIndex: Index (%d) out of bounds.',[Index]);
 end;
 
 //==============================================================================
@@ -12737,7 +13067,7 @@ var
   Temp: UInt8;
 begin
 Temp := BoolToNum(Value);
-Result := WriteValue(@Temp,Advance,SizeOf(Temp),vtPrimitive1B);
+Result := WriteValue(BS_VALTYPE_NUM_1,@Temp,Advance);
 end;
 
 //------------------------------------------------------------------------------
@@ -12751,126 +13081,126 @@ end;
 
 Function TCustomStreamer.WriteInt8(Value: Int8; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive1B);
+Result := WriteValue(BS_VALTYPE_NUM_1,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUInt8(Value: UInt8; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive1B);
+Result := WriteValue(BS_VALTYPE_NUM_1,@Value,Advance);
 end;
  
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteInt16(Value: Int16; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive2B);
+Result := WriteValue(BS_VALTYPE_NUM_2,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUInt16(Value: UInt16; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive2B);
+Result := WriteValue(BS_VALTYPE_NUM_2,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteInt32(Value: Int32; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive4B);
+Result := WriteValue(BS_VALTYPE_NUM_4,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUInt32(Value: UInt32; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive4B);
+Result := WriteValue(BS_VALTYPE_NUM_4,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteInt64(Value: Int64; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive8B);
+Result := WriteValue(BS_VALTYPE_NUM_8,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUInt64(Value: UInt64; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive8B);
+Result := WriteValue(BS_VALTYPE_NUM_8,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteFloat32(Value: Float32; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive4B);
+Result := WriteValue(BS_VALTYPE_NUM_4,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteFloat64(Value: Float64; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive8B);
+Result := WriteValue(BS_VALTYPE_NUM_8,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteFloat80(Value: Float80; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive10B);
+Result := WriteValue(BS_VALTYPE_NUM_10,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteDateTime(Value: TDateTime; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive8B);
+Result := WriteValue(BS_VALTYPE_NUM_8,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteCurrency(Value: Currency; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive8B);
+Result := WriteValue(BS_VALTYPE_NUM_8,@Value,Advance);
 end;   
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteAnsiChar(Value: AnsiChar; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive1B);
+Result := WriteValue(BS_VALTYPE_NUM_1,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUTF8Char(Value: UTF8Char; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive1B);
+Result := WriteValue(BS_VALTYPE_NUM_1,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteWideChar(Value: WideChar; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive2B);
+Result := WriteValue(BS_VALTYPE_NUM_2,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUnicodeChar(Value: UnicodeChar; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive2B);
+Result := WriteValue(BS_VALTYPE_NUM_2,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUCS4Char(Value: UCS4Char; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,SizeOf(Value),vtPrimitive4B);
+Result := WriteValue(BS_VALTYPE_NUM_4,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
@@ -12880,92 +13210,97 @@ var
   Temp: UInt16;
 begin
 Temp := UInt16(Ord(Value));
-Result := WriteValue(@Temp,Advance,SizeOf(Temp),vtPrimitive2B);
+Result := WriteValue(BS_VALTYPE_NUM_2,@Temp,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteShortString(const Value: ShortString; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,0,vtShortString);
+Result := WriteValue(BS_VALTYPE_STR_SHORT,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteAnsiString(const Value: AnsiString; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,0,vtAnsiString);
+Result := WriteValue(BS_VALTYPE_STR_ANSI,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUTF8String(const Value: UTF8String; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,0,vtUTF8String);
+Result := WriteValue(BS_VALTYPE_STR_UTF8,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteWideString(const Value: WideString; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,0,vtWideString);
+Result := WriteValue(BS_VALTYPE_STR_WIDE,@Value,Advance);
 end;
  
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUnicodeString(const Value: UnicodeString; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,0,vtUnicodeString);
+Result := WriteValue(BS_VALTYPE_STR_UNICODE,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUCS4String(const Value: UCS4String; Advance: Boolean = True): TMemSize; 
 begin
-Result := WriteValue(@Value,Advance,0,vtUCS4String);
+Result := WriteValue(BS_VALTYPE_STR_UCS4,@Value,Advance);
 end;
   
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteString(const Value: String; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,0,vtString);
+Result := WriteValue(BS_VALTYPE_STR,@Value,Advance);
 end;
   
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteBuffer(const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Buffer,Advance,Size,vtBytes);
+Result := WriteValue(BS_VALTYPE_BUFFER,@Buffer,Advance,Size);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteBytes(const Value: array of UInt8; Advance: Boolean = True): TMemSize;
 var
-  i:      Integer;
   OldPos: Int64;
+  i:      Integer;
 begin
-OldPos := CurrentPosition;
 Result := 0;
-For i := Low(Value) to High(Value) do
-  WriteUInt8(Value[i],True);
-If not Advance then
-  CurrentPosition := OldPos;
+If not ByteOpenArrayIsPacked then
+  begin
+    OldPos := Position;
+    For i := Low(Value) to High(Value) do
+      WriteUInt8(Value[i],True);
+    If not Advance then
+      Position := OldPos;
+  end
+else If Length(Value) > 0 then
+  Result := WriteValue(BS_VALTYPE_BUFFER,Addr(Value[Low(Value)]),Advance,TMemSize(Length(Value)));
 end;
 
 //------------------------------------------------------------------------------
 
-Function TCustomStreamer.FillBytes(ByteCount: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize;
+Function TCustomStreamer.FillBytes(Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,ByteCount,vtFillBytes);
+Result := WriteValue(BS_VALTYPE_FILL,@Value,Advance,Count);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteVariant(const Value: Variant; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteValue(@Value,Advance,0,vtVariant);
+Result := WriteValue(BS_VALTYPE_VARIANT,@Value,Advance);
 end;
 
 //==============================================================================
@@ -12974,18 +13309,8 @@ Function TCustomStreamer.ReadBool(out Value: ByteBool; Advance: Boolean = True):
 var
   Temp: UInt8;
 begin
-Result := ReadValue(@Temp,Advance,SizeOf(Temp),vtPrimitive1B);
+Result := ReadValue(BS_VALTYPE_NUM_1,@Temp,Advance);
 Value := NumToBool(Temp);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.LoadBool(Advance: Boolean = True): ByteBool;
-var
-  Temp: UInt8;
-begin
-ReadValue(@Temp,Advance,SizeOf(Temp),vtPrimitive1B);
-Result := NumToBool(Temp);
 end;
 
 //------------------------------------------------------------------------------
@@ -13000,261 +13325,128 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TCustomStreamer.LoadBoolean(Advance: Boolean = True): Boolean;
-begin
-Result := LoadBool(Advance);
-end;
-
-//------------------------------------------------------------------------------
-
 Function TCustomStreamer.ReadInt8(out Value: Int8; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive1B);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.LoadInt8(Advance: Boolean = True): Int8;
-begin
-ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive1B);
+Result := ReadValue(BS_VALTYPE_NUM_1,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUInt8(out Value: UInt8; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive1B);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.LoadUInt8(Advance: Boolean = True): UInt8;
-begin
-ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive1B);
+Result := ReadValue(BS_VALTYPE_NUM_1,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadInt16(out Value: Int16; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive2B);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.LoadInt16(Advance: Boolean = True): Int16;
-begin
-ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive2B);
+Result := ReadValue(BS_VALTYPE_NUM_2,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUInt16(out Value: UInt16; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive2B);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.LoadUInt16(Advance: Boolean = True): UInt16;
-begin
-ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive2B);
+Result := ReadValue(BS_VALTYPE_NUM_2,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadInt32(out Value: Int32; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive4B);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.LoadInt32(Advance: Boolean = True): Int32;
-begin
-ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive4B);
+Result := ReadValue(BS_VALTYPE_NUM_4,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUInt32(out Value: UInt32; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive4B);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.LoadUInt32(Advance: Boolean = True): UInt32;
-begin
-ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive4B);
+Result := ReadValue(BS_VALTYPE_NUM_4,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadInt64(out Value: Int64; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive8B);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.LoadInt64(Advance: Boolean = True): Int64;
-begin
-ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive8B);
+Result := ReadValue(BS_VALTYPE_NUM_8,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUInt64(out Value: UInt64; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive8B);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.LoadUInt64(Advance: Boolean = True): UInt64;
-begin
-ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive8B);
+Result := ReadValue(BS_VALTYPE_NUM_8,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadFloat32(out Value: Float32; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive4B);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.LoadFloat32(Advance: Boolean = True): Float32;
-begin
-ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive4B);
+Result := ReadValue(BS_VALTYPE_NUM_4,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadFloat64(out Value: Float64; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive8B);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.LoadFloat64(Advance: Boolean = True): Float64;
-begin
-ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive8B);
+Result := ReadValue(BS_VALTYPE_NUM_8,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadFloat80(out Value: Float80; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive10B);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.LoadFloat80(Advance: Boolean = True): Float80;
-begin
-ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive10B);
+Result := ReadValue(BS_VALTYPE_NUM_10,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadDateTime(out Value: TDateTime; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive8B);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.LoadDateTime(Advance: Boolean = True): TDateTime;
-begin
-ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive8B);
+Result := ReadValue(BS_VALTYPE_NUM_8,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadCurrency(out Value: Currency; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive8B);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.LoadCurrency(Advance: Boolean = True): Currency;
-begin
-ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive8B);
+Result := ReadValue(BS_VALTYPE_NUM_8,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadAnsiChar(out Value: AnsiChar; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive1B);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.LoadAnsiChar(Advance: Boolean = True): AnsiChar;
-begin
-ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive1B);
+Result := ReadValue(BS_VALTYPE_NUM_1,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUTF8Char(out Value: UTF8Char; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive1B);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.LoadUTF8Char(Advance: Boolean = True): UTF8Char;
-begin
-ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive1B);
+Result := ReadValue(BS_VALTYPE_NUM_1,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadWideChar(out Value: WideChar; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive2B);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.LoadWideChar(Advance: Boolean = True): WideChar;
-begin
-ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive2B);
+Result := ReadValue(BS_VALTYPE_NUM_2,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUnicodeChar(out Value: UnicodeChar; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive2B);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.LoadUnicodeChar(Advance: Boolean = True): UnicodeChar;
-begin
-ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive2B);
+Result := ReadValue(BS_VALTYPE_NUM_2,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUCS4Char(out Value: UCS4Char; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,SizeOf(Value),vtPrimitive4B);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.LoadUCS4Char(Advance: Boolean = True): UCS4Char;
-begin
-ReadValue(@Result,Advance,SizeOf(Result),vtPrimitive4B);
+Result := ReadValue(BS_VALTYPE_NUM_4,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
@@ -13263,137 +13455,280 @@ Function TCustomStreamer.ReadChar(out Value: Char; Advance: Boolean = True): TMe
 var
   Temp: UInt16;
 begin
-Result := ReadValue(@Temp,Advance,SizeOf(Temp),vtPrimitive2B);
+Result := ReadValue(BS_VALTYPE_NUM_2,@Temp,Advance);
 Value := Char(Temp);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.LoadChar(Advance: Boolean = True): Char;
-var
-  Temp: UInt16;
-begin
-ReadValue(@Temp,Advance,SizeOf(Temp),vtPrimitive2B);
-Result := Char(Temp);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadShortString(out Value: ShortString; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,0,vtShortString);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.LoadShortString(Advance: Boolean = True): ShortString;
-begin
-ReadValue(@Result,Advance,0,vtShortString);
+Result := ReadValue(BS_VALTYPE_STR_SHORT,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadAnsiString(out Value: AnsiString; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,0,vtAnsiString);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.LoadAnsiString(Advance: Boolean = True): AnsiString;
-begin
-ReadValue(@Result,Advance,0,vtAnsiString);
+Result := ReadValue(BS_VALTYPE_STR_ANSI,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUTF8String(out Value: UTF8String; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,0,vtUTF8String);
-end;
- 
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.LoadUTF8String(Advance: Boolean = True): UTF8String;
-begin
-ReadValue(@Result,Advance,0,vtUTF8String);
+Result := ReadValue(BS_VALTYPE_STR_UTF8,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadWideString(out Value: WideString; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,0,vtWideString);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.LoadWideString(Advance: Boolean = True): WideString;
-begin
-ReadValue(@Result,Advance,0,vtWideString);
+Result := ReadValue(BS_VALTYPE_STR_WIDE,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUnicodeString(out Value: UnicodeString; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,0,vtUnicodeString);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.LoadUnicodeString(Advance: Boolean = True): UnicodeString;
-begin
-ReadValue(@Result,Advance,0,vtUnicodeString);
+Result := ReadValue(BS_VALTYPE_STR_UNICODE,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUCS4String(out Value: UCS4String; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,0,vtUCS4String);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.LoadUCS4String(Advance: Boolean = True): UCS4String;
-begin
-ReadValue(@Result,Advance,0,vtUCS4String);
+Result := ReadValue(BS_VALTYPE_STR_UCS4,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadString(out Value: String; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,0,vtString);
+Result := ReadValue(BS_VALTYPE_STR,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
-Function TCustomStreamer.LoadString(Advance: Boolean = True): String;
+Function TCustomStreamer.ReadBuffer(out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
 begin
-ReadValue(@Result,Advance,0,vtString);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TCustomStreamer.ReadBuffer(var Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
-begin
-Result := ReadValue(@Buffer,Advance,Size,vtBytes);
+Result := ReadValue(BS_VALTYPE_BUFFER,@Buffer,Advance,Size);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadVariant(out Value: Variant; Advance: Boolean = True): TMemSize;
 begin
-Result := ReadValue(@Value,Advance,0,vtVariant);
+Result := ReadValue(BS_VALTYPE_VARIANT,@Value,Advance);
+end;
+
+//==============================================================================
+
+Function TCustomStreamer.GetBool(Advance: Boolean = True): ByteBool;
+var
+  Temp: UInt8;
+begin
+ReadValue(BS_VALTYPE_NUM_1,@Temp,Advance);
+Result := NumToBool(Temp);
 end;
 
 //------------------------------------------------------------------------------
 
-Function TCustomStreamer.LoadVariant(Advance: Boolean = True): Variant;
+Function TCustomStreamer.GetBoolean(Advance: Boolean = True): Boolean;
 begin
-ReadValue(@Result,Advance,0,vtVariant)
+Result := GetBool(Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetInt8(Advance: Boolean = True): Int8;
+begin
+ReadValue(BS_VALTYPE_NUM_1,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetUInt8(Advance: Boolean = True): UInt8;
+begin
+ReadValue(BS_VALTYPE_NUM_1,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetInt16(Advance: Boolean = True): Int16;
+begin
+ReadValue(BS_VALTYPE_NUM_2,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetUInt16(Advance: Boolean = True): UInt16;
+begin
+ReadValue(BS_VALTYPE_NUM_2,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetInt32(Advance: Boolean = True): Int32;
+begin
+ReadValue(BS_VALTYPE_NUM_4,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetUInt32(Advance: Boolean = True): UInt32;
+begin
+ReadValue(BS_VALTYPE_NUM_4,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetInt64(Advance: Boolean = True): Int64;
+begin
+ReadValue(BS_VALTYPE_NUM_8,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetUInt64(Advance: Boolean = True): UInt64;
+begin
+ReadValue(BS_VALTYPE_NUM_8,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetFloat32(Advance: Boolean = True): Float32;
+begin
+ReadValue(BS_VALTYPE_NUM_4,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetFloat64(Advance: Boolean = True): Float64;
+begin
+ReadValue(BS_VALTYPE_NUM_8,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetFloat80(Advance: Boolean = True): Float80;
+begin
+ReadValue(BS_VALTYPE_NUM_10,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetDateTime(Advance: Boolean = True): TDateTime;
+begin
+ReadValue(BS_VALTYPE_NUM_8,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetCurrency(Advance: Boolean = True): Currency;
+begin
+ReadValue(BS_VALTYPE_NUM_8,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetAnsiChar(Advance: Boolean = True): AnsiChar;
+begin
+ReadValue(BS_VALTYPE_NUM_1,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetUTF8Char(Advance: Boolean = True): UTF8Char;
+begin
+ReadValue(BS_VALTYPE_NUM_1,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetWideChar(Advance: Boolean = True): WideChar;
+begin
+ReadValue(BS_VALTYPE_NUM_2,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetUnicodeChar(Advance: Boolean = True): UnicodeChar;
+begin
+ReadValue(BS_VALTYPE_NUM_2,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetUCS4Char(Advance: Boolean = True): UCS4Char;
+begin
+ReadValue(BS_VALTYPE_NUM_4,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetChar(Advance: Boolean = True): Char;
+var
+  Temp: UInt16;
+begin
+ReadValue(BS_VALTYPE_NUM_2,@Temp,Advance);
+Result := Char(Temp);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetShortString(Advance: Boolean = True): ShortString;
+begin
+ReadValue(BS_VALTYPE_STR_SHORT,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetAnsiString(Advance: Boolean = True): AnsiString;
+begin
+ReadValue(BS_VALTYPE_STR_ANSI,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetUTF8String(Advance: Boolean = True): UTF8String;
+begin
+ReadValue(BS_VALTYPE_STR_UTF8,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetWideString(Advance: Boolean = True): WideString;
+begin
+ReadValue(BS_VALTYPE_STR_WIDE,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetUnicodeString(Advance: Boolean = True): UnicodeString;
+begin
+ReadValue(BS_VALTYPE_STR_UNICODE,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetUCS4String(Advance: Boolean = True): UCS4String;
+begin
+ReadValue(BS_VALTYPE_STR_UCS4,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetString(Advance: Boolean = True): String;
+begin
+ReadValue(BS_VALTYPE_STR,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetVariant(Advance: Boolean = True): Variant;
+begin
+ReadValue(BS_VALTYPE_VARIANT,@Result,Advance)
 end;
 
 
@@ -13409,87 +13744,77 @@ end;
     TMemoryStreamer - protected methods
 -------------------------------------------------------------------------------}
 
-Function TMemoryStreamer.GetStartPtr: Pointer;
+Function TMemoryStreamer.GetStartAddress: Pointer;
 begin
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-Result := Pointer(PtrUInt(fStartPosition));
+Result := Pointer(PtrUInt(fStart));
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TMemoryStreamer.SetBookmark(Index: Integer; Value: Int64);
-begin
-{
-  casting to PtrInt is done to cut off higher 32bits on 32bit system
-}
-inherited SetBookmark(Index,Int64(PtrInt(Value)));
-end;
-
-//------------------------------------------------------------------------------
-
-Function TMemoryStreamer.GetCurrentPosition: Int64;
+Function TMemoryStreamer.GetPosition: Int64;
 begin
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-Result := Int64(PtrUInt(fCurrentPtr));
+Result := Int64(PtrUInt(fPositionAddress));
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TMemoryStreamer.SetCurrentPosition(NewPosition: Int64);
+procedure TMemoryStreamer.SetPosition(NewPosition: Int64);
 begin
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-fCurrentPtr := Pointer(PtrUInt(NewPosition));
+fPositionAddress := Pointer(PtrUInt(NewPosition));
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //------------------------------------------------------------------------------
 
-Function TMemoryStreamer.WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; ValueType: TValueType): TMemSize;
+Function TMemoryStreamer.WriteValue(ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize;
 begin
 case ValueType of
-  vtShortString:    Result := Ptr_WriteShortString(fCurrentPtr,ShortString(Value^),Advance,fEndian);
-  vtAnsiString:     Result := Ptr_WriteAnsiString(fCurrentPtr,AnsiString(Value^),Advance,fEndian);
-  vtUTF8String:     Result := Ptr_WriteUTF8String(fCurrentPtr,UTF8String(Value^),Advance,fEndian);
-  vtWideString:     Result := Ptr_WriteWideString(fCurrentPtr,WideString(Value^),Advance,fEndian);
-  vtUnicodeString:  Result := Ptr_WriteUnicodeString(fCurrentPtr,UnicodeString(Value^),Advance,fEndian);
-  vtUCS4String:     Result := Ptr_WriteUCS4String(fCurrentPtr,UCS4String(Value^),Advance,fEndian);
-  vtString:         Result := Ptr_WriteString(fCurrentPtr,String(Value^),Advance,fEndian);
-  vtFillBytes:      Result := Ptr_FillBytes(fCurrentPtr,Size,UInt8(Value^),Advance,fEndian);
-  vtPrimitive1B:    Result := Ptr_WriteUInt8(fCurrentPtr,UInt8(Value^),Advance,fEndian);
-  vtPrimitive2B:    Result := Ptr_WriteUInt16(fCurrentPtr,UInt16(Value^),Advance,fEndian);
-  vtPrimitive4B:    Result := Ptr_WriteUInt32(fCurrentPtr,UInt32(Value^),Advance,fEndian);
-  vtPrimitive8B:    Result := Ptr_WriteUInt64(fCurrentPtr,UInt64(Value^),Advance,fEndian);
-  vtPrimitive10B:   Result := Ptr_WriteFloat80(fCurrentPtr,Float80(Value^),Advance,fEndian);
-  vtVariant:        Result := Ptr_WriteVariant(fCurrentPtr,Variant(Value^),Advance,fEndian);
+  BS_VALTYPE_NUM_1:       Result := Ptr_WriteUInt8(fPositionAddress,UInt8(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_NUM_2:       Result := Ptr_WriteUInt16(fPositionAddress,UInt16(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_NUM_4:       Result := Ptr_WriteUInt32(fPositionAddress,UInt32(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_NUM_8:       Result := Ptr_WriteUInt64(fPositionAddress,UInt64(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_NUM_10:      Result := Ptr_WriteFloat80(fPositionAddress,Float80(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_SHORT:   Result := Ptr_WriteShortString(fPositionAddress,ShortString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_ANSI:    Result := Ptr_WriteAnsiString(fPositionAddress,AnsiString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_UTF8:    Result := Ptr_WriteUTF8String(fPositionAddress,UTF8String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_WIDE:    Result := Ptr_WriteWideString(fPositionAddress,WideString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_UNICODE: Result := Ptr_WriteUnicodeString(fPositionAddress,UnicodeString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_UCS4:    Result := Ptr_WriteUCS4String(fPositionAddress,UCS4String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR:         Result := Ptr_WriteString(fPositionAddress,String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_FILL:        Result := Ptr_FillBytes(fPositionAddress,Size,UInt8(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_VARIANT:     Result := Ptr_WriteVariant(fPositionAddress,Variant(ValuePtr^),Advance,fEndian);
 else
- {vtBytes}
-  Result := Ptr_WriteBuffer(fCurrentPtr,Value^,Size,Advance);
+ {BS_VALTYPE_BUFFER}
+  Result := Ptr_WriteBuffer(fPositionAddress,ValuePtr^,Size,Advance);
 end;
 end;
 
 //------------------------------------------------------------------------------
 
-Function TMemoryStreamer.ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; ValueType: TValueType): TMemSize;
+Function TMemoryStreamer.ReadValue(ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize;
 begin
 case ValueType of
-  vtShortString:    Result := Ptr_ReadShortString(fCurrentPtr,ShortString(Value^),Advance,fEndian);
-  vtAnsiString:     Result := Ptr_ReadAnsiString(fCurrentPtr,AnsiString(Value^),Advance,fEndian);
-  vtUTF8String:     Result := Ptr_ReadUTF8String(fCurrentPtr,UTF8String(Value^),Advance,fEndian);
-  vtWideString:     Result := Ptr_ReadWideString(fCurrentPtr,WideString(Value^),Advance,fEndian);
-  vtUnicodeString:  Result := Ptr_ReadUnicodeString(fCurrentPtr,UnicodeString(Value^),Advance,fEndian);
-  vtUCS4String:     Result := Ptr_ReadUCS4String(fCurrentPtr,UCS4String(Value^),Advance,fEndian);
-  vtString:         Result := Ptr_ReadString(fCurrentPtr,String(Value^),Advance,fEndian);
-  vtPrimitive1B:    Result := Ptr_ReadUInt8(fCurrentPtr,UInt8(Value^),Advance,fEndian);
-  vtPrimitive2B:    Result := Ptr_ReadUInt16(fCurrentPtr,UInt16(Value^),Advance,fEndian);
-  vtPrimitive4B:    Result := Ptr_ReadUInt32(fCurrentPtr,UInt32(Value^),Advance,fEndian);
-  vtPrimitive8B:    Result := Ptr_ReadUInt64(fCurrentPtr,UInt64(Value^),Advance,fEndian);
-  vtPrimitive10B:   Result := Ptr_ReadFloat80(fCurrentPtr,Float80(Value^),Advance,fEndian);
-  vtVariant:        Result := Ptr_ReadVariant(fCurrentPtr,Variant(Value^),Advance,fEndian);
+  BS_VALTYPE_NUM_1:       Result := Ptr_ReadUInt8(fPositionAddress,UInt8(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_NUM_2:       Result := Ptr_ReadUInt16(fPositionAddress,UInt16(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_NUM_4:       Result := Ptr_ReadUInt32(fPositionAddress,UInt32(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_NUM_8:       Result := Ptr_ReadUInt64(fPositionAddress,UInt64(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_NUM_10:      Result := Ptr_ReadFloat80(fPositionAddress,Float80(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_SHORT:   Result := Ptr_ReadShortString(fPositionAddress,ShortString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_ANSI:    Result := Ptr_ReadAnsiString(fPositionAddress,AnsiString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_UTF8:    Result := Ptr_ReadUTF8String(fPositionAddress,UTF8String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_WIDE:    Result := Ptr_ReadWideString(fPositionAddress,WideString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_UNICODE: Result := Ptr_ReadUnicodeString(fPositionAddress,UnicodeString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_UCS4:    Result := Ptr_ReadUCS4String(fPositionAddress,UCS4String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR:         Result := Ptr_ReadString(fPositionAddress,String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_VARIANT:     Result := Ptr_ReadVariant(fPositionAddress,Variant(ValuePtr^),Advance,fEndian);
 else
- {vtFillBytes, vtBytes}
-  Result := Ptr_ReadBuffer(fCurrentPtr,Value^,Size,Advance);
+ {BS_VALTYPE_FILL,BS_VALTYPE_BUFFER}
+  Result := Ptr_ReadBuffer(fPositionAddress,ValuePtr^,Size,Advance);
 end;
 end;
 
@@ -13498,10 +13823,10 @@ end;
 procedure TMemoryStreamer.Initialize(Memory: Pointer);
 begin
 inherited Initialize;
-fCurrentPtr := Memory;
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-fStartPosition := Int64(PtrUInt(Memory));
+fStart := Int64(PtrUInt(Memory));
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
+fPositionAddress := Memory;
 end;
 
 {-------------------------------------------------------------------------------
@@ -13516,23 +13841,45 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TMemoryStreamer.IndexOfBookmark(Position: Int64): Integer;
+procedure TMemoryStreamer.MoveTo(Address: Pointer);
 begin
-Result := inherited IndexOfBookmark(PtrInt(Position));
+fPositionAddress := Address;
 end;
 
 //------------------------------------------------------------------------------
 
-Function TMemoryStreamer.AddBookmark(Position: Int64): Integer;
+Function TMemoryStreamer.BookmarkAdd(ID: TBSBookmarkID; Address: Pointer): Integer;
 begin
-Result := inherited AddBookmark(PtrInt(Position));
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
+Result := BookmarkAdd(ID,Int64(PtrUInt(Address)));
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //------------------------------------------------------------------------------
 
-Function TMemoryStreamer.RemoveBookmark(Position: Int64; RemoveAll: Boolean = True): Integer;
+procedure TMemoryStreamer.BookmarkInsert(Index: Integer; ID: TBSBookmarkID; Address: Pointer);
 begin
-Result := inherited RemoveBookmark(PtrInt(Position),RemoveAll);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
+BookmarkInsert(Index,ID,Int64(PtrUInt(Address)));
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.BookmarkGetAddress(ID: TBSBookmarkID): Pointer;
+begin
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
+Result := Pointer(PtrUInt(BookmarkGetPosition(ID)));
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TMemoryStreamer.BookmarkSetAddress(ID: TBSBookmarkID; NewAddress: Pointer);
+begin
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
+BookmarkSetPosition(ID,Int64(PtrUInt(NewAddress)));
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 
@@ -13548,64 +13895,64 @@ end;
     TStreamStreamer - protected methods
 -------------------------------------------------------------------------------}
 
-Function TStreamStreamer.GetCurrentPosition: Int64;
+Function TStreamStreamer.GetPosition: Int64;
 begin
 Result := fTarget.Position;
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TStreamStreamer.SetCurrentPosition(NewPosition: Int64);
+procedure TStreamStreamer.SetPosition(NewPosition: Int64);
 begin
 fTarget.Position := NewPosition;
 end;
 
 //------------------------------------------------------------------------------
 
-Function TStreamStreamer.WriteValue(Value: Pointer; Advance: Boolean; Size: TMemSize; ValueType: TValueType): TMemSize;
+Function TStreamStreamer.WriteValue(ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize;
 begin
 case ValueType of
-  vtShortString:    Result := Stream_WriteShortString(fTarget,ShortString(Value^),Advance);
-  vtAnsiString:     Result := Stream_WriteAnsiString(fTarget,AnsiString(Value^),Advance);
-  vtUTF8String:     Result := Stream_WriteUTF8String(fTarget,UTF8String(Value^),Advance);
-  vtWideString:     Result := Stream_WriteWideString(fTarget,WideString(Value^),Advance);
-  vtUnicodeString:  Result := Stream_WriteUnicodeString(fTarget,UnicodeString(Value^),Advance);
-  vtUCS4String:     Result := Stream_WriteUCS4String(fTarget,UCS4String(Value^),Advance);
-  vtString:         Result := Stream_WriteString(fTarget,String(Value^),Advance);
-  vtFillBytes:      Result := Stream_FillBytes(fTarget,Size,UInt8(Value^),Advance);
-  vtPrimitive1B:    Result := Stream_WriteUInt8(fTarget,UInt8(Value^),Advance);
-  vtPrimitive2B:    Result := Stream_WriteUInt16(fTarget,UInt16(Value^),Advance);
-  vtPrimitive4B:    Result := Stream_WriteUInt32(fTarget,UInt32(Value^),Advance);
-  vtPrimitive8B:    Result := Stream_WriteUInt64(fTarget,UInt64(Value^),Advance);
-  vtPrimitive10B:   Result := Stream_WriteFloat80(fTarget,Float80(Value^),Advance);
-  vtVariant:        Result := Stream_WriteVariant(fTarget,Variant(Value^),Advance);
+  BS_VALTYPE_NUM_1:       Result := Stream_WriteUInt8(fTarget,UInt8(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_NUM_2:       Result := Stream_WriteUInt16(fTarget,UInt16(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_NUM_4:       Result := Stream_WriteUInt32(fTarget,UInt32(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_NUM_8:       Result := Stream_WriteUInt64(fTarget,UInt64(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_NUM_10:      Result := Stream_WriteFloat80(fTarget,Float80(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_SHORT:   Result := Stream_WriteShortString(fTarget,ShortString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_ANSI:    Result := Stream_WriteAnsiString(fTarget,AnsiString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_UTF8:    Result := Stream_WriteUTF8String(fTarget,UTF8String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_WIDE:    Result := Stream_WriteWideString(fTarget,WideString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_UNICODE: Result := Stream_WriteUnicodeString(fTarget,UnicodeString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_UCS4:    Result := Stream_WriteUCS4String(fTarget,UCS4String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR:         Result := Stream_WriteString(fTarget,String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_FILL:        Result := Stream_FillBytes(fTarget,Size,UInt8(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_VARIANT:     Result := Stream_WriteVariant(fTarget,Variant(ValuePtr^),Advance,fEndian);
 else
- {vtBytes}
-  Result := Stream_WriteBuffer(fTarget,Value^,Size,Advance);
+ {BS_VALTYPE_BUFFER}
+  Result := Stream_WriteBuffer(fTarget,ValuePtr^,Size,Advance,fEndian);
 end;
 end;
 
 //------------------------------------------------------------------------------
 
-Function TStreamStreamer.ReadValue(Value: Pointer; Advance: Boolean; Size: TMemSize; ValueType: TValueType): TMemSize;
+Function TStreamStreamer.ReadValue(ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize;
 begin
 case ValueType of
-  vtShortString:    Result := Stream_ReadShortString(fTarget,ShortString(Value^),Advance);
-  vtAnsiString:     Result := Stream_ReadAnsiString(fTarget,AnsiString(Value^),Advance);
-  vtUTF8String:     Result := Stream_ReadUTF8String(fTarget,UTF8String(Value^),Advance);
-  vtWideString:     Result := Stream_ReadWideString(fTarget,WideString(Value^),Advance);
-  vtUnicodeString:  Result := Stream_ReadUnicodeString(fTarget,UnicodeString(Value^),Advance);
-  vtUCS4String:     Result := Stream_ReadUCS4String(fTarget,UCS4String(Value^),Advance);
-  vtString:         Result := Stream_ReadString(fTarget,String(Value^),Advance);
-  vtPrimitive1B:    Result := Stream_ReadUInt8(fTarget,UInt8(Value^),Advance);
-  vtPrimitive2B:    Result := Stream_ReadUInt16(fTarget,UInt16(Value^),Advance);
-  vtPrimitive4B:    Result := Stream_ReadUInt32(fTarget,UInt32(Value^),Advance);
-  vtPrimitive8B:    Result := Stream_ReadUInt64(fTarget,UInt64(Value^),Advance);
-  vtPrimitive10B:   Result := Stream_ReadFloat80(fTarget,Float80(Value^),Advance);
-  vtVariant:        Result := Stream_ReadVariant(fTarget,Variant(Value^),Advance);
+  BS_VALTYPE_NUM_1:       Result := Stream_ReadUInt8(fTarget,UInt8(ValuePtr^),Advance);
+  BS_VALTYPE_NUM_2:       Result := Stream_ReadUInt16(fTarget,UInt16(ValuePtr^),Advance);
+  BS_VALTYPE_NUM_4:       Result := Stream_ReadUInt32(fTarget,UInt32(ValuePtr^),Advance);
+  BS_VALTYPE_NUM_8:       Result := Stream_ReadUInt64(fTarget,UInt64(ValuePtr^),Advance);
+  BS_VALTYPE_NUM_10:      Result := Stream_ReadFloat80(fTarget,Float80(ValuePtr^),Advance);
+  BS_VALTYPE_STR_SHORT:   Result := Stream_ReadShortString(fTarget,ShortString(ValuePtr^),Advance);
+  BS_VALTYPE_STR_ANSI:    Result := Stream_ReadAnsiString(fTarget,AnsiString(ValuePtr^),Advance);
+  BS_VALTYPE_STR_UTF8:    Result := Stream_ReadUTF8String(fTarget,UTF8String(ValuePtr^),Advance);
+  BS_VALTYPE_STR_WIDE:    Result := Stream_ReadWideString(fTarget,WideString(ValuePtr^),Advance);
+  BS_VALTYPE_STR_UNICODE: Result := Stream_ReadUnicodeString(fTarget,UnicodeString(ValuePtr^),Advance);
+  BS_VALTYPE_STR_UCS4:    Result := Stream_ReadUCS4String(fTarget,UCS4String(ValuePtr^),Advance);
+  BS_VALTYPE_STR:         Result := Stream_ReadString(fTarget,String(ValuePtr^),Advance);
+  BS_VALTYPE_VARIANT:     Result := Stream_ReadVariant(fTarget,Variant(ValuePtr^),Advance);
 else
- {vtFillBytes,vtBytes}
-  Result := Stream_ReadBuffer(fTarget,Value^,Size,Advance);
+ {BS_VALTYPE_FILL,BS_VALTYPE_BUFFER}
+  Result := Stream_ReadBuffer(fTarget,ValuePtr^,Size,Advance);
 end;
 end;
 
@@ -13614,8 +13961,8 @@ end;
 procedure TStreamStreamer.Initialize(Target: TStream);
 begin
 inherited Initialize;
+fStart := Target.Position;
 fTarget := Target;
-fStartPosition := Target.Position;
 end;
 
 {-------------------------------------------------------------------------------
@@ -13627,7 +13974,7 @@ begin
 inherited Create;
 Initialize(Target);
 end;
-*)
+
 
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -13645,6 +13992,7 @@ procedure UnitInitialize;
   end;
 
 begin
+// following should be always true, but the paranoia needs feeding...
 ByteOpenArrayIsPacked := GetBOAStride([0,0]) = 1;
 end;
 
@@ -13654,4 +14002,5 @@ initialization
   UnitInitialize;
 
 end.
+
 
