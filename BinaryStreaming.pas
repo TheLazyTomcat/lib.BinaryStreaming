@@ -13,7 +13,14 @@
     data into/from streams and memory locations.
 
     All primitives larger than one byte (integers, floats, wide characters -
-    including in UTF-16 strings, ...) are always written with little endiannes.
+    including in UTF-16 strings, ...) can be written either with little endian
+    (LE) or big endian (BE) byte order. For single-byte primitives, the byte
+    order can also be selected, but it has no effect on the result (a common
+    code is called).
+
+      WARNING - the endianess is not stored with the data, it is up to you
+                to use proper loading function for the byte order used during
+                saving.  
 
     Boolean data are written as one byte, where zero represents false and any
     non-zero value represents true.
@@ -31,41 +38,40 @@
     Default type Char is always stored as 16bit unsigned integer, irrespective
     of how it is declared.
 
-    Default type String is always stored as UTF-8 encoded string, again
+    Default type String is always stored as an UTF-8 encoded string, again
     irrespective of how it is declared.
 
     Buffers and array of bytes are both stored as plain byte streams, without
     explicit size.
 
     Variants are stored in a litle more complex way - first a byte denoting
-    the type of the variant is stored (note that value of this byte do NOT
-    correspond to TVarType value), directly followed by the value itself.
+    type of the variant is stored (note that value of this byte does NOT
+    correspond to a TVarType value), directly followed by the value itself.
     The value is stored as if it was a normal variable (eg. for varWord variant
-    the function [Ptr/Stream]_WriteUInt16 is called).
-
-      NOTE - given the implementation, variant being written into memory
-             (function Ptr_WriteVariant) must not be larger than 2GiB-1 bytes.
+    the function WriteUInt16 is called).
 
     For variant arrays, immediately after the type byte a dimension count is
     stored (int32), followed by an array of indices bounds (two int32 values
     for each dimension, first low bound followed by a high bound, ordered from
-    lowest dimension to highest). After this an array of items is stored, each
-    item stored as a separate variant. When saving the items, the right-most
-    index is incremented first.
+    lowest dimension to highest dimension). After this, an array of items is
+    stored, each item is stored as a separate variant. When saving the items,
+    the right-most index is incremented first.
 
       NOTE - only standard variant types are supported, and from them only the
              "streamable" types (boolean, integers, floats, strings) and their
-             arrays are allowed - so no empty/null vars, interfaces, objects,
-             errors, and so on.
+             arrays are allowed - so no empty/null variants, interfaces,
+             objects, errors, and so on.
 
-    Also, since older compilers do not support all in-here used variant types
-    (namely varUInt64 and varUString), there are some specific rules in effect
-    when saving and loading such types in programs compiled by those
+    Also, since some older compilers do not support all in-here used variant
+    types (namely varUInt64 and varUString), there are some specific rules in
+    effect when saving and loading such types in programs compiled by those
     compilers...
 
-      Unsupported types are not saved at all, simply because a variant of that
-      type cannot be even created (note that the type UInt64 is sometimes
-      declared only an alias for Int64, then it will be saved as Int64).
+      Localy unsupported types are not saved at all, simply because a variant
+      of that type cannot be even created (note that the type UInt64 is
+      sometimes declared only an alias for Int64, so when creating variant from
+      that type, it will be of type varInt64, in that case such variant will be
+      saved as varInt64).
 
       When loading unsupported varUInt64, it will be loaded as Int64 (with the
       same BINARY data, ie. not necessarily the same numerical value).
@@ -79,13 +85,13 @@
     true, the position (pointer) is advanced, when false, the position is the
     same after the call as was before it.
 
-    Return value of almost all reading and writing functions is number of bytes
-    written or read. The exception to this are read functions that are directly
-    returning the value being read.
+    Return value of all read and write functions is number of bytes written or
+    read (does not apply to Get* functions, as they are returning the value
+    being read).
 
-  Version 1.9 (2023-01-22)
+  Version 2.0 (2023-09-03)
 
-  Last change 2023-01-22
+  Last change 2023-09-03
 
   ©2015-2023 František Milt
 
@@ -104,10 +110,9 @@
       github.com/TheLazyTomcat/Lib.BinaryStreaming
 
   Dependencies:
-    AuxClasses         - github.com/TheLazyTomcat/Lib.AuxClasses  
-    AuxTypes           - github.com/TheLazyTomcat/Lib.AuxTypes
-    StaticMemoryStream - github.com/TheLazyTomcat/Lib.StaticMemoryStream
-    StrRect            - github.com/TheLazyTomcat/Lib.StrRect
+    AuxClasses - github.com/TheLazyTomcat/Lib.AuxClasses
+    AuxTypes   - github.com/TheLazyTomcat/Lib.AuxTypes
+    StrRect    - github.com/TheLazyTomcat/Lib.StrRect
 
 ===============================================================================}
 unit BinaryStreaming;
@@ -142,6 +147,8 @@ unit BinaryStreaming;
 {$UNDEF BS_INC_MM_AT_OFF}   // offset macro
 {$UNDEF BS_INC_MM_TO}       // bookmark macro
 {$UNDEF BS_INC_MM_TO_IDX}   // bookmark index macro
+
+{$UNDEF BS_INC_MM_AT_ADDR}  // address macro (only TMemoryStreamer)
 
 {$UNDEF BS_INC_MM_WRITE}    // Write* macros
 {$UNDEF BS_INC_MM_READ}     // Read* macros
@@ -2177,38 +2184,38 @@ type
     Function FillBytes(Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize; virtual;
     Function WriteVariant(const Value: Variant; Advance: Boolean = True): TMemSize; virtual;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    Function WriteBoolAt(Position: Int64; Value: ByteBool; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteBooleanAt(Position: Int64; Value: Boolean; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteInt8At(Position: Int64; Value: Int8; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteUInt8At(Position: Int64; Value: UInt8; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteInt16At(Position: Int64; Value: Int16; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteUInt16At(Position: Int64; Value: UInt16; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteInt32At(Position: Int64; Value: Int32; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteUInt32At(Position: Int64; Value: UInt32; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteInt64At(Position: Int64; Value: Int64; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteUInt64At(Position: Int64; Value: UInt64; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteFloat32At(Position: Int64; Value: Float32; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteFloat64At(Position: Int64; Value: Float64; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteFloat80At(Position: Int64; Value: Float80; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteDateTimeAt(Position: Int64; Value: TDateTime; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteCurrencyAt(Position: Int64; Value: Currency; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteAnsiCharAt(Position: Int64; Value: AnsiChar; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteUTF8CharAt(Position: Int64; Value: UTF8Char; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteWideCharAt(Position: Int64; Value: WideChar; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteUnicodeCharAt(Position: Int64; Value: UnicodeChar; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteUCS4CharAt(Position: Int64; Value: UCS4Char; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteCharAt(Position: Int64; Value: Char; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteShortStringAt(Position: Int64; const Value: ShortString; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteAnsiStringAt(Position: Int64; const Value: AnsiString; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteUTF8StringAt(Position: Int64; const Value: UTF8String; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteWideStringAt(Position: Int64; const Value: WideString; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteUnicodeStringAt(Position: Int64; const Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteUCS4StringAt(Position: Int64; const Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteStringAt(Position: Int64; const Value: String; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteBufferAt(Position: Int64; const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteBytesAt(Position: Int64; const Value: array of UInt8; Advance: Boolean = True): TMemSize; virtual;
-    Function FillBytesAt(Position: Int64; Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize; virtual;
-    Function WriteVariantAt(Position: Int64; const Value: Variant; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteBoolAt(Position: Int64; Value: ByteBool; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteBooleanAt(Position: Int64; Value: Boolean; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteInt8At(Position: Int64; Value: Int8; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteUInt8At(Position: Int64; Value: UInt8; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteInt16At(Position: Int64; Value: Int16; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteUInt16At(Position: Int64; Value: UInt16; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteInt32At(Position: Int64; Value: Int32; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteUInt32At(Position: Int64; Value: UInt32; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteInt64At(Position: Int64; Value: Int64; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteUInt64At(Position: Int64; Value: UInt64; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteFloat32At(Position: Int64; Value: Float32; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteFloat64At(Position: Int64; Value: Float64; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteFloat80At(Position: Int64; Value: Float80; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteDateTimeAt(Position: Int64; Value: TDateTime; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteCurrencyAt(Position: Int64; Value: Currency; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteAnsiCharAt(Position: Int64; Value: AnsiChar; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteUTF8CharAt(Position: Int64; Value: UTF8Char; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteWideCharAt(Position: Int64; Value: WideChar; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteUnicodeCharAt(Position: Int64; Value: UnicodeChar; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteUCS4CharAt(Position: Int64; Value: UCS4Char; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteCharAt(Position: Int64; Value: Char; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteShortStringAt(Position: Int64; const Value: ShortString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteAnsiStringAt(Position: Int64; const Value: AnsiString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteUTF8StringAt(Position: Int64; const Value: UTF8String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteWideStringAt(Position: Int64; const Value: WideString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteUnicodeStringAt(Position: Int64; const Value: UnicodeString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteUCS4StringAt(Position: Int64; const Value: UCS4String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteStringAt(Position: Int64; const Value: String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteBufferAt(Position: Int64; const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteBytesAt(Position: Int64; const Value: array of UInt8; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function FillBytesAt(Position: Int64; Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteVariantAt(Position: Int64; const Value: Variant; Advance: Boolean = True): TMemSize; overload; virtual;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     Function WriteBoolAtOffset(Offset: Int64; Value: ByteBool; Advance: Boolean = True): TMemSize; virtual;
     Function WriteBooleanAtOffset(Offset: Int64; Value: Boolean; Advance: Boolean = True): TMemSize; virtual;
@@ -2340,36 +2347,36 @@ type
     Function ReadBuffer(out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; virtual;
     Function ReadVariant(out Value: Variant; Advance: Boolean = True): TMemSize; virtual;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    Function ReadBoolAt(Position: Int64; out Value: ByteBool; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadBooleanAt(Position: Int64; out Value: Boolean; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadInt8At(Position: Int64; out Value: Int8; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadUInt8At(Position: Int64; out Value: UInt8; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadInt16At(Position: Int64; out Value: Int16; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadUInt16At(Position: Int64; out Value: UInt16; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadInt32At(Position: Int64; out Value: Int32; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadUInt32At(Position: Int64; out Value: UInt32; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadInt64At(Position: Int64; out Value: Int64; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadUInt64At(Position: Int64; out Value: UInt64; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadFloat32At(Position: Int64; out Value: Float32; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadFloat64At(Position: Int64; out Value: Float64; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadFloat80At(Position: Int64; out Value: Float80; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadDateTimeAt(Position: Int64; out Value: TDateTime; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadCurrencyAt(Position: Int64; out Value: Currency; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadAnsiCharAt(Position: Int64; out Value: AnsiChar; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadUTF8CharAt(Position: Int64; out Value: UTF8Char; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadWideCharAt(Position: Int64; out Value: WideChar; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadUnicodeCharAt(Position: Int64; out Value: UnicodeChar; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadUCS4CharAt(Position: Int64; out Value: UCS4Char; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadCharAt(Position: Int64; out Value: Char; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadShortStringAt(Position: Int64; out Value: ShortString; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadAnsiStringAt(Position: Int64; out Value: AnsiString; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadUTF8StringAt(Position: Int64; out Value: UTF8String; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadWideStringAt(Position: Int64; out Value: WideString; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadUnicodeStringAt(Position: Int64; out Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadUCS4StringAt(Position: Int64; out Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadStringAt(Position: Int64; out Value: String; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadBufferAt(Position: Int64; out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; virtual;
-    Function ReadVariantAt(Position: Int64; out Value: Variant; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadBoolAt(Position: Int64; out Value: ByteBool; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadBooleanAt(Position: Int64; out Value: Boolean; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadInt8At(Position: Int64; out Value: Int8; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadUInt8At(Position: Int64; out Value: UInt8; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadInt16At(Position: Int64; out Value: Int16; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadUInt16At(Position: Int64; out Value: UInt16; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadInt32At(Position: Int64; out Value: Int32; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadUInt32At(Position: Int64; out Value: UInt32; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadInt64At(Position: Int64; out Value: Int64; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadUInt64At(Position: Int64; out Value: UInt64; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadFloat32At(Position: Int64; out Value: Float32; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadFloat64At(Position: Int64; out Value: Float64; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadFloat80At(Position: Int64; out Value: Float80; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadDateTimeAt(Position: Int64; out Value: TDateTime; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadCurrencyAt(Position: Int64; out Value: Currency; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadAnsiCharAt(Position: Int64; out Value: AnsiChar; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadUTF8CharAt(Position: Int64; out Value: UTF8Char; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadWideCharAt(Position: Int64; out Value: WideChar; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadUnicodeCharAt(Position: Int64; out Value: UnicodeChar; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadUCS4CharAt(Position: Int64; out Value: UCS4Char; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadCharAt(Position: Int64; out Value: Char; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadShortStringAt(Position: Int64; out Value: ShortString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadAnsiStringAt(Position: Int64; out Value: AnsiString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadUTF8StringAt(Position: Int64; out Value: UTF8String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadWideStringAt(Position: Int64; out Value: WideString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadUnicodeStringAt(Position: Int64; out Value: UnicodeString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadUCS4StringAt(Position: Int64; out Value: UCS4String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadStringAt(Position: Int64; out Value: String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadBufferAt(Position: Int64; out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadVariantAt(Position: Int64; out Value: Variant; Advance: Boolean = True): TMemSize; overload; virtual;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     Function ReadBoolAtOffset(Offset: Int64; out Value: ByteBool; Advance: Boolean = True): TMemSize; virtual;
     Function ReadBooleanAtOffset(Offset: Int64; out Value: Boolean; Advance: Boolean = True): TMemSize; virtual;
@@ -2494,35 +2501,35 @@ type
     Function GetString(Advance: Boolean = True): String; virtual;
     Function GetVariant(Advance: Boolean = True): Variant; virtual;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    Function GetBoolAt(Position: Int64; Advance: Boolean = True): ByteBool; virtual;
-    Function GetBooleanAt(Position: Int64; Advance: Boolean = True): Boolean; virtual;
-    Function GetInt8At(Position: Int64; Advance: Boolean = True): Int8; virtual;
-    Function GetUInt8At(Position: Int64; Advance: Boolean = True): UInt8; virtual;
-    Function GetInt16At(Position: Int64; Advance: Boolean = True): Int16; virtual;
-    Function GetUInt16At(Position: Int64; Advance: Boolean = True): UInt16; virtual;
-    Function GetInt32At(Position: Int64; Advance: Boolean = True): Int32; virtual;
-    Function GetUInt32At(Position: Int64; Advance: Boolean = True): UInt32; virtual;
-    Function GetInt64At(Position: Int64; Advance: Boolean = True): Int64; virtual;
-    Function GetUInt64At(Position: Int64; Advance: Boolean = True): UInt64; virtual;
-    Function GetFloat32At(Position: Int64; Advance: Boolean = True): Float32; virtual;
-    Function GetFloat64At(Position: Int64; Advance: Boolean = True): Float64; virtual;
-    Function GetFloat80At(Position: Int64; Advance: Boolean = True): Float80; virtual;
-    Function GetDateTimeAt(Position: Int64; Advance: Boolean = True): TDateTime; virtual;
-    Function GetCurrencyAt(Position: Int64; Advance: Boolean = True): Currency; virtual;
-    Function GetAnsiCharAt(Position: Int64; Advance: Boolean = True): AnsiChar; virtual;
-    Function GetUTF8CharAt(Position: Int64; Advance: Boolean = True): UTF8Char; virtual;
-    Function GetWideCharAt(Position: Int64; Advance: Boolean = True): WideChar; virtual;
-    Function GetUnicodeCharAt(Position: Int64; Advance: Boolean = True): UnicodeChar; virtual;
-    Function GetUCS4CharAt(Position: Int64; Advance: Boolean = True): UCS4Char; virtual;
-    Function GetCharAt(Position: Int64; Advance: Boolean = True): Char; virtual;
-    Function GetShortStringAt(Position: Int64; Advance: Boolean = True): ShortString; virtual;
-    Function GetAnsiStringAt(Position: Int64; Advance: Boolean = True): AnsiString; virtual;
-    Function GetUTF8StringAt(Position: Int64; Advance: Boolean = True): UTF8String; virtual;
-    Function GetWideStringAt(Position: Int64; Advance: Boolean = True): WideString; virtual;
-    Function GetUnicodeStringAt(Position: Int64; Advance: Boolean = True): UnicodeString; virtual;
-    Function GetUCS4StringAt(Position: Int64; Advance: Boolean = True): UCS4String; virtual;
-    Function GetStringAt(Position: Int64; Advance: Boolean = True): String; virtual;
-    Function GetVariantAt(Position: Int64; Advance: Boolean = True): Variant; virtual;
+    Function GetBoolAt(Position: Int64; Advance: Boolean = True): ByteBool; overload; virtual;
+    Function GetBooleanAt(Position: Int64; Advance: Boolean = True): Boolean; overload; virtual;
+    Function GetInt8At(Position: Int64; Advance: Boolean = True): Int8; overload; virtual;
+    Function GetUInt8At(Position: Int64; Advance: Boolean = True): UInt8; overload; virtual;
+    Function GetInt16At(Position: Int64; Advance: Boolean = True): Int16; overload; virtual;
+    Function GetUInt16At(Position: Int64; Advance: Boolean = True): UInt16; overload; virtual;
+    Function GetInt32At(Position: Int64; Advance: Boolean = True): Int32; overload; virtual;
+    Function GetUInt32At(Position: Int64; Advance: Boolean = True): UInt32; overload; virtual;
+    Function GetInt64At(Position: Int64; Advance: Boolean = True): Int64; overload; virtual;
+    Function GetUInt64At(Position: Int64; Advance: Boolean = True): UInt64; overload; virtual;
+    Function GetFloat32At(Position: Int64; Advance: Boolean = True): Float32; overload; virtual;
+    Function GetFloat64At(Position: Int64; Advance: Boolean = True): Float64; overload; virtual;
+    Function GetFloat80At(Position: Int64; Advance: Boolean = True): Float80; overload; virtual;
+    Function GetDateTimeAt(Position: Int64; Advance: Boolean = True): TDateTime; overload; virtual;
+    Function GetCurrencyAt(Position: Int64; Advance: Boolean = True): Currency; overload; virtual;
+    Function GetAnsiCharAt(Position: Int64; Advance: Boolean = True): AnsiChar; overload; virtual;
+    Function GetUTF8CharAt(Position: Int64; Advance: Boolean = True): UTF8Char; overload; virtual;
+    Function GetWideCharAt(Position: Int64; Advance: Boolean = True): WideChar; overload; virtual;
+    Function GetUnicodeCharAt(Position: Int64; Advance: Boolean = True): UnicodeChar; overload; virtual;
+    Function GetUCS4CharAt(Position: Int64; Advance: Boolean = True): UCS4Char; overload; virtual;
+    Function GetCharAt(Position: Int64; Advance: Boolean = True): Char; overload; virtual;
+    Function GetShortStringAt(Position: Int64; Advance: Boolean = True): ShortString; overload; virtual;
+    Function GetAnsiStringAt(Position: Int64; Advance: Boolean = True): AnsiString; overload; virtual;
+    Function GetUTF8StringAt(Position: Int64; Advance: Boolean = True): UTF8String; overload; virtual;
+    Function GetWideStringAt(Position: Int64; Advance: Boolean = True): WideString; overload; virtual;
+    Function GetUnicodeStringAt(Position: Int64; Advance: Boolean = True): UnicodeString; overload; virtual;
+    Function GetUCS4StringAt(Position: Int64; Advance: Boolean = True): UCS4String; overload; virtual;
+    Function GetStringAt(Position: Int64; Advance: Boolean = True): String; overload; virtual;
+    Function GetVariantAt(Position: Int64; Advance: Boolean = True): Variant; overload; virtual;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     Function GetBoolAtOffset(Offset: Int64; Advance: Boolean = True): ByteBool; virtual;
     Function GetBooleanAtOffset(Offset: Int64; Advance: Boolean = True): Boolean; virtual;
@@ -2653,11 +2660,101 @@ type
     procedure BookmarkInsert(Index: Integer; ID: TBSBookmarkID; Address: Pointer); overload; virtual;
     Function BookmarkGetAddress(ID: TBSBookmarkID): Pointer; virtual;
     procedure BookmarkSetAddress(ID: TBSBookmarkID; NewAddress: Pointer); virtual;
-  {
-    WriteTo(Address)
-    ReadFrom(Address)
-    GetFrom(Address)
-  }
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    Function WriteBoolAt(Address: Pointer; Value: ByteBool; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteBooleanAt(Address: Pointer; Value: Boolean; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteInt8At(Address: Pointer; Value: Int8; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteUInt8At(Address: Pointer; Value: UInt8; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteInt16At(Address: Pointer; Value: Int16; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteUInt16At(Address: Pointer; Value: UInt16; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteInt32At(Address: Pointer; Value: Int32; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteUInt32At(Address: Pointer; Value: UInt32; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteInt64At(Address: Pointer; Value: Int64; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteUInt64At(Address: Pointer; Value: UInt64; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteFloat32At(Address: Pointer; Value: Float32; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteFloat64At(Address: Pointer; Value: Float64; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteFloat80At(Address: Pointer; Value: Float80; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteDateTimeAt(Address: Pointer; Value: TDateTime; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteCurrencyAt(Address: Pointer; Value: Currency; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteAnsiCharAt(Address: Pointer; Value: AnsiChar; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteUTF8CharAt(Address: Pointer; Value: UTF8Char; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteWideCharAt(Address: Pointer; Value: WideChar; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteUnicodeCharAt(Address: Pointer; Value: UnicodeChar; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteUCS4CharAt(Address: Pointer; Value: UCS4Char; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteCharAt(Address: Pointer; Value: Char; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteShortStringAt(Address: Pointer; const Value: ShortString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteAnsiStringAt(Address: Pointer; const Value: AnsiString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteUTF8StringAt(Address: Pointer; const Value: UTF8String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteWideStringAt(Address: Pointer; const Value: WideString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteUnicodeStringAt(Address: Pointer; const Value: UnicodeString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteUCS4StringAt(Address: Pointer; const Value: UCS4String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteStringAt(Address: Pointer; const Value: String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteBufferAt(Address: Pointer; const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteBytesAt(Address: Pointer; const Value: array of UInt8; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function FillBytesAt(Address: Pointer; Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteVariantAt(Address: Pointer; const Value: Variant; Advance: Boolean = True): TMemSize; overload; virtual;
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    Function ReadBoolAt(Address: Pointer; out Value: ByteBool; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadBooleanAt(Address: Pointer; out Value: Boolean; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadInt8At(Address: Pointer; out Value: Int8; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadUInt8At(Address: Pointer; out Value: UInt8; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadInt16At(Address: Pointer; out Value: Int16; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadUInt16At(Address: Pointer; out Value: UInt16; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadInt32At(Address: Pointer; out Value: Int32; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadUInt32At(Address: Pointer; out Value: UInt32; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadInt64At(Address: Pointer; out Value: Int64; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadUInt64At(Address: Pointer; out Value: UInt64; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadFloat32At(Address: Pointer; out Value: Float32; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadFloat64At(Address: Pointer; out Value: Float64; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadFloat80At(Address: Pointer; out Value: Float80; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadDateTimeAt(Address: Pointer; out Value: TDateTime; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadCurrencyAt(Address: Pointer; out Value: Currency; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadAnsiCharAt(Address: Pointer; out Value: AnsiChar; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadUTF8CharAt(Address: Pointer; out Value: UTF8Char; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadWideCharAt(Address: Pointer; out Value: WideChar; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadUnicodeCharAt(Address: Pointer; out Value: UnicodeChar; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadUCS4CharAt(Address: Pointer; out Value: UCS4Char; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadCharAt(Address: Pointer; out Value: Char; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadShortStringAt(Address: Pointer; out Value: ShortString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadAnsiStringAt(Address: Pointer; out Value: AnsiString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadUTF8StringAt(Address: Pointer; out Value: UTF8String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadWideStringAt(Address: Pointer; out Value: WideString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadUnicodeStringAt(Address: Pointer; out Value: UnicodeString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadUCS4StringAt(Address: Pointer; out Value: UCS4String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadStringAt(Address: Pointer; out Value: String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadBufferAt(Address: Pointer; out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadVariantAt(Address: Pointer; out Value: Variant; Advance: Boolean = True): TMemSize; overload; virtual;
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    Function GetBoolAt(Address: Pointer; Advance: Boolean = True): ByteBool; overload; virtual;
+    Function GetBooleanAt(Address: Pointer; Advance: Boolean = True): Boolean; overload; virtual;
+    Function GetInt8At(Address: Pointer; Advance: Boolean = True): Int8; overload; virtual;
+    Function GetUInt8At(Address: Pointer; Advance: Boolean = True): UInt8; overload; virtual;
+    Function GetInt16At(Address: Pointer; Advance: Boolean = True): Int16; overload; virtual;
+    Function GetUInt16At(Address: Pointer; Advance: Boolean = True): UInt16; overload; virtual;
+    Function GetInt32At(Address: Pointer; Advance: Boolean = True): Int32; overload; virtual;
+    Function GetUInt32At(Address: Pointer; Advance: Boolean = True): UInt32; overload; virtual;
+    Function GetInt64At(Address: Pointer; Advance: Boolean = True): Int64; overload; virtual;
+    Function GetUInt64At(Address: Pointer; Advance: Boolean = True): UInt64; overload; virtual;
+    Function GetFloat32At(Address: Pointer; Advance: Boolean = True): Float32; overload; virtual;
+    Function GetFloat64At(Address: Pointer; Advance: Boolean = True): Float64; overload; virtual;
+    Function GetFloat80At(Address: Pointer; Advance: Boolean = True): Float80; overload; virtual;
+    Function GetDateTimeAt(Address: Pointer; Advance: Boolean = True): TDateTime; overload; virtual;
+    Function GetCurrencyAt(Address: Pointer; Advance: Boolean = True): Currency; overload; virtual;
+    Function GetAnsiCharAt(Address: Pointer; Advance: Boolean = True): AnsiChar; overload; virtual;
+    Function GetUTF8CharAt(Address: Pointer; Advance: Boolean = True): UTF8Char; overload; virtual;
+    Function GetWideCharAt(Address: Pointer; Advance: Boolean = True): WideChar; overload; virtual;
+    Function GetUnicodeCharAt(Address: Pointer; Advance: Boolean = True): UnicodeChar; overload; virtual;
+    Function GetUCS4CharAt(Address: Pointer; Advance: Boolean = True): UCS4Char; overload; virtual;
+    Function GetCharAt(Address: Pointer; Advance: Boolean = True): Char; overload; virtual;
+    Function GetShortStringAt(Address: Pointer; Advance: Boolean = True): ShortString; overload; virtual;
+    Function GetAnsiStringAt(Address: Pointer; Advance: Boolean = True): AnsiString; overload; virtual;
+    Function GetUTF8StringAt(Address: Pointer; Advance: Boolean = True): UTF8String; overload; virtual;
+    Function GetWideStringAt(Address: Pointer; Advance: Boolean = True): WideString; overload; virtual;
+    Function GetUnicodeStringAt(Address: Pointer; Advance: Boolean = True): UnicodeString; overload; virtual;
+    Function GetUCS4StringAt(Address: Pointer; Advance: Boolean = True): UCS4String; overload; virtual;
+    Function GetStringAt(Address: Pointer; Advance: Boolean = True): String; overload; virtual;
+    Function GetVariantAt(Address: Pointer; Advance: Boolean = True): Variant; overload; virtual;
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     property StartAddress: Pointer read GetStartAddress;
     property PositionAddress: Pointer read fPositionAddress write fPositionAddress;
   end;
@@ -16834,7 +16931,645 @@ end;
 
 procedure TMemoryStreamer.BookmarkSetAddress(ID: TBSBookmarkID; NewAddress: Pointer);
 begin
-BookmarkSetPosition(ID,AddressToPosition(NewAddress));end;
+BookmarkSetPosition(ID,AddressToPosition(NewAddress));
+end;
+
+//==============================================================================
+
+Function TMemoryStreamer.WriteBoolAt(Address: Pointer; Value: ByteBool; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_BOOL}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_BOOL}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteBooleanAt(Address: Pointer; Value: Boolean; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_BOOLEAN}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_BOOLEAN}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteInt8At(Address: Pointer; Value: Int8; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_INT8}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_INT8}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteUInt8At(Address: Pointer; Value: UInt8; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UINT8}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UINT8}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteInt16At(Address: Pointer; Value: Int16; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_INT16}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_INT16}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteUInt16At(Address: Pointer; Value: UInt16; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UINT16}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UINT16}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteInt32At(Address: Pointer; Value: Int32; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_INT32}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_INT32}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteUInt32At(Address: Pointer; Value: UInt32; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UINT32}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UINT32}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteInt64At(Address: Pointer; Value: Int64; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_INT64}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_INT64}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteUInt64At(Address: Pointer; Value: UInt64; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UINT64}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UINT64}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteFloat32At(Address: Pointer; Value: Float32; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_FLOAT32}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_FLOAT32}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteFloat64At(Address: Pointer; Value: Float64; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_FLOAT64}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_FLOAT64}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteFloat80At(Address: Pointer; Value: Float80; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_FLOAT80}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_FLOAT80}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteDateTimeAt(Address: Pointer; Value: TDateTime; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_DATETIME}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_DATETIME}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteCurrencyAt(Address: Pointer; Value: Currency; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_CURRENCY}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_CURRENCY}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteAnsiCharAt(Address: Pointer; Value: AnsiChar; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_ANSICHAR}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_ANSICHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteUTF8CharAt(Address: Pointer; Value: UTF8Char; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UTF8CHAR}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UTF8CHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteWideCharAt(Address: Pointer; Value: WideChar; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_WIDECHAR}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_WIDECHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteUnicodeCharAt(Address: Pointer; Value: UnicodeChar; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UNICODECHAR}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UNICODECHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteUCS4CharAt(Address: Pointer; Value: UCS4Char; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UCS4CHAR}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UCS4CHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteCharAt(Address: Pointer; Value: Char; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_CHAR}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_CHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteShortStringAt(Address: Pointer; const Value: ShortString; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_SHORTSTRING}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_SHORTSTRING}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteAnsiStringAt(Address: Pointer; const Value: AnsiString; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_ANSISTRING}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_ANSISTRING}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteUTF8StringAt(Address: Pointer; const Value: UTF8String; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UTF8STRING}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UTF8STRING}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteWideStringAt(Address: Pointer; const Value: WideString; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_WIDESTRING}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_WIDESTRING}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteUnicodeStringAt(Address: Pointer; const Value: UnicodeString; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UNICODESTRING}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UNICODESTRING}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteUCS4StringAt(Address: Pointer; const Value: UCS4String; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UCS4STRING}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UCS4STRING}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteStringAt(Address: Pointer; const Value: String; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_STRING}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_STRING}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteBufferAt(Address: Pointer; const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_BUFFER}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_BUFFER}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteBytesAt(Address: Pointer; const Value: array of UInt8; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_BYTES}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_BYTES}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.FillBytesAt(Address: Pointer; Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_FILL}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_FILL}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteVariantAt(Address: Pointer; const Value: Variant; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_VARIANT}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_VARIANT}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//==============================================================================
+
+Function TMemoryStreamer.ReadBoolAt(Address: Pointer; out Value: ByteBool; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_BOOL}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_BOOL}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadBooleanAt(Address: Pointer; out Value: Boolean; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_BOOLEAN}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_BOOLEAN}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadInt8At(Address: Pointer; out Value: Int8; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_INT8}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_INT8}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadUInt8At(Address: Pointer; out Value: UInt8; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UINT8}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UINT8}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadInt16At(Address: Pointer; out Value: Int16; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_INT16}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_INT16}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadUInt16At(Address: Pointer; out Value: UInt16; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UINT16}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UINT16}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadInt32At(Address: Pointer; out Value: Int32; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_INT32}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_INT32}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadUInt32At(Address: Pointer; out Value: UInt32; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UINT32}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UINT32}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadInt64At(Address: Pointer; out Value: Int64; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_INT64}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_INT64}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadUInt64At(Address: Pointer; out Value: UInt64; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UINT64}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UINT64}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadFloat32At(Address: Pointer; out Value: Float32; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_FLOAT32}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_FLOAT32}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadFloat64At(Address: Pointer; out Value: Float64; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_FLOAT64}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_FLOAT64}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadFloat80At(Address: Pointer; out Value: Float80; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_FLOAT80}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_FLOAT80}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadDateTimeAt(Address: Pointer; out Value: TDateTime; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_DATETIME}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_DATETIME}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadCurrencyAt(Address: Pointer; out Value: Currency; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_CURRENCY}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_CURRENCY}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadAnsiCharAt(Address: Pointer; out Value: AnsiChar; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_ANSICHAR}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_ANSICHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadUTF8CharAt(Address: Pointer; out Value: UTF8Char; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UTF8CHAR}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UTF8CHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadWideCharAt(Address: Pointer; out Value: WideChar; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_WIDECHAR}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_WIDECHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadUnicodeCharAt(Address: Pointer; out Value: UnicodeChar; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UNICODECHAR}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UNICODECHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadUCS4CharAt(Address: Pointer; out Value: UCS4Char; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UCS4CHAR}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UCS4CHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadCharAt(Address: Pointer; out Value: Char; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_CHAR}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_CHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadShortStringAt(Address: Pointer; out Value: ShortString; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_SHORTSTRING}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_SHORTSTRING}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadAnsiStringAt(Address: Pointer; out Value: AnsiString; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_ANSISTRING}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_ANSISTRING}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadUTF8StringAt(Address: Pointer; out Value: UTF8String; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UTF8STRING}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UTF8STRING}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadWideStringAt(Address: Pointer; out Value: WideString; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_WIDESTRING}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_WIDESTRING}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadUnicodeStringAt(Address: Pointer; out Value: UnicodeString; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UNICODESTRING}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UNICODESTRING}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadUCS4StringAt(Address: Pointer; out Value: UCS4String; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UCS4STRING}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UCS4STRING}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadStringAt(Address: Pointer; out Value: String; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_STRING}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_STRING}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadBufferAt(Address: Pointer; out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_BUFFER}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_BUFFER}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadVariantAt(Address: Pointer; out Value: Variant; Advance: Boolean = True): TMemSize;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_VARIANT}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_VARIANT}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//==============================================================================
+
+Function TMemoryStreamer.GetBoolAt(Address: Pointer; Advance: Boolean = True): ByteBool;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_BOOL}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_BOOL}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetBooleanAt(Address: Pointer; Advance: Boolean = True): Boolean;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_BOOLEAN}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_BOOLEAN}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetInt8At(Address: Pointer; Advance: Boolean = True): Int8;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_INT8}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_INT8}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetUInt8At(Address: Pointer; Advance: Boolean = True): UInt8;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UINT8}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UINT8}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetInt16At(Address: Pointer; Advance: Boolean = True): Int16;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_INT16}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_INT16}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetUInt16At(Address: Pointer; Advance: Boolean = True): UInt16;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UINT16}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UINT16}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetInt32At(Address: Pointer; Advance: Boolean = True): Int32;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_INT32}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_INT32}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetUInt32At(Address: Pointer; Advance: Boolean = True): UInt32;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UINT32}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UINT32}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetInt64At(Address: Pointer; Advance: Boolean = True): Int64;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_INT64}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_INT64}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetUInt64At(Address: Pointer; Advance: Boolean = True): UInt64;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UINT64}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UINT64}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetFloat32At(Address: Pointer; Advance: Boolean = True): Float32;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_FLOAT32}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_FLOAT32}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetFloat64At(Address: Pointer; Advance: Boolean = True): Float64;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_FLOAT64}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_FLOAT64}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetFloat80At(Address: Pointer; Advance: Boolean = True): Float80;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_FLOAT80}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_FLOAT80}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetDateTimeAt(Address: Pointer; Advance: Boolean = True): TDateTime;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_DATETIME}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_DATETIME}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetCurrencyAt(Address: Pointer; Advance: Boolean = True): Currency;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_CURRENCY}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_CURRENCY}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetAnsiCharAt(Address: Pointer; Advance: Boolean = True): AnsiChar;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_ANSICHAR}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_ANSICHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetUTF8CharAt(Address: Pointer; Advance: Boolean = True): UTF8Char;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UTF8CHAR}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UTF8CHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetWideCharAt(Address: Pointer; Advance: Boolean = True): WideChar;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_WIDECHAR}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_WIDECHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetUnicodeCharAt(Address: Pointer; Advance: Boolean = True): UnicodeChar;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UNICODECHAR}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UNICODECHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetUCS4CharAt(Address: Pointer; Advance: Boolean = True): UCS4Char;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UCS4CHAR}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UCS4CHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetCharAt(Address: Pointer; Advance: Boolean = True): Char;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_CHAR}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_CHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetShortStringAt(Address: Pointer; Advance: Boolean = True): ShortString;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_SHORTSTRING}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_SHORTSTRING}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetAnsiStringAt(Address: Pointer; Advance: Boolean = True): AnsiString;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_ANSISTRING}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_ANSISTRING}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetUTF8StringAt(Address: Pointer; Advance: Boolean = True): UTF8String;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UTF8STRING}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UTF8STRING}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetWideStringAt(Address: Pointer; Advance: Boolean = True): WideString;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_WIDESTRING}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_WIDESTRING}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetUnicodeStringAt(Address: Pointer; Advance: Boolean = True): UnicodeString;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UNICODESTRING}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UNICODESTRING}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetUCS4StringAt(Address: Pointer; Advance: Boolean = True): UCS4String;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UCS4STRING}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UCS4STRING}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetStringAt(Address: Pointer; Advance: Boolean = True): String;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_STRING}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_STRING}{$UNDEF BS_INC_MM_AT_ADDR}
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetVariantAt(Address: Pointer; Advance: Boolean = True): Variant;
+{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_VARIANT}{$DEFINE BS_INC_MM_AT_ADDR}
+  {$INCLUDE '.\BinaryStreaming_smm.inc'}
+{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_VARIANT}{$UNDEF BS_INC_MM_AT_ADDR}
 
 
 {===============================================================================

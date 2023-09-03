@@ -1,3 +1,40 @@
+{-------------------------------------------------------------------------------
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+-------------------------------------------------------------------------------}
+{===============================================================================
+
+  Binary streaming - streamer macro-methods template
+
+  Version 2.0 (2023-09-03)
+
+  Last change 2023-09-03
+
+  ©2015-2023 František Milt
+
+  Contacts:
+    František Milt: frantisek.milt@gmail.com
+
+  Support:
+    If you find this code useful, please consider supporting its author(s) by
+    making a small donation using the following link(s):
+
+      https://www.paypal.me/FMilt
+
+  Changelog:
+    For detailed changelog and history please refer to this git repository:
+
+      github.com/TheLazyTomcat/Lib.BinaryStreaming
+
+  Dependencies:
+    AuxClasses - github.com/TheLazyTomcat/Lib.AuxClasses
+    AuxTypes   - github.com/TheLazyTomcat/Lib.AuxTypes
+    StrRect    - github.com/TheLazyTomcat/Lib.StrRect
+
+===============================================================================}
 {$IFDEF BS_INC_MM}
 var
   OldPosition:  Int64;
@@ -12,6 +49,8 @@ MoveAtOffset(Offset);
 MoveTo(ID);    
 {$ELSEIF Defined(BS_INC_MM_TO_IDX)}
 MoveToIndex(Index);
+{$ELSEIF Defined(BS_INC_MM_AT_ADDR)}
+MoveAt(Address);
 {$ELSE}
   {$MESSAGE FATAL 'unknown macro type'}
 {$IFEND}
