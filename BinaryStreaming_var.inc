@@ -1,5 +1,4 @@
-{$IFDEF BS_INC_W}
-
+{$IFDEF BS_INC_VW}
 var
 {$IFDEF BS_INC_M}
   Ptr:        Pointer;
@@ -94,9 +93,11 @@ If Advance then
 AdvanceStream(Advance,Stream,Result);
 {$ENDIF}
 end;
+{$ENDIF}
 
-{$ELSE}//=======================================================================
+//==============================================================================
 
+{$IFDEF BS_INC_VR}
 var
 {$IFDEF BS_INC_M}
   Ptr:            Pointer;
@@ -205,5 +206,4 @@ If Advance then
 AdvanceStream(Advance,Stream,Result);
 {$ENDIF}
 end;
-
 {$ENDIF}
