@@ -175,52 +175,6 @@ unit BinaryStreaming;
 {$UNDEF BS_INC_M}   // operating on memory (stream is inferred when not defined)
 {$UNDEF BS_INC_L}   // little endian (big endian inferred when not defined)
 
-{$UNDEF BS_INC_MM}          // implementation of streamers macro methods
-{$UNDEF BS_INC_MM_AT}       // position macro
-{$UNDEF BS_INC_MM_AT_OFF}   // offset macro
-{$UNDEF BS_INC_MM_TO}       // bookmark macro
-{$UNDEF BS_INC_MM_TO_IDX}   // bookmark index macro
-
-{$UNDEF BS_INC_MM_AT_ADDR}  // address macro (only TMemoryStreamer)
-
-{$UNDEF BS_INC_MM_WRITE}    // Write* macros
-{$UNDEF BS_INC_MM_READ}     // Read* macros
-{$UNDEF BS_INC_MM_GET}      // Get* macros
-
-// value type selection in macro implementation...
-{$UNDEF BS_INC_MM_BOOL}
-{$UNDEF BS_INC_MM_BOOLEAN}
-{$UNDEF BS_INC_MM_INT8}
-{$UNDEF BS_INC_MM_UINT8}
-{$UNDEF BS_INC_MM_INT16}
-{$UNDEF BS_INC_MM_UINT16}
-{$UNDEF BS_INC_MM_INT32}
-{$UNDEF BS_INC_MM_UINT32}
-{$UNDEF BS_INC_MM_INT64}
-{$UNDEF BS_INC_MM_UINT64}
-{$UNDEF BS_INC_MM_FLOAT32}
-{$UNDEF BS_INC_MM_FLOAT64}
-{$UNDEF BS_INC_MM_FLOAT80}
-{$UNDEF BS_INC_MM_DATETIME}
-{$UNDEF BS_INC_MM_CURRENCY}
-{$UNDEF BS_INC_MM_ANSICHAR}
-{$UNDEF BS_INC_MM_UTF8CHAR}
-{$UNDEF BS_INC_MM_WIDECHAR}
-{$UNDEF BS_INC_MM_UNICODECHAR}
-{$UNDEF BS_INC_MM_UCS4CHAR}
-{$UNDEF BS_INC_MM_CHAR}
-{$UNDEF BS_INC_MM_SHORTSTRING}
-{$UNDEF BS_INC_MM_ANSISTRING}
-{$UNDEF BS_INC_MM_UTF8STRING}
-{$UNDEF BS_INC_MM_WIDESTRING}
-{$UNDEF BS_INC_MM_UNICODESTRING}
-{$UNDEF BS_INC_MM_UCS4STRING}
-{$UNDEF BS_INC_MM_STRING}
-{$UNDEF BS_INC_MM_BUFFER}
-{$UNDEF BS_INC_MM_BYTES}
-{$UNDEF BS_INC_MM_FILL}
-{$UNDEF BS_INC_MM_VARIANT}
-
 interface
 
 {<lite-interface>}
@@ -244,6 +198,8 @@ type
   EBSInvalidValue       = class(EBSException);
   EBSDuplicateItem      = class(EBSException);
   EBSUnknownItem        = class(EBSException);
+
+  EBSStringTooLong = class(EBSInvalidValue);
 
 {===============================================================================
     Endianness - declaration
@@ -334,7 +290,25 @@ Function StreamedSize_UCS4String(const Value: UCS4String): TMemSize;
 Function StreamedSize_String(const Value: String): TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
 
 //------------------------------------------------------------------------------
+{<lite-end-ln>}
+Function StreamedSize_SmallAnsiString(const Value: AnsiString): TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
+Function StreamedSize_SmallUTF8String(const Value: UTF8String): TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
+Function StreamedSize_SmallWideString(const Value: WideString): TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
+Function StreamedSize_SmallUnicodeString(const Value: UnicodeString): TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
+Function StreamedSize_SmallUCS4String(const Value: UCS4String): TMemSize;
+Function StreamedSize_SmallString(const Value: String): TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
 
+//------------------------------------------------------------------------------
+
+Function StreamedSize_TinyAnsiString(const Value: AnsiString): TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
+Function StreamedSize_TinyUTF8String(const Value: UTF8String): TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
+Function StreamedSize_TinyWideString(const Value: WideString): TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
+Function StreamedSize_TinyUnicodeString(const Value: UnicodeString): TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
+Function StreamedSize_TinyUCS4String(const Value: UCS4String): TMemSize;
+Function StreamedSize_TinyString(const Value: String): TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
+
+//------------------------------------------------------------------------------
+{<lite-begin>}
 Function StreamedSize_Buffer(Size: TMemSize): TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
 Function StreamedSize_Bytes(Count: TMemSize): TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
 {<lite-end-ln>}
@@ -755,6 +729,87 @@ Function Ptr_WriteString_BE(Dest: Pointer; const Value: String): TMemSize; overl
 
 Function Ptr_WriteString(var Dest: Pointer; const Value: String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function Ptr_WriteString(Dest: Pointer; const Value: String; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+{-------------------------------------------------------------------------------
+    Small strings
+-------------------------------------------------------------------------------}
+
+Function Ptr_WriteSmallAnsiString_LE(var Dest: Pointer; const Value: AnsiString; Advance: Boolean): TMemSize; overload;
+Function Ptr_WriteSmallAnsiString_LE(Dest: Pointer; const Value: AnsiString): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_WriteSmallAnsiString_BE(var Dest: Pointer; const Value: AnsiString; Advance: Boolean): TMemSize; overload;
+Function Ptr_WriteSmallAnsiString_BE(Dest: Pointer; const Value: AnsiString): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_WriteSmallAnsiString(var Dest: Pointer; const Value: AnsiString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Ptr_WriteSmallAnsiString(Dest: Pointer; const Value: AnsiString; Endian: TEndian = endDefault): TMemSize; overload;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteSmallUTF8String_LE(var Dest: Pointer; const Value: UTF8String; Advance: Boolean): TMemSize; overload;
+Function Ptr_WriteSmallUTF8String_LE(Dest: Pointer; const Value: UTF8String): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_WriteSmallUTF8String_BE(var Dest: Pointer; const Value: UTF8String; Advance: Boolean): TMemSize; overload;
+Function Ptr_WriteSmallUTF8String_BE(Dest: Pointer; const Value: UTF8String): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_WriteSmallUTF8String(var Dest: Pointer; const Value: UTF8String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Ptr_WriteSmallUTF8String(Dest: Pointer; const Value: UTF8String; Endian: TEndian = endDefault): TMemSize; overload;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteSmallWideString_LE(var Dest: Pointer; const Value: WideString; Advance: Boolean): TMemSize; overload;
+Function Ptr_WriteSmallWideString_LE(Dest: Pointer; const Value: WideString): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_WriteSmallWideString_BE(var Dest: Pointer; const Value: WideString; Advance: Boolean): TMemSize; overload;
+Function Ptr_WriteSmallWideString_BE(Dest: Pointer; const Value: WideString): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_WriteSmallWideString(var Dest: Pointer; const Value: WideString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Ptr_WriteSmallWideString(Dest: Pointer; const Value: WideString; Endian: TEndian = endDefault): TMemSize; overload;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteSmallUnicodeString_LE(var Dest: Pointer; const Value: UnicodeString; Advance: Boolean): TMemSize; overload;
+Function Ptr_WriteSmallUnicodeString_LE(Dest: Pointer; const Value: UnicodeString): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_WriteSmallUnicodeString_BE(var Dest: Pointer; const Value: UnicodeString; Advance: Boolean): TMemSize; overload;
+Function Ptr_WriteSmallUnicodeString_BE(Dest: Pointer; const Value: UnicodeString): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_WriteSmallUnicodeString(var Dest: Pointer; const Value: UnicodeString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Ptr_WriteSmallUnicodeString(Dest: Pointer; const Value: UnicodeString; Endian: TEndian = endDefault): TMemSize; overload;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteSmallUCS4String_LE(var Dest: Pointer; const Value: UCS4String; Advance: Boolean): TMemSize; overload;
+Function Ptr_WriteSmallUCS4String_LE(Dest: Pointer; const Value: UCS4String): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_WriteSmallUCS4String_BE(var Dest: Pointer; const Value: UCS4String; Advance: Boolean): TMemSize; overload;
+Function Ptr_WriteSmallUCS4String_BE(Dest: Pointer; const Value: UCS4String): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_WriteSmallUCS4String(var Dest: Pointer; const Value: UCS4String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Ptr_WriteSmallUCS4String(Dest: Pointer; const Value: UCS4String; Endian: TEndian = endDefault): TMemSize; overload;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteSmallString_LE(var Dest: Pointer; const Value: String; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_WriteSmallString_LE(Dest: Pointer; const Value: String): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_WriteSmallString_BE(var Dest: Pointer; const Value: String; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_WriteSmallString_BE(Dest: Pointer; const Value: String): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_WriteSmallString(var Dest: Pointer; const Value: String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_WriteSmallString(Dest: Pointer; const Value: String; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+{-------------------------------------------------------------------------------
+    Tiny strings
+-------------------------------------------------------------------------------}
+
+Function Ptr_WriteTinyAnsiString_LE(var Dest: Pointer; const Value: AnsiString; Advance: Boolean): TMemSize; overload;
+Function Ptr_WriteTinyAnsiString_LE(Dest: Pointer; const Value: AnsiString): TMemSize; overload;
+
+Function Ptr_WriteTinyAnsiString_BE(var Dest: Pointer; const Value: AnsiString; Advance: Boolean): TMemSize; overload;
+Function Ptr_WriteTinyAnsiString_BE(Dest: Pointer; const Value: AnsiString): TMemSize; overload;
+
+Function Ptr_WriteTinyAnsiString(var Dest: Pointer; const Value: AnsiString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Ptr_WriteTinyAnsiString(Dest: Pointer; const Value: AnsiString; Endian: TEndian = endDefault): TMemSize; overload;
 
 {<lite-begin>}
 {<lite-block-replace-begin _LE "">}
@@ -1577,6 +1632,128 @@ Function Ptr_GetString_BE(Src: Pointer): String; overload;{$IFDEF CanInline} inl
 Function Ptr_GetString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function Ptr_GetString(Src: Pointer; Endian: TEndian = endDefault): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
+{-------------------------------------------------------------------------------
+    Small strings
+-------------------------------------------------------------------------------}
+
+Function Ptr_ReadSmallAnsiString_LE(var Src: Pointer; out Value: AnsiString; Advance: Boolean): TMemSize; overload;
+Function Ptr_ReadSmallAnsiString_LE(Src: Pointer; out Value: AnsiString): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_ReadSmallAnsiString_BE(var Src: Pointer; out Value: AnsiString; Advance: Boolean): TMemSize; overload;
+Function Ptr_ReadSmallAnsiString_BE(Src: Pointer; out Value: AnsiString): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_ReadSmallAnsiString(var Src: Pointer; out Value: AnsiString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Ptr_ReadSmallAnsiString(Src: Pointer; out Value: AnsiString; Endian: TEndian = endDefault): TMemSize; overload;
+
+Function Ptr_GetSmallAnsiString_LE(var Src: Pointer; Advance: Boolean): AnsiString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetSmallAnsiString_LE(Src: Pointer): AnsiString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_GetSmallAnsiString_BE(var Src: Pointer; Advance: Boolean): AnsiString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetSmallAnsiString_BE(Src: Pointer): AnsiString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_GetSmallAnsiString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): AnsiString; overload;
+Function Ptr_GetSmallAnsiString(Src: Pointer; Endian: TEndian = endDefault): AnsiString; overload;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadSmallUTF8String_LE(var Src: Pointer; out Value: UTF8String; Advance: Boolean): TMemSize; overload;
+Function Ptr_ReadSmallUTF8String_LE(Src: Pointer; out Value: UTF8String): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_ReadSmallUTF8String_BE(var Src: Pointer; out Value: UTF8String; Advance: Boolean): TMemSize; overload;
+Function Ptr_ReadSmallUTF8String_BE(Src: Pointer; out Value: UTF8String): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_ReadSmallUTF8String(var Src: Pointer; out Value: UTF8String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Ptr_ReadSmallUTF8String(Src: Pointer; out Value: UTF8String; Endian: TEndian = endDefault): TMemSize; overload;
+
+Function Ptr_GetSmallUTF8String_LE(var Src: Pointer; Advance: Boolean): UTF8String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetSmallUTF8String_LE(Src: Pointer): UTF8String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_GetSmallUTF8String_BE(var Src: Pointer; Advance: Boolean): UTF8String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetSmallUTF8String_BE(Src: Pointer): UTF8String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_GetSmallUTF8String(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UTF8String; overload;
+Function Ptr_GetSmallUTF8String(Src: Pointer; Endian: TEndian = endDefault): UTF8String; overload;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadSmallWideString_LE(var Src: Pointer; out Value: WideString; Advance: Boolean): TMemSize; overload;
+Function Ptr_ReadSmallWideString_LE(Src: Pointer; out Value: WideString): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_ReadSmallWideString_BE(var Src: Pointer; out Value: WideString; Advance: Boolean): TMemSize; overload;
+Function Ptr_ReadSmallWideString_BE(Src: Pointer; out Value: WideString): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_ReadSmallWideString(var Src: Pointer; out Value: WideString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Ptr_ReadSmallWideString(Src: Pointer; out Value: WideString; Endian: TEndian = endDefault): TMemSize; overload;
+
+Function Ptr_GetSmallWideString_LE(var Src: Pointer; Advance: Boolean): WideString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetSmallWideString_LE(Src: Pointer): WideString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_GetSmallWideString_BE(var Src: Pointer; Advance: Boolean): WideString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetSmallWideString_BE(Src: Pointer): WideString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_GetSmallWideString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): WideString; overload;
+Function Ptr_GetSmallWideString(Src: Pointer; Endian: TEndian = endDefault): WideString; overload;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadSmallUnicodeString_LE(var Src: Pointer; out Value: UnicodeString; Advance: Boolean): TMemSize; overload;
+Function Ptr_ReadSmallUnicodeString_LE(Src: Pointer; out Value: UnicodeString): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_ReadSmallUnicodeString_BE(var Src: Pointer; out Value: UnicodeString; Advance: Boolean): TMemSize; overload;
+Function Ptr_ReadSmallUnicodeString_BE(Src: Pointer; out Value: UnicodeString): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_ReadSmallUnicodeString(var Src: Pointer; out Value: UnicodeString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Ptr_ReadSmallUnicodeString(Src: Pointer; out Value: UnicodeString; Endian: TEndian = endDefault): TMemSize; overload;
+
+Function Ptr_GetSmallUnicodeString_LE(var Src: Pointer; Advance: Boolean): UnicodeString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetSmallUnicodeString_LE(Src: Pointer): UnicodeString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_GetSmallUnicodeString_BE(var Src: Pointer; Advance: Boolean): UnicodeString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetSmallUnicodeString_BE(Src: Pointer): UnicodeString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_GetSmallUnicodeString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UnicodeString; overload;
+Function Ptr_GetSmallUnicodeString(Src: Pointer; Endian: TEndian = endDefault): UnicodeString; overload;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadSmallUCS4String_LE(var Src: Pointer; out Value: UCS4String; Advance: Boolean): TMemSize; overload;
+Function Ptr_ReadSmallUCS4String_LE(Src: Pointer; out Value: UCS4String): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_ReadSmallUCS4String_BE(var Src: Pointer; out Value: UCS4String; Advance: Boolean): TMemSize; overload;
+Function Ptr_ReadSmallUCS4String_BE(Src: Pointer; out Value: UCS4String): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_ReadSmallUCS4String(var Src: Pointer; out Value: UCS4String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Ptr_ReadSmallUCS4String(Src: Pointer; out Value: UCS4String; Endian: TEndian = endDefault): TMemSize; overload;
+
+Function Ptr_GetSmallUCS4String_LE(var Src: Pointer; Advance: Boolean): UCS4String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetSmallUCS4String_LE(Src: Pointer): UCS4String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_GetSmallUCS4String_BE(var Src: Pointer; Advance: Boolean): UCS4String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetSmallUCS4String_BE(Src: Pointer): UCS4String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_GetSmallUCS4String(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UCS4String; overload;
+Function Ptr_GetSmallUCS4String(Src: Pointer; Endian: TEndian = endDefault): UCS4String; overload;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadSmallString_LE(var Src: Pointer; out Value: String; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_ReadSmallString_LE(Src: Pointer; out Value: String): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_ReadSmallString_BE(var Src: Pointer; out Value: String; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_ReadSmallString_BE(Src: Pointer; out Value: String): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_ReadSmallString(var Src: Pointer; out Value: String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_ReadSmallString(Src: Pointer; out Value: String; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_GetSmallString_LE(var Src: Pointer; Advance: Boolean): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetSmallString_LE(Src: Pointer): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_GetSmallString_BE(var Src: Pointer; Advance: Boolean): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetSmallString_BE(Src: Pointer): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_GetSmallString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetSmallString(Src: Pointer; Endian: TEndian = endDefault): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 {<lite-begin>}
 {<lite-block-replace-begin _LE "">}
 {-------------------------------------------------------------------------------
@@ -1965,6 +2142,62 @@ Function Stream_WriteString_BE(Stream: TStream; const Value: String; Advance: Bo
 
 Function Stream_WriteString(Stream: TStream; const Value: String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function Stream_WriteString(Stream: TStream; const Value: String; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+{-------------------------------------------------------------------------------
+    Small strings
+-------------------------------------------------------------------------------}
+
+Function Stream_WriteSmallAnsiString_LE(Stream: TStream; const Value: AnsiString; Advance: Boolean = True): TMemSize;
+
+Function Stream_WriteSmallAnsiString_BE(Stream: TStream; const Value: AnsiString; Advance: Boolean = True): TMemSize;
+
+Function Stream_WriteSmallAnsiString(Stream: TStream; const Value: AnsiString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Stream_WriteSmallAnsiString(Stream: TStream; const Value: AnsiString; Endian: TEndian = endDefault): TMemSize; overload;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteSmallUTF8String_LE(Stream: TStream; const Value: UTF8String; Advance: Boolean = True): TMemSize;
+
+Function Stream_WriteSmallUTF8String_BE(Stream: TStream; const Value: UTF8String; Advance: Boolean = True): TMemSize;
+
+Function Stream_WriteSmallUTF8String(Stream: TStream; const Value: UTF8String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Stream_WriteSmallUTF8String(Stream: TStream; const Value: UTF8String; Endian: TEndian = endDefault): TMemSize; overload;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteSmallWideString_LE(Stream: TStream; const Value: WideString; Advance: Boolean = True): TMemSize;
+
+Function Stream_WriteSmallWideString_BE(Stream: TStream; const Value: WideString; Advance: Boolean = True): TMemSize;
+
+Function Stream_WriteSmallWideString(Stream: TStream; const Value: WideString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Stream_WriteSmallWideString(Stream: TStream; const Value: WideString; Endian: TEndian = endDefault): TMemSize; overload;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteSmallUnicodeString_LE(Stream: TStream; const Value: UnicodeString; Advance: Boolean = True): TMemSize;
+
+Function Stream_WriteSmallUnicodeString_BE(Stream: TStream; const Value: UnicodeString; Advance: Boolean = True): TMemSize;
+
+Function Stream_WriteSmallUnicodeString(Stream: TStream; const Value: UnicodeString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Stream_WriteSmallUnicodeString(Stream: TStream; const Value: UnicodeString; Endian: TEndian = endDefault): TMemSize; overload;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteSmallUCS4String_LE(Stream: TStream; const Value: UCS4String; Advance: Boolean = True): TMemSize;
+
+Function Stream_WriteSmallUCS4String_BE(Stream: TStream; const Value: UCS4String; Advance: Boolean = True): TMemSize;
+
+Function Stream_WriteSmallUCS4String(Stream: TStream; const Value: UCS4String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Stream_WriteSmallUCS4String(Stream: TStream; const Value: UCS4String; Endian: TEndian = endDefault): TMemSize; overload;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteSmallString_LE(Stream: TStream; const Value: String; Advance: Boolean = True): TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_WriteSmallString_BE(Stream: TStream; const Value: String; Advance: Boolean = True): TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_WriteSmallString(Stream: TStream; const Value: String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Stream_WriteSmallString(Stream: TStream; const Value: String; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
 {<lite-begin>}
 {-------------------------------------------------------------------------------
@@ -2653,6 +2886,104 @@ Function Stream_GetString_BE(Stream: TStream; Advance: Boolean = True): String;{
 Function Stream_GetString(Stream: TStream; Advance: Boolean; Endian: TEndian = endDefault): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function Stream_GetString(Stream: TStream; Endian: TEndian = endDefault): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
+{-------------------------------------------------------------------------------
+    Small strings
+-------------------------------------------------------------------------------}
+
+Function Stream_ReadSmallAnsiString_LE(Stream: TStream; out Value: AnsiString; Advance: Boolean = True): TMemSize;
+
+Function Stream_ReadSmallAnsiString_BE(Stream: TStream; out Value: AnsiString; Advance: Boolean = True): TMemSize;
+
+Function Stream_ReadSmallAnsiString(Stream: TStream; out Value: AnsiString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Stream_ReadSmallAnsiString(Stream: TStream; out Value: AnsiString; Endian: TEndian = endDefault): TMemSize; overload;
+
+Function Stream_GetSmallAnsiString_LE(Stream: TStream; Advance: Boolean = True): AnsiString;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_GetSmallAnsiString_BE(Stream: TStream; Advance: Boolean = True): AnsiString;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_GetSmallAnsiString(Stream: TStream; Advance: Boolean; Endian: TEndian = endDefault): AnsiString; overload;
+Function Stream_GetSmallAnsiString(Stream: TStream; Endian: TEndian = endDefault): AnsiString; overload;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadSmallUTF8String_LE(Stream: TStream; out Value: UTF8String; Advance: Boolean = True): TMemSize;
+
+Function Stream_ReadSmallUTF8String_BE(Stream: TStream; out Value: UTF8String; Advance: Boolean = True): TMemSize;
+
+Function Stream_ReadSmallUTF8String(Stream: TStream; out Value: UTF8String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Stream_ReadSmallUTF8String(Stream: TStream; out Value: UTF8String; Endian: TEndian = endDefault): TMemSize; overload;
+
+Function Stream_GetSmallUTF8String_LE(Stream: TStream; Advance: Boolean = True): UTF8String;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_GetSmallUTF8String_BE(Stream: TStream; Advance: Boolean = True): UTF8String;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_GetSmallUTF8String(Stream: TStream; Advance: Boolean; Endian: TEndian = endDefault): UTF8String; overload;
+Function Stream_GetSmallUTF8String(Stream: TStream; Endian: TEndian = endDefault): UTF8String; overload;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadSmallWideString_LE(Stream: TStream; out Value: WideString; Advance: Boolean = True): TMemSize;
+
+Function Stream_ReadSmallWideString_BE(Stream: TStream; out Value: WideString; Advance: Boolean = True): TMemSize;
+
+Function Stream_ReadSmallWideString(Stream: TStream; out Value: WideString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Stream_ReadSmallWideString(Stream: TStream; out Value: WideString; Endian: TEndian = endDefault): TMemSize; overload;
+
+Function Stream_GetSmallWideString_LE(Stream: TStream; Advance: Boolean = True): WideString;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_GetSmallWideString_BE(Stream: TStream; Advance: Boolean = True): WideString;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_GetSmallWideString(Stream: TStream; Advance: Boolean; Endian: TEndian = endDefault): WideString; overload;
+Function Stream_GetSmallWideString(Stream: TStream; Endian: TEndian = endDefault): WideString; overload;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadSmallUnicodeString_LE(Stream: TStream; out Value: UnicodeString; Advance: Boolean = True): TMemSize;
+
+Function Stream_ReadSmallUnicodeString_BE(Stream: TStream; out Value: UnicodeString; Advance: Boolean = True): TMemSize;
+
+Function Stream_ReadSmallUnicodeString(Stream: TStream; out Value: UnicodeString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Stream_ReadSmallUnicodeString(Stream: TStream; out Value: UnicodeString; Endian: TEndian = endDefault): TMemSize; overload;
+
+Function Stream_GetSmallUnicodeString_LE(Stream: TStream; Advance: Boolean = True): UnicodeString;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_GetSmallUnicodeString_BE(Stream: TStream; Advance: Boolean = True): UnicodeString;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_GetSmallUnicodeString(Stream: TStream; Advance: Boolean; Endian: TEndian = endDefault): UnicodeString; overload;
+Function Stream_GetSmallUnicodeString(Stream: TStream; Endian: TEndian = endDefault): UnicodeString; overload;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadSmallUCS4String_LE(Stream: TStream; out Value: UCS4String; Advance: Boolean = True): TMemSize;
+
+Function Stream_ReadSmallUCS4String_BE(Stream: TStream; out Value: UCS4String; Advance: Boolean = True): TMemSize;
+
+Function Stream_ReadSmallUCS4String(Stream: TStream; out Value: UCS4String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Stream_ReadSmallUCS4String(Stream: TStream; out Value: UCS4String; Endian: TEndian = endDefault): TMemSize; overload;
+
+Function Stream_GetSmallUCS4String_LE(Stream: TStream; Advance: Boolean = True): UCS4String;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_GetSmallUCS4String_BE(Stream: TStream; Advance: Boolean = True): UCS4String;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_GetSmallUCS4String(Stream: TStream; Advance: Boolean; Endian: TEndian = endDefault): UCS4String; overload;
+Function Stream_GetSmallUCS4String(Stream: TStream; Endian: TEndian = endDefault): UCS4String; overload;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadSmallString_LE(Stream: TStream; out Value: String; Advance: Boolean = True): TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_ReadSmallString_BE(Stream: TStream; out Value: String; Advance: Boolean = True): TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_ReadSmallString(Stream: TStream; out Value: String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Stream_ReadSmallString(Stream: TStream; out Value: String; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_GetSmallString_LE(Stream: TStream; Advance: Boolean = True): String;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_GetSmallString_BE(Stream: TStream; Advance: Boolean = True): String;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_GetSmallString(Stream: TStream; Advance: Boolean; Endian: TEndian = endDefault): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Stream_GetSmallString(Stream: TStream; Endian: TEndian = endDefault): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 {<lite-begin>}
 {-------------------------------------------------------------------------------
     General data buffers
@@ -2725,8 +3056,17 @@ type
     procedure SetCapacity(Value: Integer); override;
     Function GetCount: Integer; override;
     procedure SetCount(Value: Integer); override;
+    Function WriteOpenByteArray(Ptr: Pointer; Count: TMemSize; Advance: Boolean): TMemSize; virtual;
     Function WriteValue(ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize; virtual; abstract;
+    Function WriteValueAt(Position: Int64; ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize; virtual;
+    Function WriteValueAtOffset(Offset: Int64; ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize; virtual;
+    Function WriteValueTo(ID: TBSBookmarkID; ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize; virtual;
+    Function WriteValueToIndex(Index: Integer; ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize; virtual;
     Function ReadValue(ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize; virtual; abstract;
+    Function ReadValueAt(Position: Int64; ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize; virtual;
+    Function ReadValueAtOffset(Offset: Int64; ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize; virtual;
+    Function ReadValueFrom(ID: TBSBookmarkID; ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize; virtual;
+    Function ReadValueFromIndex(Index: Integer; ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize; virtual;
     procedure DoChange; virtual;
     procedure Initialize; virtual;
     procedure Finalize; virtual;
@@ -2791,6 +3131,12 @@ type
     Function WriteUnicodeString(const Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
     Function WriteUCS4String(const Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
     Function WriteString(const Value: String; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteSmallAnsiString(const Value: AnsiString; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteSmallUTF8String(const Value: UTF8String; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteSmallWideString(const Value: WideString; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteSmallUnicodeString(const Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteSmallUCS4String(const Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteSmallString(const Value: String; Advance: Boolean = True): TMemSize; virtual;
     Function WriteBuffer(const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; virtual;
     Function WriteBytes(const Value: array of UInt8; Advance: Boolean = True): TMemSize; virtual;
     Function FillBytes(Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize; virtual;
@@ -2824,6 +3170,12 @@ type
     Function WriteUnicodeStringAt(Position: Int64; const Value: UnicodeString; Advance: Boolean = True): TMemSize; overload; virtual;
     Function WriteUCS4StringAt(Position: Int64; const Value: UCS4String; Advance: Boolean = True): TMemSize; overload; virtual;
     Function WriteStringAt(Position: Int64; const Value: String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteSmallAnsiStringAt(Position: Int64; const Value: AnsiString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteSmallUTF8StringAt(Position: Int64; const Value: UTF8String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteSmallWideStringAt(Position: Int64; const Value: WideString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteSmallUnicodeStringAt(Position: Int64; const Value: UnicodeString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteSmallUCS4StringAt(Position: Int64; const Value: UCS4String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteSmallStringAt(Position: Int64; const Value: String; Advance: Boolean = True): TMemSize; overload; virtual;  
     Function WriteBufferAt(Position: Int64; const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; overload; virtual;
     Function WriteBytesAt(Position: Int64; const Value: array of UInt8; Advance: Boolean = True): TMemSize; overload; virtual;
     Function FillBytesAt(Position: Int64; Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize; overload; virtual;
@@ -2857,6 +3209,12 @@ type
     Function WriteUnicodeStringAtOffset(Offset: Int64; const Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
     Function WriteUCS4StringAtOffset(Offset: Int64; const Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
     Function WriteStringAtOffset(Offset: Int64; const Value: String; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteSmallAnsiStringAtOffset(Offset: Int64; const Value: AnsiString; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteSmallUTF8StringAtOffset(Offset: Int64; const Value: UTF8String; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteSmallWideStringAtOffset(Offset: Int64; const Value: WideString; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteSmallUnicodeStringAtOffset(Offset: Int64; const Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteSmallUCS4StringAtOffset(Offset: Int64; const Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteSmallStringAtOffset(Offset: Int64; const Value: String; Advance: Boolean = True): TMemSize; virtual;
     Function WriteBufferAtOffset(Offset: Int64; const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; virtual;
     Function WriteBytesAtOffset(Offset: Int64; const Value: array of UInt8; Advance: Boolean = True): TMemSize; virtual;
     Function FillBytesAtOffset(Offset: Int64; Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize; virtual;
@@ -2890,6 +3248,12 @@ type
     Function WriteUnicodeStringTo(ID: TBSBookmarkID; const Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
     Function WriteUCS4StringTo(ID: TBSBookmarkID; const Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
     Function WriteStringTo(ID: TBSBookmarkID; const Value: String; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteSmallAnsiStringTo(ID: TBSBookmarkID; const Value: AnsiString; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteSmallUTF8StringTo(ID: TBSBookmarkID; const Value: UTF8String; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteSmallWideStringTo(ID: TBSBookmarkID; const Value: WideString; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteSmallUnicodeStringTo(ID: TBSBookmarkID; const Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteSmallUCS4StringTo(ID: TBSBookmarkID; const Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteSmallStringTo(ID: TBSBookmarkID; const Value: String; Advance: Boolean = True): TMemSize; virtual;
     Function WriteBufferTo(ID: TBSBookmarkID; const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; virtual;
     Function WriteBytesTo(ID: TBSBookmarkID; const Value: array of UInt8; Advance: Boolean = True): TMemSize; virtual;
     Function FillBytesTo(ID: TBSBookmarkID; Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize; virtual;
@@ -2923,6 +3287,12 @@ type
     Function WriteUnicodeStringToIndex(Index: Integer; const Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
     Function WriteUCS4StringToIndex(Index: Integer; const Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
     Function WriteStringToIndex(Index: Integer; const Value: String; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteSmallAnsiStringToIndex(Index: Integer; const Value: AnsiString; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteSmallUTF8StringToIndex(Index: Integer; const Value: UTF8String; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteSmallWideStringToIndex(Index: Integer; const Value: WideString; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteSmallUnicodeStringToIndex(Index: Integer; const Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteSmallUCS4StringToIndex(Index: Integer; const Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteSmallStringToIndex(Index: Integer; const Value: String; Advance: Boolean = True): TMemSize; virtual;
     Function WriteBufferToIndex(Index: Integer; const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; virtual;
     Function WriteBytesToIndex(Index: Integer; const Value: array of UInt8; Advance: Boolean = True): TMemSize; virtual;
     Function FillBytesToIndex(Index: Integer; Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize; virtual;
@@ -2956,6 +3326,12 @@ type
     Function ReadUnicodeString(out Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
     Function ReadUCS4String(out Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
     Function ReadString(out Value: String; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadSmallAnsiString(out Value: AnsiString; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadSmallUTF8String(out Value: UTF8String; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadSmallWideString(out Value: WideString; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadSmallUnicodeString(out Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadSmallUCS4String(out Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadSmallString(out Value: String; Advance: Boolean = True): TMemSize; virtual;
     Function ReadBuffer(out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; virtual;
     Function ReadVariant(out Value: Variant; Advance: Boolean = True): TMemSize; virtual;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -2987,6 +3363,12 @@ type
     Function ReadUnicodeStringAt(Position: Int64; out Value: UnicodeString; Advance: Boolean = True): TMemSize; overload; virtual;
     Function ReadUCS4StringAt(Position: Int64; out Value: UCS4String; Advance: Boolean = True): TMemSize; overload; virtual;
     Function ReadStringAt(Position: Int64; out Value: String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadSmallAnsiStringAt(Position: Int64; out Value: AnsiString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadSmallUTF8StringAt(Position: Int64; out Value: UTF8String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadSmallWideStringAt(Position: Int64; out Value: WideString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadSmallUnicodeStringAt(Position: Int64; out Value: UnicodeString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadSmallUCS4StringAt(Position: Int64; out Value: UCS4String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadSmallStringAt(Position: Int64; out Value: String; Advance: Boolean = True): TMemSize; overload; virtual;
     Function ReadBufferAt(Position: Int64; out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; overload; virtual;
     Function ReadVariantAt(Position: Int64; out Value: Variant; Advance: Boolean = True): TMemSize; overload; virtual;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -3018,6 +3400,12 @@ type
     Function ReadUnicodeStringAtOffset(Offset: Int64; out Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
     Function ReadUCS4StringAtOffset(Offset: Int64; out Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
     Function ReadStringAtOffset(Offset: Int64; out Value: String; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadSmallAnsiStringAtOffset(Offset: Int64; out Value: AnsiString; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadSmallUTF8StringAtOffset(Offset: Int64; out Value: UTF8String; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadSmallWideStringAtOffset(Offset: Int64; out Value: WideString; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadSmallUnicodeStringAtOffset(Offset: Int64; out Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadSmallUCS4StringAtOffset(Offset: Int64; out Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadSmallStringAtOffset(Offset: Int64; out Value: String; Advance: Boolean = True): TMemSize; virtual;
     Function ReadBufferAtOffset(Offset: Int64; out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; virtual;
     Function ReadVariantAtOffset(Offset: Int64; out Value: Variant; Advance: Boolean = True): TMemSize; virtual;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -3049,6 +3437,12 @@ type
     Function ReadUnicodeStringFrom(ID: TBSBookmarkID; out Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
     Function ReadUCS4StringFrom(ID: TBSBookmarkID; out Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
     Function ReadStringFrom(ID: TBSBookmarkID; out Value: String; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadSmallAnsiStringFrom(ID: TBSBookmarkID; out Value: AnsiString; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadSmallUTF8StringFrom(ID: TBSBookmarkID; out Value: UTF8String; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadSmallWideStringFrom(ID: TBSBookmarkID; out Value: WideString; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadSmallUnicodeStringFrom(ID: TBSBookmarkID; out Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadSmallUCS4StringFrom(ID: TBSBookmarkID; out Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadSmallStringFrom(ID: TBSBookmarkID; out Value: String; Advance: Boolean = True): TMemSize; virtual;
     Function ReadBufferFrom(ID: TBSBookmarkID; out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; virtual;
     Function ReadVariantFrom(ID: TBSBookmarkID; out Value: Variant; Advance: Boolean = True): TMemSize; virtual;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -3080,6 +3474,12 @@ type
     Function ReadUnicodeStringFromIndex(Index: Integer; out Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
     Function ReadUCS4StringFromIndex(Index: Integer; out Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
     Function ReadStringFromIndex(Index: Integer; out Value: String; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadSmallAnsiStringFromIndex(Index: Integer; out Value: AnsiString; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadSmallUTF8StringFromIndex(Index: Integer; out Value: UTF8String; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadSmallWideStringFromIndex(Index: Integer; out Value: WideString; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadSmallUnicodeStringFromIndex(Index: Integer; out Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadSmallUCS4StringFromIndex(Index: Integer; out Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadSmallStringFromIndex(Index: Integer; out Value: String; Advance: Boolean = True): TMemSize; virtual;
     Function ReadBufferFromIndex(Index: Integer; out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; virtual;
     Function ReadVariantFromIndex(Index: Integer; out Value: Variant; Advance: Boolean = True): TMemSize; virtual;
     // reading into result
@@ -3111,6 +3511,12 @@ type
     Function GetUnicodeString(Advance: Boolean = True): UnicodeString; virtual;
     Function GetUCS4String(Advance: Boolean = True): UCS4String; virtual;
     Function GetString(Advance: Boolean = True): String; virtual;
+    Function GetSmallAnsiString(Advance: Boolean = True): AnsiString; virtual;
+    Function GetSmallUTF8String(Advance: Boolean = True): UTF8String; virtual;
+    Function GetSmallWideString(Advance: Boolean = True): WideString; virtual;
+    Function GetSmallUnicodeString(Advance: Boolean = True): UnicodeString; virtual;
+    Function GetSmallUCS4String(Advance: Boolean = True): UCS4String; virtual;
+    Function GetSmallString(Advance: Boolean = True): String; virtual;
     Function GetVariant(Advance: Boolean = True): Variant; virtual;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     Function GetBoolAt(Position: Int64; Advance: Boolean = True): ByteBool; overload; virtual;
@@ -3141,6 +3547,12 @@ type
     Function GetUnicodeStringAt(Position: Int64; Advance: Boolean = True): UnicodeString; overload; virtual;
     Function GetUCS4StringAt(Position: Int64; Advance: Boolean = True): UCS4String; overload; virtual;
     Function GetStringAt(Position: Int64; Advance: Boolean = True): String; overload; virtual;
+    Function GetSmallAnsiStringAt(Position: Int64; Advance: Boolean = True): AnsiString; overload; virtual;
+    Function GetSmallUTF8StringAt(Position: Int64; Advance: Boolean = True): UTF8String; overload; virtual;
+    Function GetSmallWideStringAt(Position: Int64; Advance: Boolean = True): WideString; overload; virtual;
+    Function GetSmallUnicodeStringAt(Position: Int64; Advance: Boolean = True): UnicodeString; overload; virtual;
+    Function GetSmallUCS4StringAt(Position: Int64; Advance: Boolean = True): UCS4String; overload; virtual;
+    Function GetSmallStringAt(Position: Int64; Advance: Boolean = True): String; overload; virtual;
     Function GetVariantAt(Position: Int64; Advance: Boolean = True): Variant; overload; virtual;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     Function GetBoolAtOffset(Offset: Int64; Advance: Boolean = True): ByteBool; virtual;
@@ -3171,6 +3583,12 @@ type
     Function GetUnicodeStringAtOffset(Offset: Int64; Advance: Boolean = True): UnicodeString; virtual;
     Function GetUCS4StringAtOffset(Offset: Int64; Advance: Boolean = True): UCS4String; virtual;
     Function GetStringAtOffset(Offset: Int64; Advance: Boolean = True): String; virtual;
+    Function GetSmallAnsiStringAtOffset(Offset: Int64; Advance: Boolean = True): AnsiString; virtual;
+    Function GetSmallUTF8StringAtOffset(Offset: Int64; Advance: Boolean = True): UTF8String; virtual;
+    Function GetSmallWideStringAtOffset(Offset: Int64; Advance: Boolean = True): WideString; virtual;
+    Function GetSmallUnicodeStringAtOffset(Offset: Int64; Advance: Boolean = True): UnicodeString; virtual;
+    Function GetSmallUCS4StringAtOffset(Offset: Int64; Advance: Boolean = True): UCS4String; virtual;
+    Function GetSmallStringAtOffset(Offset: Int64; Advance: Boolean = True): String; virtual;
     Function GetVariantAtOffset(Offset: Int64; Advance: Boolean = True): Variant; virtual;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     Function GetBoolFrom(ID: TBSBookmarkID; Advance: Boolean = True): ByteBool; virtual;
@@ -3201,6 +3619,12 @@ type
     Function GetUnicodeStringFrom(ID: TBSBookmarkID; Advance: Boolean = True): UnicodeString; virtual;
     Function GetUCS4StringFrom(ID: TBSBookmarkID; Advance: Boolean = True): UCS4String; virtual;
     Function GetStringFrom(ID: TBSBookmarkID; Advance: Boolean = True): String; virtual;
+    Function GetSmallAnsiStringFrom(ID: TBSBookmarkID; Advance: Boolean = True): AnsiString; virtual;
+    Function GetSmallUTF8StringFrom(ID: TBSBookmarkID; Advance: Boolean = True): UTF8String; virtual;
+    Function GetSmallWideStringFrom(ID: TBSBookmarkID; Advance: Boolean = True): WideString; virtual;
+    Function GetSmallUnicodeStringFrom(ID: TBSBookmarkID; Advance: Boolean = True): UnicodeString; virtual;
+    Function GetSmallUCS4StringFrom(ID: TBSBookmarkID; Advance: Boolean = True): UCS4String; virtual;
+    Function GetSmallStringFrom(ID: TBSBookmarkID; Advance: Boolean = True): String; virtual;
     Function GetVariantFrom(ID: TBSBookmarkID; Advance: Boolean = True): Variant; virtual;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     Function GetBoolFromIndex(Index: Integer; Advance: Boolean = True): ByteBool; virtual;
@@ -3231,6 +3655,12 @@ type
     Function GetUnicodeStringFromIndex(Index: Integer; Advance: Boolean = True): UnicodeString; virtual;
     Function GetUCS4StringFromIndex(Index: Integer; Advance: Boolean = True): UCS4String; virtual;
     Function GetStringFromIndex(Index: Integer; Advance: Boolean = True): String; virtual;
+    Function GetSmallAnsiStringFromIndex(Index: Integer; Advance: Boolean = True): AnsiString; virtual;
+    Function GetSmallUTF8StringFromIndex(Index: Integer; Advance: Boolean = True): UTF8String; virtual;
+    Function GetSmallWideStringFromIndex(Index: Integer; Advance: Boolean = True): WideString; virtual;
+    Function GetSmallUnicodeStringFromIndex(Index: Integer; Advance: Boolean = True): UnicodeString; virtual;
+    Function GetSmallUCS4StringFromIndex(Index: Integer; Advance: Boolean = True): UCS4String; virtual;
+    Function GetSmallStringFromIndex(Index: Integer; Advance: Boolean = True): String; virtual;
     Function GetVariantFromIndex(Index: Integer; Advance: Boolean = True): Variant; virtual;
     // properties
     property Endian: TEndian read fEndian write fEndian;
@@ -3244,6 +3674,7 @@ type
     property OnChangeEvent: TNotifyEvent read fOnChangeEvent write fOnChangeEvent;
     property OnChangeCallback: TNotifyCallback read fOnChangeCallback write fOnChangeCallback;    
   end;
+
 
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -3261,7 +3692,9 @@ type
     Function GetPosition: Int64; override;
     procedure SetPosition(NewPosition: Int64); override;
     Function WriteValue(ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize; override;
+    Function WriteValueAtAddr(Address: Pointer; ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize; virtual;
     Function ReadValue(ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize; override;
+    Function ReadValueAtAddr(Address: Pointer; ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize; virtual;
     procedure Initialize(Memory: Pointer); reintroduce; virtual;
   public
     class Function AddressToPosition(Address: Pointer): Int64; virtual;
@@ -3300,7 +3733,13 @@ type
     Function WriteWideStringAt(Address: Pointer; const Value: WideString; Advance: Boolean = True): TMemSize; overload; virtual;
     Function WriteUnicodeStringAt(Address: Pointer; const Value: UnicodeString; Advance: Boolean = True): TMemSize; overload; virtual;
     Function WriteUCS4StringAt(Address: Pointer; const Value: UCS4String; Advance: Boolean = True): TMemSize; overload; virtual;
-    Function WriteStringAt(Address: Pointer; const Value: String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteStringAt(Address: Pointer; const Value: String; Advance: Boolean = True): TMemSize; overload; virtual; 
+    Function WriteSmallAnsiStringAt(Address: Pointer; const Value: AnsiString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteSmallUTF8StringAt(Address: Pointer; const Value: UTF8String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteSmallWideStringAt(Address: Pointer; const Value: WideString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteSmallUnicodeStringAt(Address: Pointer; const Value: UnicodeString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteSmallUCS4StringAt(Address: Pointer; const Value: UCS4String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteSmallStringAt(Address: Pointer; const Value: String; Advance: Boolean = True): TMemSize; overload; virtual;
     Function WriteBufferAt(Address: Pointer; const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; overload; virtual;
     Function WriteBytesAt(Address: Pointer; const Value: array of UInt8; Advance: Boolean = True): TMemSize; overload; virtual;
     Function FillBytesAt(Address: Pointer; Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize; overload; virtual;
@@ -3334,6 +3773,12 @@ type
     Function ReadUnicodeStringAt(Address: Pointer; out Value: UnicodeString; Advance: Boolean = True): TMemSize; overload; virtual;
     Function ReadUCS4StringAt(Address: Pointer; out Value: UCS4String; Advance: Boolean = True): TMemSize; overload; virtual;
     Function ReadStringAt(Address: Pointer; out Value: String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadSmallAnsiStringAt(Address: Pointer; out Value: AnsiString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadSmallUTF8StringAt(Address: Pointer; out Value: UTF8String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadSmallWideStringAt(Address: Pointer; out Value: WideString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadSmallUnicodeStringAt(Address: Pointer; out Value: UnicodeString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadSmallUCS4StringAt(Address: Pointer; out Value: UCS4String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadSmallStringAt(Address: Pointer; out Value: String; Advance: Boolean = True): TMemSize; overload; virtual;
     Function ReadBufferAt(Address: Pointer; out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; overload; virtual;
     Function ReadVariantAt(Address: Pointer; out Value: Variant; Advance: Boolean = True): TMemSize; overload; virtual;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -3365,6 +3810,12 @@ type
     Function GetUnicodeStringAt(Address: Pointer; Advance: Boolean = True): UnicodeString; overload; virtual;
     Function GetUCS4StringAt(Address: Pointer; Advance: Boolean = True): UCS4String; overload; virtual;
     Function GetStringAt(Address: Pointer; Advance: Boolean = True): String; overload; virtual;
+    Function GetSmallAnsiStringAt(Address: Pointer; Advance: Boolean = True): AnsiString; overload; virtual;
+    Function GetSmallUTF8StringAt(Address: Pointer; Advance: Boolean = True): UTF8String; overload; virtual;
+    Function GetSmallWideStringAt(Address: Pointer; Advance: Boolean = True): WideString; overload; virtual;
+    Function GetSmallUnicodeStringAt(Address: Pointer; Advance: Boolean = True): UnicodeString; overload; virtual;
+    Function GetSmallUCS4StringAt(Address: Pointer; Advance: Boolean = True): UCS4String; overload; virtual;
+    Function GetSmallStringAt(Address: Pointer; Advance: Boolean = True): String; overload; virtual;
     Function GetVariantAt(Address: Pointer; Advance: Boolean = True): Variant; overload; virtual;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     property StartAddress: Pointer read GetStartAddress;
@@ -3426,7 +3877,8 @@ uses
     Internal variables
 ===============================================================================}
 var
-  ByteOpenArrayIsPacked: Boolean = False;         
+  OpenByteArrayIsPacked: Boolean = True;
+  OpenByteArrayStride:   TMemSize = 1;
 
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -3467,7 +3919,17 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure ClampStringLength(var StrLength: Int32);{$IFDEF CanInline} inline;{$ENDIF}
+{<lite-replace " overload;" "">}
+procedure ClampStringLength(var StrLength: Int32); overload;{$IFDEF CanInline} inline;{$ENDIF}
+begin
+If StrLength < 0 then
+  StrLength := 0;
+end;
+
+{<lite-remove-multi 8>}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure ClampStringLength(var StrLength: Int16); overload;{$IFDEF CanInline} inline;{$ENDIF}
 begin
 If StrLength < 0 then
   StrLength := 0;
@@ -4066,8 +4528,98 @@ end;
 Function StreamedSize_String(const Value: String): TMemSize;
 begin
 Result := StreamedSize_UTF8String(StrToUTF8(Value));
+end; 
+{<lite-end-ln>}
+//==============================================================================
+
+Function StreamedSize_SmallAnsiString(const Value: AnsiString): TMemSize;
+begin
+Result := StreamedSize_Int16 + TMemSize(Length(Value) * SizeOf(AnsiChar));
 end;
 
+//------------------------------------------------------------------------------
+
+Function StreamedSize_SmallUTF8String(const Value: UTF8String): TMemSize;
+begin
+Result := StreamedSize_Int16 + TMemSize(Length(Value) * SizeOf(UTF8Char));
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_SmallWideString(const Value: WideString): TMemSize;
+begin
+Result := StreamedSize_Int16 + TMemSize(Length(Value) * SizeOf(WideChar));
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_SmallUnicodeString(const Value: UnicodeString): TMemSize;
+begin
+Result := StreamedSize_Int16 + TMemSize(Length(Value) * SizeOf(UnicodeChar));
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_SmallUCS4String(const Value: UCS4String): TMemSize;
+begin
+If Length(Value) > 0 then
+  Result := StreamedSize_Int16 + TMemSize(IfThen(Value[High(Value)] = 0,Pred(Length(Value)),Length(Value)) * SizeOf(UCS4Char))
+else
+  Result := StreamedSize_Int16;
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_SmallString(const Value: String): TMemSize;
+begin
+Result := StreamedSize_SmallUTF8String(StrToUTF8(Value));
+end;
+
+//==============================================================================
+
+Function StreamedSize_TinyAnsiString(const Value: AnsiString): TMemSize;
+begin
+Result := StreamedSize_UInt8 + TMemSize(Length(Value) * SizeOf(AnsiChar));
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_TinyUTF8String(const Value: UTF8String): TMemSize;
+begin
+Result := StreamedSize_UInt8 + TMemSize(Length(Value) * SizeOf(UTF8Char));
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_TinyWideString(const Value: WideString): TMemSize;
+begin
+Result := StreamedSize_UInt8 + TMemSize(Length(Value) * SizeOf(WideChar));
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_TinyUnicodeString(const Value: UnicodeString): TMemSize;
+begin
+Result := StreamedSize_UInt8 + TMemSize(Length(Value) * SizeOf(UnicodeChar));
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_TinyUCS4String(const Value: UCS4String): TMemSize;
+begin
+If Length(Value) > 0 then
+  Result := StreamedSize_UInt8 + TMemSize(IfThen(Value[High(Value)] = 0,Pred(Length(Value)),Length(Value)) * SizeOf(UCS4Char))
+else
+  Result := StreamedSize_UInt8;
+end;
+
+//------------------------------------------------------------------------------
+
+Function StreamedSize_TinyString(const Value: String): TMemSize;
+begin
+Result := StreamedSize_TinyUTF8String(Value);
+end;
+{<lite-begin>}
 //==============================================================================
 
 Function StreamedSize_Buffer(Size: TMemSize): TMemSize;
@@ -6154,6 +6706,568 @@ begin
 Result := Ptr_WriteUTF8String(Dest,StrToUTF8(Value),Endian);
 end;
 
+{-------------------------------------------------------------------------------
+    Small strings
+-------------------------------------------------------------------------------}
+
+Function Ptr_WriteSmallAnsiString_LE(var Dest: Pointer; const Value: AnsiString; Advance: Boolean): TMemSize;
+var
+  WorkPtr:  Pointer;
+begin
+If Length(Value) <= High(Int16) then
+  begin
+    WorkPtr := Dest;
+    Result := Ptr_WriteInt16_LE(WorkPtr,Int16(Length(Value)),True);
+    If Length(Value) > 0 then
+      Inc(Result,Ptr_WriteBuffer_LE(WorkPtr,PAnsiChar(Value)^,Length(Value) * SizeOf(AnsiChar),True));
+    If Advance then
+      Dest := WorkPtr;
+  end
+else raise EBSStringTooLong.CreateFmt('Ptr_WriteSmallAnsiString_LE: String is too long (%d) for small storage.',[Length(Value)]);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteSmallAnsiString_LE(Dest: Pointer; const Value: AnsiString): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+Result := Ptr_WriteSmallAnsiString_LE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteSmallAnsiString_BE(var Dest: Pointer; const Value: AnsiString; Advance: Boolean): TMemSize;
+var
+  WorkPtr:  Pointer;
+begin
+If Length(Value) <= High(Int16) then
+  begin
+    WorkPtr := Dest;
+    Result := Ptr_WriteInt16_BE(WorkPtr,Int16(Length(Value)),True);
+    If Length(Value) > 0 then
+      Inc(Result,Ptr_WriteBuffer_BE(WorkPtr,PAnsiChar(Value)^,Length(Value) * SizeOf(AnsiChar),True));
+    If Advance then
+      Dest := WorkPtr;
+  end
+else raise EBSStringTooLong.CreateFmt('Ptr_WriteSmallAnsiString_BE: String is too long (%d) for small storage.',[Length(Value)]);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteSmallAnsiString_BE(Dest: Pointer; const Value: AnsiString): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+Result := Ptr_WriteSmallAnsiString_BE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteSmallAnsiString(var Dest: Pointer; const Value: AnsiString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_WriteSmallAnsiString_BE(Dest,Value,Advance)
+else
+  Result := Ptr_WriteSmallAnsiString_LE(Dest,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteSmallAnsiString(Dest: Pointer; const Value: AnsiString; Endian: TEndian = endDefault): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_WriteSmallAnsiString_BE(Ptr,Value,False)
+else
+  Result := Ptr_WriteSmallAnsiString_LE(Ptr,Value,False);
+end;
+
+//==============================================================================
+
+Function Ptr_WriteSmallUTF8String_LE(var Dest: Pointer; const Value: UTF8String; Advance: Boolean): TMemSize;
+var
+  WorkPtr:  Pointer;
+begin
+If Length(Value) <= High(Int16) then
+  begin
+    WorkPtr := Dest;
+    Result := Ptr_WriteInt16_LE(WorkPtr,Int16(Length(Value)),True);
+    If Length(Value) > 0 then
+      Inc(Result,Ptr_WriteBuffer_LE(WorkPtr,PUTF8Char(Value)^,Length(Value) * SizeOf(UTF8Char),True));
+    If Advance then
+      Dest := WorkPtr;
+  end
+else raise EBSStringTooLong.CreateFmt('Ptr_WriteSmallUTF8String_LE: String is too long (%d) for small storage.',[Length(Value)]);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteSmallUTF8String_LE(Dest: Pointer; const Value: UTF8String): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+Result := Ptr_WriteSmallUTF8String_LE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteSmallUTF8String_BE(var Dest: Pointer; const Value: UTF8String; Advance: Boolean): TMemSize;
+var
+  WorkPtr:  Pointer;
+begin
+If Length(Value) <= High(Int16) then
+  begin
+    WorkPtr := Dest;
+    Result := Ptr_WriteInt16_BE(WorkPtr,Int16(Length(Value)),True);
+    If Length(Value) > 0 then
+      Inc(Result,Ptr_WriteBuffer_BE(WorkPtr,PUTF8Char(Value)^,Length(Value) * SizeOf(UTF8Char),True));
+    If Advance then
+      Dest := WorkPtr;
+  end
+else raise EBSStringTooLong.CreateFmt('Ptr_WriteSmallUTF8String_BE: String is too long (%d) for small storage.',[Length(Value)]);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteSmallUTF8String_BE(Dest: Pointer; const Value: UTF8String): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+Result := Ptr_WriteSmallUTF8String_BE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteSmallUTF8String(var Dest: Pointer; const Value: UTF8String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_WriteSmallUTF8String_BE(Dest,Value,Advance)
+else
+  Result := Ptr_WriteSmallUTF8String_LE(Dest,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteSmallUTF8String(Dest: Pointer; const Value: UTF8String; Endian: TEndian = endDefault): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_WriteSmallUTF8String_BE(Ptr,Value,False)
+else
+  Result := Ptr_WriteSmallUTF8String_LE(Ptr,Value,False);
+end;
+
+//==============================================================================
+
+Function Ptr_WriteSmallWideString_LE(var Dest: Pointer; const Value: WideString; Advance: Boolean): TMemSize;
+var
+  WorkPtr:  Pointer;
+begin
+If Length(Value) <= High(Int16) then
+  begin
+    WorkPtr := Dest;
+    Result := Ptr_WriteInt16_LE(WorkPtr,Int16(Length(Value)),True);
+    If Length(Value) > 0 then
+    {$IFDEF ENDIAN_BIG}
+      Inc(Result,Ptr_WriteUInt16Arr_SwapEndian(PUInt16(WorkPtr),PUInt16(PWideChar(Value)),Length(Value)));
+    {$ELSE}
+      Inc(Result,Ptr_WriteBuffer_LE(WorkPtr,PWideChar(Value)^,Length(Value) * SizeOf(WideChar),True));
+    {$ENDIF}
+    If Advance then
+      Dest := WorkPtr;
+  end
+else raise EBSStringTooLong.CreateFmt('Ptr_WriteSmallWideString_LE: String is too long (%d) for small storage.',[Length(Value)]);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteSmallWideString_LE(Dest: Pointer; const Value: WideString): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+Result := Ptr_WriteSmallWideString_LE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteSmallWideString_BE(var Dest: Pointer; const Value: WideString; Advance: Boolean): TMemSize;
+var
+  WorkPtr:  Pointer;
+begin
+If Length(Value) <= High(Int16) then
+  begin
+    WorkPtr := Dest;
+    Result := Ptr_WriteInt16_BE(WorkPtr,Int16(Length(Value)),True);
+    If Length(Value) > 0 then
+    {$IFDEF ENDIAN_BIG}
+      Inc(Result,Ptr_WriteBuffer_BE(WorkPtr,PWideChar(Value)^,Length(Value) * SizeOf(WideChar),True));
+    {$ELSE}
+      Inc(Result,Ptr_WriteUInt16Arr_SwapEndian(PUInt16(WorkPtr),PUInt16(PWideChar(Value)),Length(Value)));
+    {$ENDIF}
+    If Advance then
+      Dest := WorkPtr;
+  end
+else raise EBSStringTooLong.CreateFmt('Ptr_WriteSmallWideString_BE: String is too long (%d) for small storage.',[Length(Value)]);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteSmallWideString_BE(Dest: Pointer; const Value: WideString): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+Result := Ptr_WriteSmallWideString_BE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteSmallWideString(var Dest: Pointer; const Value: WideString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_WriteSmallWideString_BE(Dest,Value,Advance)
+else
+  Result := Ptr_WriteSmallWideString_LE(Dest,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteSmallWideString(Dest: Pointer; const Value: WideString; Endian: TEndian = endDefault): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_WriteSmallWideString_BE(Ptr,Value,False)
+else
+  Result := Ptr_WriteSmallWideString_LE(Ptr,Value,False);
+end;
+
+//==============================================================================
+
+Function Ptr_WriteSmallUnicodeString_LE(var Dest: Pointer; const Value: UnicodeString; Advance: Boolean): TMemSize;
+var
+  WorkPtr:  Pointer;
+begin
+If Length(Value) <= High(Int16) then
+  begin
+    WorkPtr := Dest;
+    Result := Ptr_WriteInt16_LE(WorkPtr,Int16(Length(Value)),True);
+    If Length(Value) > 0 then
+    {$IFDEF ENDIAN_BIG}
+      Inc(Result,Ptr_WriteUInt16Arr_SwapEndian(PUInt16(WorkPtr),PUInt16(PUnicodeChar(Value)),Length(Value)));
+    {$ELSE}
+      Inc(Result,Ptr_WriteBuffer_LE(WorkPtr,PUnicodeChar(Value)^,Length(Value) * SizeOf(UnicodeChar),True));
+    {$ENDIF}
+    If Advance then
+      Dest := WorkPtr;
+  end
+else raise EBSStringTooLong.CreateFmt('Ptr_WriteSmallUnicodeString_LE: String is too long (%d) for small storage.',[Length(Value)]);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteSmallUnicodeString_LE(Dest: Pointer; const Value: UnicodeString): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+Result := Ptr_WriteSmallUnicodeString_LE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteSmallUnicodeString_BE(var Dest: Pointer; const Value: UnicodeString; Advance: Boolean): TMemSize;
+var
+  WorkPtr:  Pointer;
+begin
+If Length(Value) <= High(Int16) then
+  begin
+    WorkPtr := Dest;
+    Result := Ptr_WriteInt16_BE(WorkPtr,Int16(Length(Value)),True);
+    If Length(Value) > 0 then
+    {$IFDEF ENDIAN_BIG}
+      Inc(Result,Ptr_WriteBuffer_BE(WorkPtr,PUnicodeChar(Value)^,Length(Value) * SizeOf(UnicodeChar),True));
+    {$ELSE}
+      Inc(Result,Ptr_WriteUInt16Arr_SwapEndian(PUInt16(WorkPtr),PUInt16(PUnicodeChar(Value)),Length(Value)));
+    {$ENDIF}
+    If Advance then
+      Dest := WorkPtr;
+  end
+else raise EBSStringTooLong.CreateFmt('Ptr_WriteSmallUnicodeString_BE: String is too long (%d) for small storage.',[Length(Value)]);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteSmallUnicodeString_BE(Dest: Pointer; const Value: UnicodeString): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+Result := Ptr_WriteSmallUnicodeString_BE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteSmallUnicodeString(var Dest: Pointer; const Value: UnicodeString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_WriteSmallUnicodeString_BE(Dest,Value,Advance)
+else
+  Result := Ptr_WriteSmallUnicodeString_LE(Dest,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteSmallUnicodeString(Dest: Pointer; const Value: UnicodeString; Endian: TEndian = endDefault): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_WriteSmallUnicodeString_BE(Ptr,Value,False)
+else
+  Result := Ptr_WriteSmallUnicodeString_LE(Ptr,Value,False);
+end;
+
+//==============================================================================
+
+Function Ptr_WriteSmallUCS4String_LE(var Dest: Pointer; const Value: UCS4String; Advance: Boolean): TMemSize;
+var
+  WorkPtr:  Pointer;
+  TrueLen:  TStrSize;
+begin
+WorkPtr := Dest;
+If Length(Value) > 0 then
+  begin
+    If Value[High(Value)] = 0 then
+      TrueLen := Pred(Length(Value))
+    else
+      TrueLen := Length(Value);
+    If TrueLen > High(Int16) then
+      raise EBSStringTooLong.CreateFmt('Ptr_WriteSmallUCS4String_LE: String is too long (%d) for small storage.',[Length(Value)])
+    else If TrueLen > 0 then
+      begin
+        Result := Ptr_WriteInt16_LE(WorkPtr,TrueLen,True);
+      {$IFDEF ENDIAN_BIG}
+        Inc(Result,Ptr_WriteUInt32Arr_SwapEndian(PUInt32(WorkPtr),PUInt32(Addr(Value[Low(Value)])),TrueLen));
+      {$ELSE}
+        Inc(Result,Ptr_WriteBuffer_LE(WorkPtr,Addr(Value[Low(Value)])^,TrueLen * SizeOf(UCS4Char),True));
+      {$ENDIF}
+      end
+    else Result := Ptr_WriteInt16_LE(WorkPtr,0,True);
+  end
+else Result := Ptr_WriteInt16_LE(WorkPtr,0,True);
+If Advance then
+  Dest := WorkPtr;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteSmallUCS4String_LE(Dest: Pointer; const Value: UCS4String): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+Result := Ptr_WriteSmallUCS4String_LE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteSmallUCS4String_BE(var Dest: Pointer; const Value: UCS4String; Advance: Boolean): TMemSize;
+var
+  WorkPtr:  Pointer;
+  TrueLen:  TStrSize;
+begin
+WorkPtr := Dest;
+If Length(Value) > 0 then
+  begin
+    If Value[High(Value)] = 0 then
+      TrueLen := Pred(Length(Value))
+    else
+      TrueLen := Length(Value);
+    If TrueLen > High(Int16) then
+      raise EBSStringTooLong.CreateFmt('Ptr_WriteSmallUCS4String_BE: String is too long (%d) for small storage.',[Length(Value)])
+    else If TrueLen > 0 then
+      begin
+        Result := Ptr_WriteInt16_BE(WorkPtr,TrueLen,True);
+      {$IFDEF ENDIAN_BIG}
+        Inc(Result,Ptr_WriteBuffer_BE(WorkPtr,Addr(Value[Low(Value)])^,TrueLen * SizeOf(UCS4Char),True));
+      {$ELSE}
+        Inc(Result,Ptr_WriteUInt32Arr_SwapEndian(PUInt32(WorkPtr),PUInt32(Addr(Value[Low(Value)])),TrueLen));
+      {$ENDIF}
+      end
+    else Result := Ptr_WriteInt16_BE(WorkPtr,0,True);
+  end
+else Result := Ptr_WriteInt16_BE(WorkPtr,0,True);
+If Advance then
+  Dest := WorkPtr;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteSmallUCS4String_BE(Dest: Pointer; const Value: UCS4String): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+Result := Ptr_WriteSmallUCS4String_BE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteSmallUCS4String(var Dest: Pointer; const Value: UCS4String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_WriteSmallUCS4String_BE(Dest,Value,Advance)
+else
+  Result := Ptr_WriteSmallUCS4String_LE(Dest,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteSmallUCS4String(Dest: Pointer; const Value: UCS4String; Endian: TEndian = endDefault): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_WriteSmallUCS4String_BE(Ptr,Value,False)
+else
+  Result := Ptr_WriteSmallUCS4String_LE(Ptr,Value,False);
+end;
+
+//==============================================================================
+
+Function Ptr_WriteSmallString_LE(var Dest: Pointer; const Value: String; Advance: Boolean): TMemSize;
+begin
+Result := Ptr_WriteSmallUTF8String_LE(Dest,StrToUTF8(Value),Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteSmallString_LE(Dest: Pointer; const Value: String): TMemSize;
+begin
+Result := Ptr_WriteSmallUTF8String_LE(Dest,StrToUTF8(Value));
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteSmallString_BE(var Dest: Pointer; const Value: String; Advance: Boolean): TMemSize;
+begin
+Result := Ptr_WriteSmallUTF8String_BE(Dest,StrToUTF8(Value),Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteSmallString_BE(Dest: Pointer; const Value: String): TMemSize;
+begin
+Result := Ptr_WriteSmallUTF8String_BE(Dest,StrToUTF8(Value));
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteSmallString(var Dest: Pointer; const Value: String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+Result := Ptr_WriteSmallUTF8String(Dest,StrToUTF8(Value),Advance,Endian);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteSmallString(Dest: Pointer; const Value: String; Endian: TEndian = endDefault): TMemSize;
+begin
+Result := Ptr_WriteSmallUTF8String(Dest,StrToUTF8(Value),Endian);
+end;
+
+{-------------------------------------------------------------------------------
+    Tiny strings
+-------------------------------------------------------------------------------}
+
+Function _Ptr_WriteTinyAnsiString(var Dest: Pointer; const Value: AnsiString; Advance: Boolean): TMemSize;
+var
+  WorkPtr:  Pointer;
+begin
+If Length(Value) <= High(UInt8) then
+  begin
+    WorkPtr := Dest;
+    Result := Ptr_WriteUInt8_LE(WorkPtr,UInt8(Length(Value)),True);
+    If Length(Value) > 0 then
+      Inc(Result,Ptr_WriteBuffer_LE(WorkPtr,PAnsiChar(Value)^,Length(Value) * SizeOf(AnsiChar),True));
+    If Advance then
+      Dest := WorkPtr;
+  end
+else raise EBSStringTooLong.CreateFmt('_Ptr_WriteTinyAnsiString: String is too long (%d) for tiny storage.',[Length(Value)]);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteTinyAnsiString_LE(var Dest: Pointer; const Value: AnsiString; Advance: Boolean): TMemSize;
+begin
+Result := _Ptr_WriteTinyAnsiString(Dest,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteTinyAnsiString_LE(Dest: Pointer; const Value: AnsiString): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+Result := _Ptr_WriteTinyAnsiString(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteTinyAnsiString_BE(var Dest: Pointer; const Value: AnsiString; Advance: Boolean): TMemSize;
+begin
+Result := _Ptr_WriteShortString(Dest,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteTinyAnsiString_BE(Dest: Pointer; const Value: AnsiString): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+Result := _Ptr_WriteTinyAnsiString(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteTinyAnsiString(var Dest: Pointer; const Value: AnsiString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_WriteTinyAnsiString_BE(Dest,Value,Advance)
+else
+  Result := Ptr_WriteTinyAnsiString_LE(Dest,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteTinyAnsiString(Dest: Pointer; const Value: AnsiString; Endian: TEndian = endDefault): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_WriteTinyAnsiString_BE(Ptr,Value,False)
+else
+  Result := Ptr_WriteTinyAnsiString_LE(Ptr,Value,False);
+end;
+
+//==============================================================================
+
 {<lite-begin>}
 {-------------------------------------------------------------------------------
     General data buffers
@@ -6238,7 +7352,7 @@ var
   WorkPtr:  PUInt8;
   i:        Integer;
 begin
-If ByteOpenArrayIsPacked then
+If OpenByteArrayIsPacked then
   begin
     // write whole array
     If Length(Value) > 0 then
@@ -10164,6 +11278,816 @@ begin
 Result := UTF8ToStr(Ptr_GetUTF8String(Src,Endian));
 end;
 
+{-------------------------------------------------------------------------------
+    Small strings
+-------------------------------------------------------------------------------}
+
+Function Ptr_ReadSmallAnsiString_LE(var Src: Pointer; out Value: AnsiString; Advance: Boolean): TMemSize;
+var
+  StrLength:  Int16;
+  WorkPtr:    Pointer;
+begin
+WorkPtr := Src;
+Result := Ptr_ReadInt16_LE(WorkPtr,StrLength,True);
+ClampStringLength(StrLength);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+  Inc(Result,Ptr_ReadBuffer_LE(WorkPtr,PAnsiChar(Value)^,StrLength * SizeOf(AnsiChar),True));
+If Advance then
+  Src := WorkPtr;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadSmallAnsiString_LE(Src: Pointer; out Value: AnsiString): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Result := Ptr_ReadSmallAnsiString_LE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadSmallAnsiString_BE(var Src: Pointer; out Value: AnsiString; Advance: Boolean): TMemSize;
+var
+  StrLength:  Int16;
+  WorkPtr:    Pointer;
+begin
+WorkPtr := Src;
+Result := Ptr_ReadInt16_BE(WorkPtr,StrLength,True);
+ClampStringLength(StrLength);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+  Inc(Result,Ptr_ReadBuffer_BE(WorkPtr,PAnsiChar(Value)^,StrLength * SizeOf(AnsiChar),True));
+If Advance then
+  Src := WorkPtr;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadSmallAnsiString_BE(Src: Pointer; out Value: AnsiString): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Result := Ptr_ReadSmallAnsiString_BE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadSmallAnsiString(var Src: Pointer; out Value: AnsiString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_ReadSmallAnsiString_BE(Src,Value,Advance)
+else
+  Result := Ptr_ReadSmallAnsiString_LE(Src,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadSmallAnsiString(Src: Pointer; out Value: AnsiString; Endian: TEndian = endDefault): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_ReadSmallAnsiString_BE(Ptr,Value,False)
+else
+  Result := Ptr_ReadSmallAnsiString_LE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetSmallAnsiString_LE(var Src: Pointer; Advance: Boolean): AnsiString;
+begin
+Ptr_ReadSmallAnsiString_LE(Src,Result,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetSmallAnsiString_LE(Src: Pointer): AnsiString;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Ptr_ReadSmallAnsiString_LE(Ptr,Result,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetSmallAnsiString_BE(var Src: Pointer; Advance: Boolean): AnsiString;
+begin
+Ptr_ReadSmallAnsiString_BE(Src,Result,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetSmallAnsiString_BE(Src: Pointer): AnsiString;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Ptr_ReadSmallAnsiString_BE(Ptr,Result,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetSmallAnsiString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): AnsiString;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_GetSmallAnsiString_BE(Src,Advance)
+else
+  Result := Ptr_GetSmallAnsiString_LE(Src,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetSmallAnsiString(Src: Pointer; Endian: TEndian = endDefault): AnsiString;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_GetSmallAnsiString_BE(Ptr,False)
+else
+  Result := Ptr_GetSmallAnsiString_LE(Ptr,False);
+end;
+
+//==============================================================================
+
+Function Ptr_ReadSmallUTF8String_LE(var Src: Pointer; out Value: UTF8String; Advance: Boolean): TMemSize;
+var
+  StrLength:  Int16;
+  WorkPtr:    Pointer;
+begin
+WorkPtr := Src;
+Result := Ptr_ReadInt16_LE(WorkPtr,StrLength,True);
+ClampStringLength(StrLength);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+  Inc(Result,Ptr_ReadBuffer_LE(WorkPtr,PUTF8Char(Value)^,StrLength * SizeOf(UTF8Char),True));
+If Advance then
+  Src := WorkPtr;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadSmallUTF8String_LE(Src: Pointer; out Value: UTF8String): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Result := Ptr_ReadSmallUTF8String_LE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadSmallUTF8String_BE(var Src: Pointer; out Value: UTF8String; Advance: Boolean): TMemSize;
+var
+  StrLength:  Int16;
+  WorkPtr:    Pointer;
+begin
+WorkPtr := Src;
+Result := Ptr_ReadInt16_BE(WorkPtr,StrLength,True);
+ClampStringLength(StrLength);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+  Inc(Result,Ptr_ReadBuffer_BE(WorkPtr,PUTF8Char(Value)^,StrLength * SizeOf(UTF8Char),True));
+If Advance then
+  Src := WorkPtr;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadSmallUTF8String_BE(Src: Pointer; out Value: UTF8String): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Result := Ptr_ReadSmallUTF8String_BE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadSmallUTF8String(var Src: Pointer; out Value: UTF8String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_ReadSmallUTF8String_BE(Src,Value,Advance)
+else
+  Result := Ptr_ReadSmallUTF8String_LE(Src,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadSmallUTF8String(Src: Pointer; out Value: UTF8String; Endian: TEndian = endDefault): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_ReadSmallUTF8String_BE(Ptr,Value,False)
+else
+  Result := Ptr_ReadSmallUTF8String_LE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetSmallUTF8String_LE(var Src: Pointer; Advance: Boolean): UTF8String;
+begin
+Ptr_ReadSmallUTF8String_LE(Src,Result,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetSmallUTF8String_LE(Src: Pointer): UTF8String;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Ptr_ReadSmallUTF8String_LE(Ptr,Result,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetSmallUTF8String_BE(var Src: Pointer; Advance: Boolean): UTF8String;
+begin
+Ptr_ReadSmallUTF8String_BE(Src,Result,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetSmallUTF8String_BE(Src: Pointer): UTF8String;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Ptr_ReadSmallUTF8String_BE(Ptr,Result,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetSmallUTF8String(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UTF8String;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_GetSmallUTF8String_BE(Src,Advance)
+else
+  Result := Ptr_GetSmallUTF8String_LE(Src,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetSmallUTF8String(Src: Pointer; Endian: TEndian = endDefault): UTF8String;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_GetSmallUTF8String_BE(Ptr,False)
+else
+  Result := Ptr_GetSmallUTF8String_LE(Ptr,False);
+end;
+
+//==============================================================================
+
+Function Ptr_ReadSmallWideString_LE(var Src: Pointer; out Value: WideString; Advance: Boolean): TMemSize;
+var
+  StrLength:  Int16;
+  WorkPtr:    Pointer;
+begin
+WorkPtr := Src;
+Result := Ptr_ReadInt16_LE(WorkPtr,StrLength,True);
+ClampStringLength(StrLength);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+{$IFDEF ENDIAN_BIG}
+  Inc(Result,Ptr_ReadUInt16Arr_SwapEndian(PUInt16(WorkPtr),PUInt16(PWideChar(Value)),StrLength));
+{$ELSE}
+  Inc(Result,Ptr_ReadBuffer_LE(WorkPtr,PWideChar(Value)^,StrLength * SizeOf(WideChar),True));
+{$ENDIF}
+If Advance then
+  Src := WorkPtr;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadSmallWideString_LE(Src: Pointer; out Value: WideString): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Result := Ptr_ReadSmallWideString_LE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadSmallWideString_BE(var Src: Pointer; out Value: WideString; Advance: Boolean): TMemSize;
+var
+  StrLength:  Int16;
+  WorkPtr:    Pointer;
+begin
+WorkPtr := Src;
+Result := Ptr_ReadInt16_BE(WorkPtr,StrLength,True);
+ClampStringLength(StrLength);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+{$IFDEF ENDIAN_BIG}
+  Inc(Result,Ptr_ReadBuffer_BE(WorkPtr,PWideChar(Value)^,StrLength * SizeOf(WideChar),True));
+{$ELSE}
+  Inc(Result,Ptr_ReadUInt16Arr_SwapEndian(PUInt16(WorkPtr),PUInt16(PWideChar(Value)),StrLength));
+{$ENDIF}
+If Advance then
+  Src := WorkPtr;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadSmallWideString_BE(Src: Pointer; out Value: WideString): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Result := Ptr_ReadSmallWideString_BE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadSmallWideString(var Src: Pointer; out Value: WideString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_ReadSmallWideString_BE(Src,Value,Advance)
+else
+  Result := Ptr_ReadSmallWideString_LE(Src,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadSmallWideString(Src: Pointer; out Value: WideString; Endian: TEndian = endDefault): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_ReadSmallWideString_BE(Ptr,Value,False)
+else
+  Result := Ptr_ReadSmallWideString_LE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetSmallWideString_LE(var Src: Pointer; Advance: Boolean): WideString;
+begin
+Ptr_ReadSmallWideString_LE(Src,Result,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetSmallWideString_LE(Src: Pointer): WideString;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Ptr_ReadSmallWideString_LE(Ptr,Result,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetSmallWideString_BE(var Src: Pointer; Advance: Boolean): WideString;
+begin
+Ptr_ReadSmallWideString_BE(Src,Result,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetSmallWideString_BE(Src: Pointer): WideString;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Ptr_ReadSmallWideString_BE(Ptr,Result,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetSmallWideString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): WideString;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_GetSmallWideString_BE(Src,Advance)
+else
+  Result := Ptr_GetSmallWideString_LE(Src,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetSmallWideString(Src: Pointer; Endian: TEndian = endDefault): WideString;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_GetSmallWideString_BE(Ptr,False)
+else
+  Result := Ptr_GetSmallWideString_LE(Ptr,False);
+end;
+
+//==============================================================================
+
+Function Ptr_ReadSmallUnicodeString_LE(var Src: Pointer; out Value: UnicodeString; Advance: Boolean): TMemSize;
+var
+  StrLength:  Int16;
+  WorkPtr:    Pointer;
+begin
+WorkPtr := Src;
+Result := Ptr_ReadInt16_LE(WorkPtr,StrLength,True);
+ClampStringLength(StrLength);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+{$IFDEF ENDIAN_BIG}
+  Inc(Result,Ptr_ReadUInt16Arr_SwapEndian(PUInt16(WorkPtr),PUInt16(PUnicodeChar(Value)),StrLength));
+{$ELSE}
+  Inc(Result,Ptr_ReadBuffer_LE(WorkPtr,PUnicodeChar(Value)^,StrLength * SizeOf(UnicodeChar),True));
+{$ENDIF}
+If Advance then
+  Src := WorkPtr;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadSmallUnicodeString_LE(Src: Pointer; out Value: UnicodeString): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Result := Ptr_ReadSmallUnicodeString_LE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadSmallUnicodeString_BE(var Src: Pointer; out Value: UnicodeString; Advance: Boolean): TMemSize;
+var
+  StrLength:  Int16;
+  WorkPtr:    Pointer;
+begin
+WorkPtr := Src;
+Result := Ptr_ReadInt16_BE(WorkPtr,StrLength,True);
+ClampStringLength(StrLength);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+{$IFDEF ENDIAN_BIG}
+  Inc(Result,Ptr_ReadBuffer_BE(WorkPtr,PUnicodeChar(Value)^,StrLength * SizeOf(UnicodeChar),True));
+{$ELSE}
+  Inc(Result,Ptr_ReadUInt16Arr_SwapEndian(PUInt16(WorkPtr),PUInt16(PUnicodeChar(Value)),StrLength));
+{$ENDIF}
+If Advance then
+  Src := WorkPtr;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadSmallUnicodeString_BE(Src: Pointer; out Value: UnicodeString): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Result := Ptr_ReadSmallUnicodeString_BE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadSmallUnicodeString(var Src: Pointer; out Value: UnicodeString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_ReadSmallUnicodeString_BE(Src,Value,Advance)
+else
+  Result := Ptr_ReadSmallUnicodeString_LE(Src,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadSmallUnicodeString(Src: Pointer; out Value: UnicodeString; Endian: TEndian = endDefault): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_ReadSmallUnicodeString_BE(Ptr,Value,False)
+else
+  Result := Ptr_ReadSmallUnicodeString_LE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetSmallUnicodeString_LE(var Src: Pointer; Advance: Boolean): UnicodeString;
+begin
+Ptr_ReadSmallUnicodeString_LE(Src,Result,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetSmallUnicodeString_LE(Src: Pointer): UnicodeString;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Ptr_ReadSmallUnicodeString_LE(Ptr,Result,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetSmallUnicodeString_BE(var Src: Pointer; Advance: Boolean): UnicodeString;
+begin
+Ptr_ReadSmallUnicodeString_BE(Src,Result,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetSmallUnicodeString_BE(Src: Pointer): UnicodeString;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Ptr_ReadSmallUnicodeString_BE(Ptr,Result,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetSmallUnicodeString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UnicodeString;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_GetSmallUnicodeString_BE(Src,Advance)
+else
+  Result := Ptr_GetSmallUnicodeString_LE(Src,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetSmallUnicodeString(Src: Pointer; Endian: TEndian = endDefault): UnicodeString;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_GetSmallUnicodeString_BE(Ptr,False)
+else
+  Result := Ptr_GetSmallUnicodeString_LE(Ptr,False);
+end;
+
+//==============================================================================
+
+Function Ptr_ReadSmallUCS4String_LE(var Src: Pointer; out Value: UCS4String; Advance: Boolean): TMemSize;
+var
+  StrLength:  Int16;
+  WorkPtr:    Pointer;
+begin
+WorkPtr := Src;
+Result := Ptr_ReadInt16_LE(WorkPtr,StrLength,True);
+ClampStringLength(StrLength);
+Value := nil;
+SetLength(Value,StrLength + 1);
+Value[High(Value)] := 0;
+If StrLength > 0 then
+{$IFDEF ENDIAN_BIG}
+  Inc(Result,Ptr_ReadUInt32Arr_SwapEndian(PUInt32(WorkPtr),PUInt32(Addr(Value[Low(Value)])),StrLength));
+{$ELSE}
+  Inc(Result,Ptr_ReadBuffer_LE(WorkPtr,Addr(Value[Low(Value)])^,StrLength * SizeOf(UCS4Char),True));
+{$ENDIF}
+If Advance then
+  Src := WorkPtr;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadSmallUCS4String_LE(Src: Pointer; out Value: UCS4String): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Result := Ptr_ReadSmallUCS4String_LE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadSmallUCS4String_BE(var Src: Pointer; out Value: UCS4String; Advance: Boolean): TMemSize;
+var
+  StrLength:  Int16;
+  WorkPtr:    Pointer;
+begin
+WorkPtr := Src;
+Result := Ptr_ReadInt16_BE(WorkPtr,StrLength,True);
+ClampStringLength(StrLength);
+Value := nil;
+SetLength(Value,StrLength + 1);
+Value[High(Value)] := 0;
+If StrLength > 0 then
+{$IFDEF ENDIAN_BIG}
+  Inc(Result,Ptr_ReadBuffer_BE(WorkPtr,Addr(Value[Low(Value)])^,StrLength * SizeOf(UCS4Char),True));
+{$ELSE}
+  Inc(Result,Ptr_ReadUInt32Arr_SwapEndian(PUInt32(WorkPtr),PUInt32(Addr(Value[Low(Value)])),StrLength));
+{$ENDIF}
+If Advance then
+  Src := WorkPtr;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadSmallUCS4String_BE(Src: Pointer; out Value: UCS4String): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Result := Ptr_ReadSmallUCS4String_BE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadSmallUCS4String(var Src: Pointer; out Value: UCS4String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_ReadSmallUCS4String_BE(Src,Value,Advance)
+else
+  Result := Ptr_ReadSmallUCS4String_LE(Src,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadSmallUCS4String(Src: Pointer; out Value: UCS4String; Endian: TEndian = endDefault): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_ReadSmallUCS4String_BE(Ptr,Value,False)
+else
+  Result := Ptr_ReadSmallUCS4String_LE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetSmallUCS4String_LE(var Src: Pointer; Advance: Boolean): UCS4String;
+begin
+Ptr_ReadSmallUCS4String_LE(Src,Result,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetSmallUCS4String_LE(Src: Pointer): UCS4String;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Ptr_ReadSmallUCS4String_LE(Ptr,Result,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetSmallUCS4String_BE(var Src: Pointer; Advance: Boolean): UCS4String;
+begin
+Ptr_ReadSmallUCS4String_BE(Src,Result,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetSmallUCS4String_BE(Src: Pointer): UCS4String;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Ptr_ReadSmallUCS4String_BE(Ptr,Result,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetSmallUCS4String(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UCS4String;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_GetSmallUCS4String_BE(Src,Advance)
+else
+  Result := Ptr_GetSmallUCS4String_LE(Src,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetSmallUCS4String(Src: Pointer; Endian: TEndian = endDefault): UCS4String;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_GetSmallUCS4String_BE(Ptr,False)
+else
+  Result := Ptr_GetSmallUCS4String_LE(Ptr,False);
+end;
+
+//==============================================================================
+
+Function Ptr_ReadSmallString_LE(var Src: Pointer; out Value: String; Advance: Boolean): TMemSize;
+var
+  TempStr:  UTF8String;
+begin
+Result := Ptr_ReadSmallUTF8String_LE(Src,TempStr,Advance);
+Value := UTF8ToStr(TempStr);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadSmallString_LE(Src: Pointer; out Value: String): TMemSize;
+var
+  TempStr:  UTF8String;
+begin
+Result := Ptr_ReadSmallUTF8String_LE(Src,TempStr);
+Value := UTF8ToStr(TempStr);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadSmallString_BE(var Src: Pointer; out Value: String; Advance: Boolean): TMemSize;
+var
+  TempStr:  UTF8String;
+begin
+Result := Ptr_ReadSmallUTF8String_BE(Src,TempStr,Advance);
+Value := UTF8ToStr(TempStr);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadSmallString_BE(Src: Pointer; out Value: String): TMemSize;
+var
+  TempStr:  UTF8String;
+begin
+Result := Ptr_ReadSmallUTF8String_BE(Src,TempStr);
+Value := UTF8ToStr(TempStr);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadSmallString(var Src: Pointer; out Value: String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+var
+  TempStr:  UTF8String;
+begin
+Result := Ptr_ReadSmallUTF8String(Src,TempStr,Advance,Endian);
+Value := UTF8ToStr(TempStr);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadSmallString(Src: Pointer; out Value: String; Endian: TEndian = endDefault): TMemSize;
+var
+  TempStr:  UTF8String;
+begin
+Result := Ptr_ReadSmallUTF8String(Src,TempStr,Endian);
+Value := UTF8ToStr(TempStr);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetSmallString_LE(var Src: Pointer; Advance: Boolean): String;
+begin
+Result := UTF8ToStr(Ptr_GetSmallUTF8String_LE(Src,Advance));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetSmallString_LE(Src: Pointer): String;
+begin
+Result := UTF8ToStr(Ptr_GetSmallUTF8String_LE(Src));
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetSmallString_BE(var Src: Pointer; Advance: Boolean): String;
+begin
+Result := UTF8ToStr(Ptr_GetSmallUTF8String_BE(Src,Advance));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetSmallString_BE(Src: Pointer): String;
+begin
+Result := UTF8ToStr(Ptr_GetSmallUTF8String_BE(Src));
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetSmallString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): String;
+begin
+Result := UTF8ToStr(Ptr_GetSmallUTF8String(Src,Advance,Endian));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetSmallString(Src: Pointer; Endian: TEndian = endDefault): String;
+begin
+Result := UTF8ToStr(Ptr_GetSmallUTF8String(Src,Endian));
+end;
+
 {<lite-begin>}
 {-------------------------------------------------------------------------------
     General data buffers
@@ -11680,6 +13604,322 @@ begin
 Result := Stream_WriteUTF8String(Stream,StrToUTF8(Value),Endian);
 end;
 
+{-------------------------------------------------------------------------------
+    Small strings
+-------------------------------------------------------------------------------}
+
+Function Stream_WriteSmallAnsiString_LE(Stream: TStream; const Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+If Length(Value) <= High(Int16) then
+  begin
+    Result := Stream_WriteInt16_LE(Stream,Int16(Length(Value)),True);
+    If Length(Value) > 0 then
+      Inc(Result,Stream_WriteBuffer_LE(Stream,PAnsiChar(Value)^,Length(Value) * SizeOf(AnsiChar),True));
+    AdvanceStream(Advance,Stream,Result);
+  end
+else raise EBSStringTooLong.CreateFmt('Stream_WriteSmallAnsiString_LE: String is too long (%d) for small storage.',[Length(Value)]);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteSmallAnsiString_BE(Stream: TStream; const Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+If Length(Value) <= High(Int16) then
+  begin
+    Result := Stream_WriteInt16_BE(Stream,Int16(Length(Value)),True);
+    If Length(Value) > 0 then
+      Inc(Result,Stream_WriteBuffer_BE(Stream,PAnsiChar(Value)^,Length(Value) * SizeOf(AnsiChar),True));
+    AdvanceStream(Advance,Stream,Result);
+  end
+else raise EBSStringTooLong.CreateFmt('Stream_WriteSmallAnsiString_BE: String is too long (%d) for small storage.',[Length(Value)]);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteSmallAnsiString(Stream: TStream; const Value: AnsiString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_WriteSmallAnsiString_BE(Stream,Value,Advance)
+else
+  Result := Stream_WriteSmallAnsiString_LE(Stream,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_WriteSmallAnsiString(Stream: TStream; const Value: AnsiString; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_WriteSmallAnsiString_BE(Stream,Value)
+else
+  Result := Stream_WriteSmallAnsiString_LE(Stream,Value);
+end;
+
+//==============================================================================
+
+Function Stream_WriteSmallUTF8String_LE(Stream: TStream; const Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+If Length(Value) <= High(Int16) then
+  begin
+    Result := Stream_WriteInt16_LE(Stream,Int16(Length(Value)),True);
+    If Length(Value) > 0 then
+      Inc(Result,Stream_WriteBuffer_LE(Stream,PUTF8Char(Value)^,Length(Value) * SizeOf(UTF8Char),True));
+    AdvanceStream(Advance,Stream,Result);
+  end
+else raise EBSStringTooLong.CreateFmt('Stream_WriteSmallUTF8String_LE: String is too long (%d) for small storage.',[Length(Value)]);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteSmallUTF8String_BE(Stream: TStream; const Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+If Length(Value) <= High(Int16) then
+  begin
+    Result := Stream_WriteInt16_BE(Stream,Int16(Length(Value)),True);
+    If Length(Value) > 0 then
+      Inc(Result,Stream_WriteBuffer_BE(Stream,PUTF8Char(Value)^,Length(Value) * SizeOf(UTF8Char),True));
+    AdvanceStream(Advance,Stream,Result);
+  end
+else raise EBSStringTooLong.CreateFmt('Stream_WriteSmallUTF8String_BE: String is too long (%d) for small storage.',[Length(Value)]);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteSmallUTF8String(Stream: TStream; const Value: UTF8String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_WriteSmallUTF8String_BE(Stream,Value,Advance)
+else
+  Result := Stream_WriteSmallUTF8String_LE(Stream,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_WriteSmallUTF8String(Stream: TStream; const Value: UTF8String; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_WriteSmallUTF8String_BE(Stream,Value)
+else
+  Result := Stream_WriteSmallUTF8String_LE(Stream,Value);
+end;
+
+//==============================================================================
+
+Function Stream_WriteSmallWideString_LE(Stream: TStream; const Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+If Length(Value) <= High(Int16) then
+  begin
+    Result := Stream_WriteInt16_LE(Stream,Int16(Length(Value)),True);
+    If Length(Value) > 0 then
+    {$IFDEF ENDIAN_BIG}
+      Inc(Result,Stream_WriteUInt16Arr_SwapEndian(Stream,PUInt16(PWideChar(Value)),Length(Value)));
+    {$ELSE}
+      Inc(Result,Stream_WriteBuffer_LE(Stream,PWideChar(Value)^,Length(Value) * SizeOf(WideChar),True));
+    {$ENDIF}
+    AdvanceStream(Advance,Stream,Result);
+  end
+else raise EBSStringTooLong.CreateFmt('Stream_WriteSmallWideString_LE: String is too long (%d) for small storage.',[Length(Value)]);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteSmallWideString_BE(Stream: TStream; const Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+If Length(Value) <= High(Int16) then
+  begin
+    Result := Stream_WriteInt16_BE(Stream,Int16(Length(Value)),True);
+    If Length(Value) > 0 then
+    {$IFDEF ENDIAN_BIG}
+      Inc(Result,Stream_WriteBuffer_BE(Stream,PWideChar(Value)^,Length(Value) * SizeOf(WideChar),True));
+    {$ELSE}
+      Inc(Result,Stream_WriteUInt16Arr_SwapEndian(Stream,PUInt16(PWideChar(Value)),Length(Value)));
+    {$ENDIF}
+    AdvanceStream(Advance,Stream,Result);
+  end
+else raise EBSStringTooLong.CreateFmt('Stream_WriteSmallWideString_BE: String is too long (%d) for small storage.',[Length(Value)]);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteSmallWideString(Stream: TStream; const Value: WideString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_WriteSmallWideString_BE(Stream,Value,Advance)
+else
+  Result := Stream_WriteSmallWideString_LE(Stream,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_WriteSmallWideString(Stream: TStream; const Value: WideString; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_WriteSmallWideString_BE(Stream,Value)
+else
+  Result := Stream_WriteSmallWideString_LE(Stream,Value);
+end;
+
+//==============================================================================
+
+Function Stream_WriteSmallUnicodeString_LE(Stream: TStream; const Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+If Length(Value) <= High(Int16) then
+  begin
+    Result := Stream_WriteInt16_LE(Stream,Int16(Length(Value)),True);
+    If Length(Value) > 0 then
+    {$IFDEF ENDIAN_BIG}
+      Inc(Result,Stream_WriteUInt16Arr_SwapEndian(Stream,PUInt16(PUnicodeChar(Value)),Length(Value)));
+    {$ELSE}
+      Inc(Result,Stream_WriteBuffer_LE(Stream,PUnicodeChar(Value)^,Length(Value) * SizeOf(UnicodeChar),True));
+    {$ENDIF}
+    AdvanceStream(Advance,Stream,Result);
+  end
+else raise EBSStringTooLong.CreateFmt('Stream_WriteSmallUnicodeString_LE: String is too long (%d) for small storage.',[Length(Value)]);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteSmallUnicodeString_BE(Stream: TStream; const Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+If Length(Value) <= High(Int16) then
+  begin
+    Result := Stream_WriteInt16_BE(Stream,Int16(Length(Value)),True);
+    If Length(Value) > 0 then
+    {$IFDEF ENDIAN_BIG}
+      Inc(Result,Stream_WriteBuffer_BE(Stream,PUnicodeChar(Value)^,Length(Value) * SizeOf(UnicodeChar),True));
+    {$ELSE}
+      Inc(Result,Stream_WriteUInt16Arr_SwapEndian(Stream,PUInt16(PUnicodeChar(Value)),Length(Value)));
+    {$ENDIF}
+    AdvanceStream(Advance,Stream,Result);
+  end
+else raise EBSStringTooLong.CreateFmt('Stream_WriteSmallUnicodeString_BE: String is too long (%d) for small storage.',[Length(Value)]);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteSmallUnicodeString(Stream: TStream; const Value: UnicodeString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_WriteSmallUnicodeString_BE(Stream,Value,Advance)
+else
+  Result := Stream_WriteSmallUnicodeString_LE(Stream,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_WriteSmallUnicodeString(Stream: TStream; const Value: UnicodeString; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_WriteSmallUnicodeString_BE(Stream,Value)
+else
+  Result := Stream_WriteSmallUnicodeString_LE(Stream,Value);
+end;
+
+//==============================================================================
+
+Function Stream_WriteSmallUCS4String_LE(Stream: TStream; const Value: UCS4String; Advance: Boolean = True): TMemSize;
+var
+  TrueLen:  TStrSize;
+begin
+If Length(Value) > 0 then
+  begin
+    If Value[High(Value)] = 0 then
+      TrueLen := Pred(Length(Value))
+    else
+      TrueLen := Length(Value);
+    If TrueLen > High(Int16) then
+      raise EBSStringTooLong.CreateFmt('Stream_WriteSmallUCS4String_LE: String is too long (%d) for small storage.',[Length(Value)])
+    else If TrueLen > 0 then
+      begin
+        Result := Stream_WriteInt16_LE(Stream,TrueLen,True);
+      {$IFDEF ENDIAN_BIG}
+        Inc(Result,Stream_WriteUInt32Arr_SwapEndian(Stream,PUInt32(Addr(Value[Low(Value)])),TrueLen));
+      {$ELSE}
+        Inc(Result,Stream_WriteBuffer_LE(Stream,Addr(Value[Low(Value)])^,TrueLen * SizeOf(UCS4Char),True));
+      {$ENDIF}
+      end
+    else Result := Stream_WriteInt16_LE(Stream,0,True);
+  end
+else Result := Stream_WriteInt16_LE(Stream,0,True);
+AdvanceStream(Advance,Stream,Result);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteSmallUCS4String_BE(Stream: TStream; const Value: UCS4String; Advance: Boolean = True): TMemSize;
+var
+  TrueLen:  TStrSize;
+begin
+If Length(Value) > 0 then
+  begin
+    If Value[High(Value)] = 0 then
+      TrueLen := Pred(Length(Value))
+    else
+      TrueLen := Length(Value);
+    If TrueLen > High(Int16) then
+      raise EBSStringTooLong.CreateFmt('Stream_WriteSmallUCS4String_BE: String is too long (%d) for small storage.',[Length(Value)])
+    else If TrueLen > 0 then
+      begin
+        Result := Stream_WriteInt16_BE(Stream,TrueLen,True);
+      {$IFDEF ENDIAN_BIG}
+        Inc(Result,Stream_WriteBuffer_BE(Stream,Addr(Value[Low(Value)])^,TrueLen * SizeOf(UCS4Char),True));
+      {$ELSE}
+        Inc(Result,Stream_WriteUInt32Arr_SwapEndian(Stream,PUInt32(Addr(Value[Low(Value)])),TrueLen));
+      {$ENDIF}
+      end
+    else Result := Stream_WriteInt16_BE(Stream,0,True);
+  end
+else Result := Stream_WriteInt16_BE(Stream,0,True);
+AdvanceStream(Advance,Stream,Result);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteSmallUCS4String(Stream: TStream; const Value: UCS4String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_WriteSmallUCS4String_BE(Stream,Value,Advance)
+else
+  Result := Stream_WriteSmallUCS4String_LE(Stream,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_WriteSmallUCS4String(Stream: TStream; const Value: UCS4String; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_WriteSmallUCS4String_BE(Stream,Value)
+else
+  Result := Stream_WriteSmallUCS4String_LE(Stream,Value);
+end;
+
+//==============================================================================
+
+Function Stream_WriteSmallString_LE(Stream: TStream; const Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := Stream_WriteSmallUTF8String_LE(Stream,StrToUTF8(Value),Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteSmallString_BE(Stream: TStream; const Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := Stream_WriteSmallUTF8String_BE(Stream,StrToUTF8(Value),Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteSmallString(Stream: TStream; const Value: String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+Result := Stream_WriteSmallUTF8String(Stream,StrToUTF8(Value),Advance,Endian);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_WriteSmallString(Stream: TStream; const Value: String; Endian: TEndian = endDefault): TMemSize;
+begin
+Result := Stream_WriteSmallUTF8String(Stream,StrToUTF8(Value),Endian);
+end;
+
 {<lite-begin>}
 {-------------------------------------------------------------------------------
     General data buffers
@@ -11740,7 +13980,7 @@ var
   CopyCnt:  Integer;
   i:        Integer;
 begin
-If not ByteOpenArrayIsPacked then
+If not OpenByteArrayIsPacked then
   begin
     Remain := Length(Value);
     Offset := 0;
@@ -14300,6 +16540,523 @@ begin
 Result := UTF8ToStr(Stream_GetUTF8String(Stream,Endian));
 end;
 
+{-------------------------------------------------------------------------------
+    Small strings
+-------------------------------------------------------------------------------}
+
+Function Stream_ReadSmallAnsiString_LE(Stream: TStream; out Value: AnsiString; Advance: Boolean = True): TMemSize;
+var
+  StrLength:  Int16;
+begin
+Result := Stream_ReadInt16_LE(Stream,StrLength,True);
+ClampStringLength(StrLength);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+  Inc(Result,Stream_ReadBuffer_LE(Stream,PAnsiChar(Value)^,StrLength * SizeOf(AnsiChar),True));
+AdvanceStream(Advance,Stream,Result);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadSmallAnsiString_BE(Stream: TStream; out Value: AnsiString; Advance: Boolean = True): TMemSize;
+var
+  StrLength:  Int16;
+begin
+Result := Stream_ReadInt16_BE(Stream,StrLength,True);
+ClampStringLength(StrLength);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+  Inc(Result,Stream_ReadBuffer_BE(Stream,PAnsiChar(Value)^,StrLength * SizeOf(AnsiChar),True));
+AdvanceStream(Advance,Stream,Result);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadSmallAnsiString(Stream: TStream; out Value: AnsiString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_ReadSmallAnsiString_BE(Stream,Value,Advance)
+else
+  Result := Stream_ReadSmallAnsiString_LE(Stream,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_ReadSmallAnsiString(Stream: TStream; out Value: AnsiString; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_ReadSmallAnsiString_BE(Stream,Value)
+else
+  Result := Stream_ReadSmallAnsiString_LE(Stream,Value);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetSmallAnsiString_LE(Stream: TStream; Advance: Boolean = True): AnsiString;
+begin
+Stream_ReadSmallAnsiString_LE(Stream,Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetSmallAnsiString_BE(Stream: TStream; Advance: Boolean = True): AnsiString;
+begin
+Stream_ReadSmallAnsiString_BE(Stream,Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetSmallAnsiString(Stream: TStream; Advance: Boolean; Endian: TEndian = endDefault): AnsiString;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_GetSmallAnsiString_BE(Stream,Advance)
+else
+  Result := Stream_GetSmallAnsiString_LE(Stream,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_GetSmallAnsiString(Stream: TStream; Endian: TEndian = endDefault): AnsiString;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_GetSmallAnsiString_BE(Stream)
+else
+  Result := Stream_GetSmallAnsiString_LE(Stream);
+end;
+
+//==============================================================================
+
+Function Stream_ReadSmallUTF8String_LE(Stream: TStream; out Value: UTF8String; Advance: Boolean = True): TMemSize;
+var
+  StrLength:  Int16;
+begin
+Result := Stream_ReadInt16_LE(Stream,StrLength,True);
+ClampStringLength(StrLength);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+  Inc(Result,Stream_ReadBuffer_LE(Stream,PUTF8Char(Value)^,StrLength * SizeOf(UTF8Char),True));
+AdvanceStream(Advance,Stream,Result);
+end;
+
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadSmallUTF8String_BE(Stream: TStream; out Value: UTF8String; Advance: Boolean = True): TMemSize;
+var
+  StrLength:  Int16;
+begin
+Result := Stream_ReadInt16_BE(Stream,StrLength,True);
+ClampStringLength(StrLength);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+  Inc(Result,Stream_ReadBuffer_BE(Stream,PUTF8Char(Value)^,StrLength * SizeOf(UTF8Char),True));
+AdvanceStream(Advance,Stream,Result);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadSmallUTF8String(Stream: TStream; out Value: UTF8String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_ReadSmallUTF8String_BE(Stream,Value,Advance)
+else
+  Result := Stream_ReadSmallUTF8String_LE(Stream,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_ReadSmallUTF8String(Stream: TStream; out Value: UTF8String; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_ReadSmallUTF8String_BE(Stream,Value)
+else
+  Result := Stream_ReadSmallUTF8String_LE(Stream,Value);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetSmallUTF8String_LE(Stream: TStream; Advance: Boolean = True): UTF8String;
+begin
+Stream_ReadSmallUTF8String_LE(Stream,Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetSmallUTF8String_BE(Stream: TStream; Advance: Boolean = True): UTF8String;
+begin
+Stream_ReadSmallUTF8String_BE(Stream,Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetSmallUTF8String(Stream: TStream; Advance: Boolean; Endian: TEndian = endDefault): UTF8String;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_GetSmallUTF8String_BE(Stream,Advance)
+else
+  Result := Stream_GetSmallUTF8String_LE(Stream,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_GetSmallUTF8String(Stream: TStream; Endian: TEndian = endDefault): UTF8String;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_GetSmallUTF8String_BE(Stream)
+else
+  Result := Stream_GetSmallUTF8String_LE(Stream);
+end;
+
+//==============================================================================
+
+Function Stream_ReadSmallWideString_LE(Stream: TStream; out Value: WideString; Advance: Boolean = True): TMemSize;
+var
+  StrLength:  Int16;
+begin
+Result := Stream_ReadInt16_LE(Stream,StrLength,True);
+ClampStringLength(StrLength);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+{$IFDEF ENDIAN_BIG}
+  Inc(Result,Stream_ReadUInt16Arr_SwapEndian(Stream,PUInt16(PWideChar(Value)),StrLength));
+{$ELSE}
+  Inc(Result,Stream_ReadBuffer_LE(Stream,PWideChar(Value)^,StrLength * SizeOf(WideChar),True));
+{$ENDIF}
+AdvanceStream(Advance,Stream,Result);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadSmallWideString_BE(Stream: TStream; out Value: WideString; Advance: Boolean = True): TMemSize;
+var
+  StrLength:  Int16;
+begin
+Result := Stream_ReadInt16_BE(Stream,StrLength,True);
+ClampStringLength(StrLength);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+{$IFDEF ENDIAN_BIG}
+  Inc(Result,Stream_ReadBuffer_BE(Stream,PWideChar(Value)^,StrLength * SizeOf(WideChar),True));
+{$ELSE}
+  Inc(Result,Stream_ReadUInt16Arr_SwapEndian(Stream,PUInt16(PWideChar(Value)),StrLength));
+{$ENDIF}
+AdvanceStream(Advance,Stream,Result);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadSmallWideString(Stream: TStream; out Value: WideString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_ReadSmallWideString_BE(Stream,Value,Advance)
+else
+  Result := Stream_ReadSmallWideString_LE(Stream,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_ReadSmallWideString(Stream: TStream; out Value: WideString; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_ReadSmallWideString_BE(Stream,Value)
+else
+  Result := Stream_ReadSmallWideString_LE(Stream,Value);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetSmallWideString_LE(Stream: TStream; Advance: Boolean = True): WideString;
+begin
+Stream_ReadSmallWideString_LE(Stream,Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetSmallWideString_BE(Stream: TStream; Advance: Boolean = True): WideString;
+begin
+Stream_ReadSmallWideString_BE(Stream,Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetSmallWideString(Stream: TStream; Advance: Boolean; Endian: TEndian = endDefault): WideString;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_GetSmallWideString_BE(Stream,Advance)
+else
+  Result := Stream_GetSmallWideString_LE(Stream,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_GetSmallWideString(Stream: TStream; Endian: TEndian = endDefault): WideString;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_GetSmallWideString_BE(Stream)
+else
+  Result := Stream_GetSmallWideString_LE(Stream);
+end;
+
+//==============================================================================
+
+Function Stream_ReadSmallUnicodeString_LE(Stream: TStream; out Value: UnicodeString; Advance: Boolean = True): TMemSize;
+var
+  StrLength:  Int16;
+begin
+Result := Stream_ReadInt16_LE(Stream,StrLength,True);
+ClampStringLength(StrLength);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+{$IFDEF ENDIAN_BIG}
+  Inc(Result,Stream_ReadUInt16Arr_SwapEndian(Stream,PUInt16(PUnicodeChar(Value)),StrLength));
+{$ELSE}
+  Inc(Result,Stream_ReadBuffer_LE(Stream,PUnicodeChar(Value)^,StrLength * SizeOf(UnicodeChar),True));
+{$ENDIF}
+AdvanceStream(Advance,Stream,Result);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadSmallUnicodeString_BE(Stream: TStream; out Value: UnicodeString; Advance: Boolean = True): TMemSize;
+var
+  StrLength:  Int16;
+begin
+Result := Stream_ReadInt16_BE(Stream,StrLength,True);
+ClampStringLength(StrLength);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+{$IFDEF ENDIAN_BIG}
+  Inc(Result,Stream_ReadBuffer_BE(Stream,PUnicodeChar(Value)^,StrLength * SizeOf(UnicodeChar),True));
+{$ELSE}
+  Inc(Result,Stream_ReadUInt16Arr_SwapEndian(Stream,PUInt16(PUnicodeChar(Value)),StrLength));
+{$ENDIF}
+AdvanceStream(Advance,Stream,Result);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadSmallUnicodeString(Stream: TStream; out Value: UnicodeString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_ReadSmallUnicodeString_BE(Stream,Value,Advance)
+else
+  Result := Stream_ReadSmallUnicodeString_LE(Stream,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_ReadSmallUnicodeString(Stream: TStream; out Value: UnicodeString; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_ReadSmallUnicodeString_BE(Stream,Value)
+else
+  Result := Stream_ReadSmallUnicodeString_LE(Stream,Value);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetSmallUnicodeString_LE(Stream: TStream; Advance: Boolean = True): UnicodeString;
+begin
+Stream_ReadSmallUnicodeString_LE(Stream,Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetSmallUnicodeString_BE(Stream: TStream; Advance: Boolean = True): UnicodeString;
+begin
+Stream_ReadSmallUnicodeString_BE(Stream,Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetSmallUnicodeString(Stream: TStream; Advance: Boolean; Endian: TEndian = endDefault): UnicodeString;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_GetSmallUnicodeString_BE(Stream,Advance)
+else
+  Result := Stream_GetSmallUnicodeString_LE(Stream,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_GetSmallUnicodeString(Stream: TStream; Endian: TEndian = endDefault): UnicodeString;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_GetSmallUnicodeString_BE(Stream)
+else
+  Result := Stream_GetSmallUnicodeString_LE(Stream);
+end;
+
+//==============================================================================
+
+Function Stream_ReadSmallUCS4String_LE(Stream: TStream; out Value: UCS4String; Advance: Boolean = True): TMemSize;
+var
+  StrLength:  Int16;
+begin
+Result := Stream_ReadInt16_LE(Stream,StrLength,True);
+ClampStringLength(StrLength);
+Value := nil;
+SetLength(Value,StrLength + 1);
+Value[High(Value)] := 0;
+If StrLength > 0 then
+{$IFDEF ENDIAN_BIG}
+  Inc(Result,Stream_ReadUInt32Arr_SwapEndian(Stream,PUInt32(Addr(Value[Low(Value)])),StrLength));
+{$ELSE}
+  Inc(Result,Stream_ReadBuffer_LE(Stream,Addr(Value[Low(Value)])^,StrLength * SizeOf(UCS4Char),True));
+{$ENDIF}
+AdvanceStream(Advance,Stream,Result);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadSmallUCS4String_BE(Stream: TStream; out Value: UCS4String; Advance: Boolean = True): TMemSize;
+var
+  StrLength:  Int16;
+begin
+Result := Stream_ReadInt16_BE(Stream,StrLength,True);
+ClampStringLength(StrLength);
+Value := nil;
+SetLength(Value,StrLength + 1);
+Value[High(Value)] := 0;
+If StrLength > 0 then
+{$IFDEF ENDIAN_BIG}
+  Inc(Result,Stream_ReadBuffer_BE(Stream,Addr(Value[Low(Value)])^,StrLength * SizeOf(UCS4Char),True));
+{$ELSE}
+  Inc(Result,Stream_ReadUInt32Arr_SwapEndian(Stream,PUInt32(Addr(Value[Low(Value)])),StrLength));
+{$ENDIF}
+AdvanceStream(Advance,Stream,Result);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadSmallUCS4String(Stream: TStream; out Value: UCS4String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_ReadSmallUCS4String_BE(Stream,Value,Advance)
+else
+  Result := Stream_ReadSmallUCS4String_LE(Stream,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_ReadSmallUCS4String(Stream: TStream; out Value: UCS4String; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_ReadSmallUCS4String_BE(Stream,Value)
+else
+  Result := Stream_ReadSmallUCS4String_LE(Stream,Value);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetSmallUCS4String_LE(Stream: TStream; Advance: Boolean = True): UCS4String;
+begin
+Stream_ReadSmallUCS4String_LE(Stream,Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetSmallUCS4String_BE(Stream: TStream; Advance: Boolean = True): UCS4String;
+begin
+Stream_ReadSmallUCS4String_BE(Stream,Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetSmallUCS4String(Stream: TStream; Advance: Boolean; Endian: TEndian = endDefault): UCS4String;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_GetSmallUCS4String_BE(Stream,Advance)
+else
+  Result := Stream_GetSmallUCS4String_LE(Stream,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_GetSmallUCS4String(Stream: TStream; Endian: TEndian = endDefault): UCS4String;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_GetSmallUCS4String_BE(Stream)
+else
+  Result := Stream_GetSmallUCS4String_LE(Stream);
+end;
+
+//==============================================================================
+
+Function Stream_ReadSmallString_LE(Stream: TStream; out Value: String; Advance: Boolean = True): TMemSize;
+var
+  TempStr:  UTF8String;
+begin
+Result := Stream_ReadSmallUTF8String_LE(Stream,TempStr,Advance);
+Value := UTF8ToStr(TempStr);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadSmallString_BE(Stream: TStream; out Value: String; Advance: Boolean = True): TMemSize;
+var
+  TempStr:  UTF8String;
+begin
+Result := Stream_ReadSmallUTF8String_BE(Stream,TempStr,Advance);
+Value := UTF8ToStr(TempStr);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadSmallString(Stream: TStream; out Value: String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+var
+  TempStr:  UTF8String;
+begin
+Result := Stream_ReadSmallUTF8String(Stream,TempStr,Advance,Endian);
+Value := UTF8ToStr(TempStr);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_ReadSmallString(Stream: TStream; out Value: String; Endian: TEndian = endDefault): TMemSize;
+var
+  TempStr:  UTF8String;
+begin
+Result := Stream_ReadSmallUTF8String(Stream,TempStr,Endian);
+Value := UTF8ToStr(TempStr);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetSmallString_LE(Stream: TStream; Advance: Boolean = True): String;
+begin
+Result := UTF8ToStr(Stream_GetSmallUTF8String_LE(Stream,Advance));
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetSmallString_BE(Stream: TStream; Advance: Boolean = True): String;
+begin
+Result := UTF8ToStr(Stream_GetSmallUTF8String_BE(Stream,Advance));
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetSmallString(Stream: TStream; Advance: Boolean; Endian: TEndian = endDefault): String;
+begin
+Result := UTF8ToStr(Stream_GetSmallUTF8String(Stream,Advance,Endian));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_GetSmallString(Stream: TStream; Endian: TEndian = endDefault): String;
+begin
+Result := UTF8ToStr(Stream_GetSmallUTF8String(Stream,Endian));
+end;
+
 {<lite-begin>}
 {-------------------------------------------------------------------------------
     General data buffers
@@ -14429,21 +17186,32 @@ end;
 --------------------------------------------------------------------------------
 ===============================================================================}
 const
-  BS_VALTYPE_NUM_1       = 0;
-  BS_VALTYPE_NUM_2       = 1;
-  BS_VALTYPE_NUM_4       = 2;
-  BS_VALTYPE_NUM_8       = 3;
-  BS_VALTYPE_NUM_10      = 4;
-  BS_VALTYPE_STR_SHORT   = 5;
-  BS_VALTYPE_STR_ANSI    = 6;
-  BS_VALTYPE_STR_UTF8    = 7;
-  BS_VALTYPE_STR_WIDE    = 8;
-  BS_VALTYPE_STR_UNICODE = 9;
-  BS_VALTYPE_STR_UCS4    = 10;
-  BS_VALTYPE_STR         = 11;
-  BS_VALTYPE_BUFFER      = 12;
-  BS_VALTYPE_FILL        = 13;
-  BS_VALTYPE_VARIANT     = 14;
+  BS_VALTYPE_BOOL           = 0;
+  BS_VALTYPE_BOOLEAN        = 1;
+  BS_VALTYPE_NUM_1          = 2;
+  BS_VALTYPE_NUM_2          = 3;
+  BS_VALTYPE_NUM_4          = 4;
+  BS_VALTYPE_NUM_8          = 5;
+  BS_VALTYPE_NUM_10         = 6;
+  BS_VALTYPE_CHAR           = 7;
+  BS_VALTYPE_STR_SHORT      = 8;
+  BS_VALTYPE_STR_ANSI       = 9;
+  BS_VALTYPE_STR_UTF8       = 10;
+  BS_VALTYPE_STR_WIDE       = 11;
+  BS_VALTYPE_STR_UNICODE    = 12;
+  BS_VALTYPE_STR_UCS4       = 13;
+  BS_VALTYPE_STR            = 14;
+  BS_VALTYPE_SMLSTR_ANSI    = 15;
+  BS_VALTYPE_SMLSTR_UTF8    = 16;
+  BS_VALTYPE_SMLSTR_WIDE    = 17;
+  BS_VALTYPE_SMLSTR_UNICODE = 18;
+  BS_VALTYPE_SMLSTR_UCS4    = 19;
+  BS_VALTYPE_SMLSTR         = 20;
+  
+  BS_VALTYPE_BUFFER         = 27;
+  BS_VALTYPE_BYTEARRAY      = 28;
+  BS_VALTYPE_FILL           = 29;
+  BS_VALTYPE_VARIANT        = 30;
 
 //------------------------------------------------------------------------------
 {===============================================================================
@@ -14537,6 +17305,136 @@ begin
 // do nothing
 end;
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteOpenByteArray(Ptr: Pointer; Count: TMemSize; Advance: Boolean): TMemSize;
+var
+  OldPos:   Int64;
+  WorkPtr:  PUInt8;
+  i:        Integer;
+begin
+Result := 0;
+If not OpenByteArrayIsPacked then
+  begin
+    OldPos := Position;
+    WorkPtr := Ptr;
+    For i := 0 to Pred(Count) do
+      begin
+        Inc(Result,WriteUInt8(UInt8(WorkPtr^),True));
+        Inc(WorkPtr,OpenByteArrayStride);
+      end;
+    If not Advance then
+      Position := OldPos;
+  end
+else If Count > 0 then
+  Result := WriteValue(BS_VALTYPE_BUFFER,Ptr,Advance,Count);
+{$message 'todo - rewisit and optimize (buffering)'}
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteValueAt(Position: Int64; ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize;
+var
+  OldPosition:  Int64;
+begin
+OldPosition := Self.Position;
+MoveAt(Position);
+Result := WriteValue(ValueType,ValuePtr,Advance,Size);
+If not Advance then
+  Self.Position := OldPosition;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteValueAtOffset(Offset: Int64; ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize;
+var
+  OldPosition:  Int64;
+begin
+OldPosition := Self.Position;
+MoveAtOffset(Offset);
+Result := WriteValue(ValueType,ValuePtr,Advance,Size);
+If not Advance then
+  Self.Position := OldPosition;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteValueTo(ID: TBSBookmarkID; ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize;
+var
+  OldPosition:  Int64;
+begin
+OldPosition := Self.Position;
+MoveTo(ID);
+Result := WriteValue(ValueType,ValuePtr,Advance,Size);
+If not Advance then
+  Self.Position := OldPosition;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteValueToIndex(Index: Integer; ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize;
+var
+  OldPosition:  Int64;
+begin
+OldPosition := Self.Position;
+MoveToIndex(Index);
+Result := WriteValue(ValueType,ValuePtr,Advance,Size);
+If not Advance then
+  Self.Position := OldPosition;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadValueAt(Position: Int64; ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize;
+var
+  OldPosition:  Int64;
+begin
+OldPosition := Self.Position;
+MoveAt(Position);
+Result := ReadValue(ValueType,ValuePtr,Advance,Size);
+If not Advance then
+  Self.Position := OldPosition;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadValueAtOffset(Offset: Int64; ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize;
+var
+  OldPosition:  Int64;
+begin
+OldPosition := Self.Position;
+MoveAtOffset(Offset);
+Result := ReadValue(ValueType,ValuePtr,Advance,Size);
+If not Advance then
+  Self.Position := OldPosition;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadValueFrom(ID: TBSBookmarkID; ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize;
+var
+  OldPosition:  Int64;
+begin
+OldPosition := Self.Position;
+MoveTo(ID);
+Result := ReadValue(ValueType,ValuePtr,Advance,Size);
+If not Advance then
+  Self.Position := OldPosition;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadValueFromIndex(Index: Integer; ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize;
+var
+  OldPosition:  Int64;
+begin
+OldPosition := Self.Position;
+MoveToIndex(Index);
+Result := ReadValue(ValueType,ValuePtr,Advance,Size);
+If not Advance then
+  Self.Position := OldPosition;
+end;
 
 //------------------------------------------------------------------------------
 
@@ -14896,18 +17794,15 @@ end;
 //==============================================================================
 
 Function TCustomStreamer.WriteBool(Value: ByteBool; Advance: Boolean = True): TMemSize;
-var
-  Temp: UInt8;
 begin
-Temp := BoolToNum(Value);
-Result := WriteValue(BS_VALTYPE_NUM_1,@Temp,Advance);
+Result := WriteValue(BS_VALTYPE_BOOL,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteBoolean(Value: Boolean; Advance: Boolean = True): TMemSize;
 begin
-Result := WriteBool(Value,Advance);
+Result := WriteValue(BS_VALTYPE_BOOLEAN,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
@@ -15039,11 +17934,8 @@ end;
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteChar(Value: Char; Advance: Boolean = True): TMemSize;
-var
-  Temp: UInt16;
 begin
-Temp := UInt16(Ord(Value));
-Result := WriteValue(BS_VALTYPE_NUM_2,@Temp,Advance);
+Result := WriteValue(BS_VALTYPE_CHAR,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
@@ -15094,6 +17986,48 @@ Function TCustomStreamer.WriteString(const Value: String; Advance: Boolean = Tru
 begin
 Result := WriteValue(BS_VALTYPE_STR,@Value,Advance);
 end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallAnsiString(const Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(BS_VALTYPE_SMLSTR_ANSI,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallUTF8String(const Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(BS_VALTYPE_SMLSTR_UTF8,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallWideString(const Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(BS_VALTYPE_SMLSTR_WIDE,@Value,Advance);
+end;
+ 
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallUnicodeString(const Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(BS_VALTYPE_SMLSTR_UNICODE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallUCS4String(const Value: UCS4String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(BS_VALTYPE_SMLSTR_UCS4,@Value,Advance);
+end;
+  
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallString(const Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(BS_VALTYPE_SMLSTR,@Value,Advance);
+end;
   
 //------------------------------------------------------------------------------
 
@@ -15105,21 +18039,8 @@ end;
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteBytes(const Value: array of UInt8; Advance: Boolean = True): TMemSize;
-var
-  OldPos: Int64;
-  i:      Integer;
 begin
-Result := 0;
-If not ByteOpenArrayIsPacked then
-  begin
-    OldPos := Position;
-    For i := Low(Value) to High(Value) do
-      WriteUInt8(Value[i],True);
-    If not Advance then
-      Position := OldPos;
-  end
-else If Length(Value) > 0 then
-  Result := WriteValue(BS_VALTYPE_BUFFER,Addr(Value[Low(Value)]),Advance,TMemSize(Length(Value)));
+Result := WriteValue(BS_VALTYPE_BYTEARRAY,@Value,Advance,TMemSize(Length(Value)));
 end;
 
 //------------------------------------------------------------------------------
@@ -15139,917 +18060,1079 @@ end;
 //==============================================================================
 
 Function TCustomStreamer.WriteBoolAt(Position: Int64; Value: ByteBool; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_BOOL}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_BOOL}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_BOOL,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteBooleanAt(Position: Int64; Value: Boolean; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_BOOLEAN}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_BOOLEAN}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_BOOLEAN,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteInt8At(Position: Int64; Value: Int8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_INT8}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_INT8}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUInt8At(Position: Int64; Value: UInt8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UINT8}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UINT8}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteInt16At(Position: Int64; Value: Int16; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_INT16}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_INT16}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUInt16At(Position: Int64; Value: UInt16; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UINT16}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UINT16}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteInt32At(Position: Int64; Value: Int32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_INT32}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_INT32}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUInt32At(Position: Int64; Value: UInt32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UINT32}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UINT32}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteInt64At(Position: Int64; Value: Int64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_INT64}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_INT64}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUInt64At(Position: Int64; Value: UInt64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UINT64}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UINT64}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteFloat32At(Position: Int64; Value: Float32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_FLOAT32}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_FLOAT32}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteFloat64At(Position: Int64; Value: Float64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_FLOAT64}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_FLOAT64}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteFloat80At(Position: Int64; Value: Float80; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_FLOAT80}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_FLOAT80}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_NUM_10,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteDateTimeAt(Position: Int64; Value: TDateTime; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_DATETIME}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_DATETIME}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteCurrencyAt(Position: Int64; Value: Currency; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_CURRENCY}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_CURRENCY}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteAnsiCharAt(Position: Int64; Value: AnsiChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_ANSICHAR}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_ANSICHAR}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUTF8CharAt(Position: Int64; Value: UTF8Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UTF8CHAR}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UTF8CHAR}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteWideCharAt(Position: Int64; Value: WideChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_WIDECHAR}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_WIDECHAR}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUnicodeCharAt(Position: Int64; Value: UnicodeChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UNICODECHAR}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UNICODECHAR}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUCS4CharAt(Position: Int64; Value: UCS4Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UCS4CHAR}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UCS4CHAR}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteCharAt(Position: Int64; Value: Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_CHAR}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_CHAR}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_CHAR,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteShortStringAt(Position: Int64; const Value: ShortString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_SHORTSTRING}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_SHORTSTRING}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_STR_SHORT,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteAnsiStringAt(Position: Int64; const Value: AnsiString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_ANSISTRING}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_ANSISTRING}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_STR_ANSI,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUTF8StringAt(Position: Int64; const Value: UTF8String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UTF8STRING}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UTF8STRING}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_STR_UTF8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteWideStringAt(Position: Int64; const Value: WideString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_WIDESTRING}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_WIDESTRING}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_STR_WIDE,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUnicodeStringAt(Position: Int64; const Value: UnicodeString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UNICODESTRING}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UNICODESTRING}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_STR_UNICODE,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUCS4StringAt(Position: Int64; const Value: UCS4String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UCS4STRING}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UCS4STRING}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_STR_UCS4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteStringAt(Position: Int64; const Value: String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_STRING}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_STRING}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_STR,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallAnsiStringAt(Position: Int64; const Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_SMLSTR_ANSI,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallUTF8StringAt(Position: Int64; const Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_SMLSTR_UTF8,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallWideStringAt(Position: Int64; const Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_SMLSTR_WIDE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallUnicodeStringAt(Position: Int64; const Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_SMLSTR_UNICODE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallUCS4StringAt(Position: Int64; const Value: UCS4String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_SMLSTR_UCS4,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallStringAt(Position: Int64; const Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_SMLSTR,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteBufferAt(Position: Int64; const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_BUFFER}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_BUFFER}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_BUFFER,@Buffer,Advance,Size);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteBytesAt(Position: Int64; const Value: array of UInt8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_BYTES}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_BYTES}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_BYTEARRAY,@Value,Advance,TMemSize(Length(Value)));
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.FillBytesAt(Position: Int64; Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_FILL}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_FILL}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_FILL,@Value,Advance,Count);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteVariantAt(Position: Int64; const Value: Variant; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_VARIANT}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_VARIANT}{$UNDEF BS_INC_MM_AT}
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_VARIANT,@Value,Advance);
+end;
 
 //==============================================================================
 
 Function TCustomStreamer.WriteBoolAtOffset(Offset: Int64; Value: ByteBool; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_BOOL}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_BOOL}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_BOOL,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteBooleanAtOffset(Offset: Int64; Value: Boolean; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_BOOLEAN}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_BOOLEAN}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_BOOLEAN,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteInt8AtOffset(Offset: Int64; Value: Int8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_INT8}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_INT8}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUInt8AtOffset(Offset: Int64; Value: UInt8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UINT8}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UINT8}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteInt16AtOffset(Offset: Int64; Value: Int16; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_INT16}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_INT16}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUInt16AtOffset(Offset: Int64; Value: UInt16; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UINT16}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UINT16}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteInt32AtOffset(Offset: Int64; Value: Int32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_INT32}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_INT32}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUInt32AtOffset(Offset: Int64; Value: UInt32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UINT32}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UINT32}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteInt64AtOffset(Offset: Int64; Value: Int64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_INT64}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_INT64}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUInt64AtOffset(Offset: Int64; Value: UInt64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UINT64}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UINT64}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteFloat32AtOffset(Offset: Int64; Value: Float32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_FLOAT32}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_FLOAT32}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteFloat64AtOffset(Offset: Int64; Value: Float64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_FLOAT64}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_FLOAT64}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteFloat80AtOffset(Offset: Int64; Value: Float80; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_FLOAT80}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_FLOAT80}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_NUM_10,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteDateTimeAtOffset(Offset: Int64; Value: TDateTime; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_DATETIME}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_DATETIME}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteCurrencyAtOffset(Offset: Int64; Value: Currency; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_CURRENCY}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_CURRENCY}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteAnsiCharAtOffset(Offset: Int64; Value: AnsiChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_ANSICHAR}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_ANSICHAR}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUTF8CharAtOffset(Offset: Int64; Value: UTF8Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UTF8CHAR}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UTF8CHAR}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteWideCharAtOffset(Offset: Int64; Value: WideChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_WIDECHAR}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_WIDECHAR}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUnicodeCharAtOffset(Offset: Int64; Value: UnicodeChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UNICODECHAR}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UNICODECHAR}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUCS4CharAtOffset(Offset: Int64; Value: UCS4Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UCS4CHAR}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UCS4CHAR}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteCharAtOffset(Offset: Int64; Value: Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_CHAR}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_CHAR}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_CHAR,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteShortStringAtOffset(Offset: Int64; const Value: ShortString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_SHORTSTRING}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_SHORTSTRING}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_STR_SHORT,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteAnsiStringAtOffset(Offset: Int64; const Value: AnsiString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_ANSISTRING}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_ANSISTRING}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_STR_ANSI,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUTF8StringAtOffset(Offset: Int64; const Value: UTF8String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UTF8STRING}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UTF8STRING}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_STR_UTF8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteWideStringAtOffset(Offset: Int64; const Value: WideString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_WIDESTRING}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_WIDESTRING}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_STR_WIDE,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUnicodeStringAtOffset(Offset: Int64; const Value: UnicodeString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UNICODESTRING}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UNICODESTRING}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_STR_UNICODE,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUCS4StringAtOffset(Offset: Int64; const Value: UCS4String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UCS4STRING}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UCS4STRING}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_STR_UCS4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteStringAtOffset(Offset: Int64; const Value: String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_STRING}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_STRING}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_STR,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallAnsiStringAtOffset(Offset: Int64; const Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_SMLSTR_ANSI,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallUTF8StringAtOffset(Offset: Int64; const Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_SMLSTR_UTF8,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallWideStringAtOffset(Offset: Int64; const Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_SMLSTR_WIDE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallUnicodeStringAtOffset(Offset: Int64; const Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_SMLSTR_UNICODE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallUCS4StringAtOffset(Offset: Int64; const Value: UCS4String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_SMLSTR_UCS4,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallStringAtOffset(Offset: Int64; const Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_SMLSTR,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteBufferAtOffset(Offset: Int64; const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_BUFFER}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_BUFFER}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_BUFFER,@Buffer,Advance,Size);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteBytesAtOffset(Offset: Int64; const Value: array of UInt8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_BYTES}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_BYTES}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Position,BS_VALTYPE_BYTEARRAY,@Value,Advance,TMemSize(Length(Value)));
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.FillBytesAtOffset(Offset: Int64; Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_FILL}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_FILL}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_FILL,@Value,Advance,Count);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteVariantAtOffset(Offset: Int64; const Value: Variant; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_VARIANT}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_VARIANT}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_VARIANT,@Value,Advance);
+end;
 
 //==============================================================================
 
 Function TCustomStreamer.WriteBoolTo(ID: TBSBookmarkID; Value: ByteBool; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_BOOL}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_BOOL}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_BOOL,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteBooleanTo(ID: TBSBookmarkID; Value: Boolean; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_BOOLEAN}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_BOOLEAN}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_BOOLEAN,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteInt8To(ID: TBSBookmarkID; Value: Int8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_INT8}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_INT8}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUInt8To(ID: TBSBookmarkID; Value: UInt8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UINT8}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UINT8}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteInt16To(ID: TBSBookmarkID; Value: Int16; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_INT16}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_INT16}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUInt16To(ID: TBSBookmarkID; Value: UInt16; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UINT16}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UINT16}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteInt32To(ID: TBSBookmarkID; Value: Int32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_INT32}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_INT32}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUInt32To(ID: TBSBookmarkID; Value: UInt32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UINT32}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UINT32}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteInt64To(ID: TBSBookmarkID; Value: Int64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_INT64}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_INT64}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUInt64To(ID: TBSBookmarkID; Value: UInt64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UINT64}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UINT64}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteFloat32To(ID: TBSBookmarkID; Value: Float32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_FLOAT32}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_FLOAT32}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteFloat64To(ID: TBSBookmarkID; Value: Float64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_FLOAT64}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_FLOAT64}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteFloat80To(ID: TBSBookmarkID; Value: Float80; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_FLOAT80}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_FLOAT80}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_NUM_10,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteDateTimeTo(ID: TBSBookmarkID; Value: TDateTime; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_DATETIME}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_DATETIME}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteCurrencyTo(ID: TBSBookmarkID; Value: Currency; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_CURRENCY}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_CURRENCY}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteAnsiCharTo(ID: TBSBookmarkID; Value: AnsiChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_ANSICHAR}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_ANSICHAR}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUTF8CharTo(ID: TBSBookmarkID; Value: UTF8Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UTF8CHAR}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UTF8CHAR}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteWideCharTo(ID: TBSBookmarkID; Value: WideChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_WIDECHAR}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_WIDECHAR}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUnicodeCharTo(ID: TBSBookmarkID; Value: UnicodeChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UNICODECHAR}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UNICODECHAR}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUCS4CharTo(ID: TBSBookmarkID; Value: UCS4Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UCS4CHAR}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UCS4CHAR}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteCharTo(ID: TBSBookmarkID; Value: Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_CHAR}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_CHAR}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_CHAR,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteShortStringTo(ID: TBSBookmarkID; const Value: ShortString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_SHORTSTRING}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_SHORTSTRING}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_STR_SHORT,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteAnsiStringTo(ID: TBSBookmarkID; const Value: AnsiString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_ANSISTRING}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_ANSISTRING}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_STR_ANSI,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUTF8StringTo(ID: TBSBookmarkID; const Value: UTF8String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UTF8STRING}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UTF8STRING}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_STR_UTF8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteWideStringTo(ID: TBSBookmarkID; const Value: WideString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_WIDESTRING}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_WIDESTRING}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_STR_WIDE,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUnicodeStringTo(ID: TBSBookmarkID; const Value: UnicodeString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UNICODESTRING}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UNICODESTRING}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_STR_UNICODE,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUCS4StringTo(ID: TBSBookmarkID; const Value: UCS4String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UCS4STRING}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UCS4STRING}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_STR_UCS4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteStringTo(ID: TBSBookmarkID; const Value: String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_STRING}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_STRING}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_STR,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallAnsiStringTo(ID: TBSBookmarkID; const Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_SMLSTR_ANSI,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallUTF8StringTo(ID: TBSBookmarkID; const Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_SMLSTR_UTF8,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallWideStringTo(ID: TBSBookmarkID; const Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_SMLSTR_WIDE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallUnicodeStringTo(ID: TBSBookmarkID; const Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_SMLSTR_UNICODE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallUCS4StringTo(ID: TBSBookmarkID; const Value: UCS4String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_SMLSTR_UCS4,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallStringTo(ID: TBSBookmarkID; const Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_SMLSTR,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteBufferTo(ID: TBSBookmarkID; const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_BUFFER}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_BUFFER}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_BUFFER,@Buffer,Advance,Size);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteBytesTo(ID: TBSBookmarkID; const Value: array of UInt8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_BYTES}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_BYTES}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueAtOffset(Position,BS_VALTYPE_BYTEARRAY,@Value,Advance,TMemSize(Length(Value)));
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.FillBytesTo(ID: TBSBookmarkID; Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_FILL}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_FILL}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_FILL,@Value,Advance,Count);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteVariantTo(ID: TBSBookmarkID; const Value: Variant; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_VARIANT}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_VARIANT}{$UNDEF BS_INC_MM_TO}
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_VARIANT,@Value,Advance);
+end;
 
 //==============================================================================
 
 Function TCustomStreamer.WriteBoolToIndex(Index: Integer; Value: ByteBool; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_BOOL}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_BOOL}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_BOOL,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteBooleanToIndex(Index: Integer; Value: Boolean; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_BOOLEAN}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_BOOLEAN}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_BOOLEAN,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteInt8ToIndex(Index: Integer; Value: Int8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_INT8}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_INT8}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUInt8ToIndex(Index: Integer; Value: UInt8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UINT8}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UINT8}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteInt16ToIndex(Index: Integer; Value: Int16; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_INT16}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_INT16}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUInt16ToIndex(Index: Integer; Value: UInt16; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UINT16}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UINT16}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteInt32ToIndex(Index: Integer; Value: Int32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_INT32}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_INT32}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUInt32ToIndex(Index: Integer; Value: UInt32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UINT32}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UINT32}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteInt64ToIndex(Index: Integer; Value: Int64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_INT64}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_INT64}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUInt64ToIndex(Index: Integer; Value: UInt64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UINT64}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UINT64}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteFloat32ToIndex(Index: Integer; Value: Float32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_FLOAT32}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_FLOAT32}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteFloat64ToIndex(Index: Integer; Value: Float64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_FLOAT64}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_FLOAT64}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteFloat80ToIndex(Index: Integer; Value: Float80; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_FLOAT80}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_FLOAT80}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_NUM_10,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteDateTimeToIndex(Index: Integer; Value: TDateTime; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_DATETIME}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_DATETIME}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteCurrencyToIndex(Index: Integer; Value: Currency; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_CURRENCY}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_CURRENCY}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteAnsiCharToIndex(Index: Integer; Value: AnsiChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_ANSICHAR}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_ANSICHAR}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUTF8CharToIndex(Index: Integer; Value: UTF8Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UTF8CHAR}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UTF8CHAR}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteWideCharToIndex(Index: Integer; Value: WideChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_WIDECHAR}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_WIDECHAR}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUnicodeCharToIndex(Index: Integer; Value: UnicodeChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UNICODECHAR}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UNICODECHAR}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUCS4CharToIndex(Index: Integer; Value: UCS4Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UCS4CHAR}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UCS4CHAR}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteCharToIndex(Index: Integer; Value: Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_CHAR}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_CHAR}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_CHAR,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteShortStringToIndex(Index: Integer; const Value: ShortString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_SHORTSTRING}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_SHORTSTRING}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_STR_SHORT,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteAnsiStringToIndex(Index: Integer; const Value: AnsiString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_ANSISTRING}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_ANSISTRING}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_STR_ANSI,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUTF8StringToIndex(Index: Integer; const Value: UTF8String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UTF8STRING}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UTF8STRING}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_STR_UTF8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteWideStringToIndex(Index: Integer; const Value: WideString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_WIDESTRING}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_WIDESTRING}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_STR_WIDE,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUnicodeStringToIndex(Index: Integer; const Value: UnicodeString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UNICODESTRING}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UNICODESTRING}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_STR_UNICODE,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUCS4StringToIndex(Index: Integer; const Value: UCS4String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UCS4STRING}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UCS4STRING}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_STR_UCS4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteStringToIndex(Index: Integer; const Value: String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_STRING}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_STRING}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_STR,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallAnsiStringToIndex(Index: Integer; const Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_SMLSTR_ANSI,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallUTF8StringToIndex(Index: Integer; const Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_SMLSTR_UTF8,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallWideStringToIndex(Index: Integer; const Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_SMLSTR_WIDE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallUnicodeStringToIndex(Index: Integer; const Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_SMLSTR_UNICODE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallUCS4StringToIndex(Index: Integer; const Value: UCS4String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_SMLSTR_UCS4,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteSmallStringToIndex(Index: Integer; const Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_SMLSTR,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteBufferToIndex(Index: Integer; const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_BUFFER}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_BUFFER}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_BUFFER,@Buffer,Advance,Size);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteBytesToIndex(Index: Integer; const Value: array of UInt8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_BYTES}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_BYTES}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueAtOffset(Position,BS_VALTYPE_BYTEARRAY,@Value,Advance,TMemSize(Length(Value)));
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.FillBytesToIndex(Index: Integer; Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_FILL}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_FILL}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_FILL,@Value,Advance,Count);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteVariantToIndex(Index: Integer; const Value: Variant; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_VARIANT}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_VARIANT}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_VARIANT,@Value,Advance);
+end;
 
 //==============================================================================
 
 Function TCustomStreamer.ReadBool(out Value: ByteBool; Advance: Boolean = True): TMemSize;
-var
-  Temp: UInt8;
 begin
-Result := ReadValue(BS_VALTYPE_NUM_1,@Temp,Advance);
-Value := NumToBool(Temp);
+Result := ReadValue(BS_VALTYPE_BOOL,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadBoolean(out Value: Boolean; Advance: Boolean = True): TMemSize;
-var
-  TempBool: ByteBool;
 begin
-Result := ReadBool(TempBool,Advance);
-Value := TempBool;
+Result := ReadValue(BS_VALTYPE_BOOLEAN,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
@@ -16181,11 +19264,8 @@ end;
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadChar(out Value: Char; Advance: Boolean = True): TMemSize;
-var
-  Temp: UInt16;
 begin
-Result := ReadValue(BS_VALTYPE_NUM_2,@Temp,Advance);
-Value := Char(Temp);
+Result := ReadValue(BS_VALTYPE_CHAR,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
@@ -16239,6 +19319,48 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TCustomStreamer.ReadSmallAnsiString(out Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(BS_VALTYPE_SMLSTR_ANSI,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallUTF8String(out Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(BS_VALTYPE_SMLSTR_UTF8,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallWideString(out Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(BS_VALTYPE_SMLSTR_WIDE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallUnicodeString(out Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(BS_VALTYPE_SMLSTR_UNICODE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallUCS4String(out Value: UCS4String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(BS_VALTYPE_SMLSTR_UCS4,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallString(out Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(BS_VALTYPE_SMLSTR,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
 Function TCustomStreamer.ReadBuffer(out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
 begin
 Result := ReadValue(BS_VALTYPE_BUFFER,@Buffer,Advance,Size);
@@ -16254,857 +19376,1023 @@ end;
 //==============================================================================
 
 Function TCustomStreamer.ReadBoolAt(Position: Int64; out Value: ByteBool; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_BOOL}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_BOOL}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_BOOL,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadBooleanAt(Position: Int64; out Value: Boolean; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_BOOLEAN}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_BOOLEAN}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_BOOLEAN,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadInt8At(Position: Int64; out Value: Int8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_INT8}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_INT8}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUInt8At(Position: Int64; out Value: UInt8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UINT8}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UINT8}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadInt16At(Position: Int64; out Value: Int16; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_INT16}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_INT16}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUInt16At(Position: Int64; out Value: UInt16; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UINT16}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UINT16}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadInt32At(Position: Int64; out Value: Int32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_INT32}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_INT32}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUInt32At(Position: Int64; out Value: UInt32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UINT32}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UINT32}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadInt64At(Position: Int64; out Value: Int64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_INT64}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_INT64}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUInt64At(Position: Int64; out Value: UInt64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UINT64}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UINT64}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadFloat32At(Position: Int64; out Value: Float32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_FLOAT32}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_FLOAT32}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadFloat64At(Position: Int64; out Value: Float64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_FLOAT64}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_FLOAT64}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadFloat80At(Position: Int64; out Value: Float80; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_FLOAT80}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_FLOAT80}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_NUM_10,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadDateTimeAt(Position: Int64; out Value: TDateTime; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_DATETIME}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_DATETIME}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadCurrencyAt(Position: Int64; out Value: Currency; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_CURRENCY}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_CURRENCY}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadAnsiCharAt(Position: Int64; out Value: AnsiChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_ANSICHAR}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_ANSICHAR}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUTF8CharAt(Position: Int64; out Value: UTF8Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UTF8CHAR}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UTF8CHAR}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadWideCharAt(Position: Int64; out Value: WideChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_WIDECHAR}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_WIDECHAR}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUnicodeCharAt(Position: Int64; out Value: UnicodeChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UNICODECHAR}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UNICODECHAR}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUCS4CharAt(Position: Int64; out Value: UCS4Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UCS4CHAR}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UCS4CHAR}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadCharAt(Position: Int64; out Value: Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_CHAR}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_CHAR}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_CHAR,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadShortStringAt(Position: Int64; out Value: ShortString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_SHORTSTRING}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_SHORTSTRING}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_STR_SHORT,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadAnsiStringAt(Position: Int64; out Value: AnsiString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_ANSISTRING}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_ANSISTRING}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_STR_ANSI,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUTF8StringAt(Position: Int64; out Value: UTF8String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UTF8STRING}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UTF8STRING}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_STR_UTF8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadWideStringAt(Position: Int64; out Value: WideString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_WIDESTRING}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_WIDESTRING}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_STR_WIDE,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUnicodeStringAt(Position: Int64; out Value: UnicodeString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UNICODESTRING}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UNICODESTRING}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_STR_UNICODE,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUCS4StringAt(Position: Int64; out Value: UCS4String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UCS4STRING}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UCS4STRING}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_STR_UCS4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadStringAt(Position: Int64; out Value: String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_STRING}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_STRING}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_STR,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallAnsiStringAt(Position: Int64; out Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_SMLSTR_ANSI,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallUTF8StringAt(Position: Int64; out Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_SMLSTR_UTF8,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallWideStringAt(Position: Int64; out Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_SMLSTR_WIDE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallUnicodeStringAt(Position: Int64; out Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_SMLSTR_UNICODE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallUCS4StringAt(Position: Int64; out Value: UCS4String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_SMLSTR_UCS4,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallStringAt(Position: Int64; out Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_SMLSTR,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadBufferAt(Position: Int64; out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_BUFFER}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_BUFFER}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_BUFFER,@Buffer,Advance,Size);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadVariantAt(Position: Int64; out Value: Variant; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_VARIANT}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_VARIANT}{$UNDEF BS_INC_MM_AT}
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_VARIANT,@Value,Advance);
+end;
 
 //==============================================================================
 
 Function TCustomStreamer.ReadBoolAtOffset(Offset: Int64; out Value: ByteBool; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_BOOL}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_BOOL}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_BOOL,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadBooleanAtOffset(Offset: Int64; out Value: Boolean; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_BOOLEAN}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_BOOLEAN}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_BOOLEAN,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadInt8AtOffset(Offset: Int64; out Value: Int8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_INT8}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_INT8}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUInt8AtOffset(Offset: Int64; out Value: UInt8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UINT8}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UINT8}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadInt16AtOffset(Offset: Int64; out Value: Int16; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_INT16}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_INT16}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUInt16AtOffset(Offset: Int64; out Value: UInt16; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UINT16}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UINT16}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadInt32AtOffset(Offset: Int64; out Value: Int32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_INT32}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_INT32}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUInt32AtOffset(Offset: Int64; out Value: UInt32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UINT32}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UINT32}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadInt64AtOffset(Offset: Int64; out Value: Int64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_INT64}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_INT64}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUInt64AtOffset(Offset: Int64; out Value: UInt64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UINT64}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UINT64}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadFloat32AtOffset(Offset: Int64; out Value: Float32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_FLOAT32}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_FLOAT32}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadFloat64AtOffset(Offset: Int64; out Value: Float64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_FLOAT64}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_FLOAT64}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadFloat80AtOffset(Offset: Int64; out Value: Float80; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_FLOAT80}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_FLOAT80}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_NUM_10,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadDateTimeAtOffset(Offset: Int64; out Value: TDateTime; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_DATETIME}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_DATETIME}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadCurrencyAtOffset(Offset: Int64; out Value: Currency; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_CURRENCY}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_CURRENCY}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadAnsiCharAtOffset(Offset: Int64; out Value: AnsiChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_ANSICHAR}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_ANSICHAR}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUTF8CharAtOffset(Offset: Int64; out Value: UTF8Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UTF8CHAR}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UTF8CHAR}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadWideCharAtOffset(Offset: Int64; out Value: WideChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_WIDECHAR}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_WIDECHAR}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUnicodeCharAtOffset(Offset: Int64; out Value: UnicodeChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UNICODECHAR}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UNICODECHAR}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUCS4CharAtOffset(Offset: Int64; out Value: UCS4Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UCS4CHAR}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UCS4CHAR}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadCharAtOffset(Offset: Int64; out Value: Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_CHAR}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_CHAR}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_CHAR,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadShortStringAtOffset(Offset: Int64; out Value: ShortString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_SHORTSTRING}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_SHORTSTRING}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_STR_SHORT,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadAnsiStringAtOffset(Offset: Int64; out Value: AnsiString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_ANSISTRING}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_ANSISTRING}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_STR_ANSI,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUTF8StringAtOffset(Offset: Int64; out Value: UTF8String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UTF8STRING}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UTF8STRING}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_STR_UTF8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadWideStringAtOffset(Offset: Int64; out Value: WideString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_WIDESTRING}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_WIDESTRING}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_STR_WIDE,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUnicodeStringAtOffset(Offset: Int64; out Value: UnicodeString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UNICODESTRING}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UNICODESTRING}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_STR_UNICODE,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUCS4StringAtOffset(Offset: Int64; out Value: UCS4String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UCS4STRING}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UCS4STRING}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_STR_UCS4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadStringAtOffset(Offset: Int64; out Value: String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_STRING}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_STRING}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_STR,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallAnsiStringAtOffset(Offset: Int64; out Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_SMLSTR_ANSI,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallUTF8StringAtOffset(Offset: Int64; out Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_SMLSTR_UTF8,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallWideStringAtOffset(Offset: Int64; out Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_SMLSTR_WIDE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallUnicodeStringAtOffset(Offset: Int64; out Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_SMLSTR_UNICODE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallUCS4StringAtOffset(Offset: Int64; out Value: UCS4String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_SMLSTR_UCS4,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallStringAtOffset(Offset: Int64; out Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_SMLSTR,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadBufferAtOffset(Offset: Int64; out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_BUFFER}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_BUFFER}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_BUFFER,@Buffer,Advance,Size);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadVariantAtOffset(Offset: Int64; out Value: Variant; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_VARIANT}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_VARIANT}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_VARIANT,@Value,Advance);
+end;
 
 //==============================================================================
 
 Function TCustomStreamer.ReadBoolFrom(ID: TBSBookmarkID; out Value: ByteBool; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_BOOL}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_BOOL}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_BOOL,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadBooleanFrom(ID: TBSBookmarkID; out Value: Boolean; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_BOOLEAN}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_BOOLEAN}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_BOOLEAN,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadInt8From(ID: TBSBookmarkID; out Value: Int8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_INT8}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_INT8}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUInt8From(ID: TBSBookmarkID; out Value: UInt8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UINT8}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UINT8}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadInt16From(ID: TBSBookmarkID; out Value: Int16; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_INT16}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_INT16}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUInt16From(ID: TBSBookmarkID; out Value: UInt16; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UINT16}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UINT16}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadInt32From(ID: TBSBookmarkID; out Value: Int32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_INT32}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_INT32}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUInt32From(ID: TBSBookmarkID; out Value: UInt32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UINT32}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UINT32}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadInt64From(ID: TBSBookmarkID; out Value: Int64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_INT64}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_INT64}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUInt64From(ID: TBSBookmarkID; out Value: UInt64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UINT64}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UINT64}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadFloat32From(ID: TBSBookmarkID; out Value: Float32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_FLOAT32}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_FLOAT32}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadFloat64From(ID: TBSBookmarkID; out Value: Float64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_FLOAT64}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_FLOAT64}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadFloat80From(ID: TBSBookmarkID; out Value: Float80; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_FLOAT80}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_FLOAT80}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_NUM_10,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadDateTimeFrom(ID: TBSBookmarkID; out Value: TDateTime; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_DATETIME}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_DATETIME}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadCurrencyFrom(ID: TBSBookmarkID; out Value: Currency; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_CURRENCY}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_CURRENCY}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadAnsiCharFrom(ID: TBSBookmarkID; out Value: AnsiChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_ANSICHAR}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_ANSICHAR}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUTF8CharFrom(ID: TBSBookmarkID; out Value: UTF8Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UTF8CHAR}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UTF8CHAR}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadWideCharFrom(ID: TBSBookmarkID; out Value: WideChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_WIDECHAR}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_WIDECHAR}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUnicodeCharFrom(ID: TBSBookmarkID; out Value: UnicodeChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UNICODECHAR}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UNICODECHAR}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUCS4CharFrom(ID: TBSBookmarkID; out Value: UCS4Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UCS4CHAR}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UCS4CHAR}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadCharFrom(ID: TBSBookmarkID; out Value: Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_CHAR}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_CHAR}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_CHAR,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadShortStringFrom(ID: TBSBookmarkID; out Value: ShortString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_SHORTSTRING}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_SHORTSTRING}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_STR_SHORT,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadAnsiStringFrom(ID: TBSBookmarkID; out Value: AnsiString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_ANSISTRING}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_ANSISTRING}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_STR_ANSI,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUTF8StringFrom(ID: TBSBookmarkID; out Value: UTF8String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UTF8STRING}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UTF8STRING}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_STR_UTF8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadWideStringFrom(ID: TBSBookmarkID; out Value: WideString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_WIDESTRING}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_WIDESTRING}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_STR_WIDE,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUnicodeStringFrom(ID: TBSBookmarkID; out Value: UnicodeString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UNICODESTRING}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UNICODESTRING}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_STR_UNICODE,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUCS4StringFrom(ID: TBSBookmarkID; out Value: UCS4String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UCS4STRING}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UCS4STRING}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_STR_UCS4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadStringFrom(ID: TBSBookmarkID; out Value: String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_STRING}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_STRING}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_STR,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallAnsiStringFrom(ID: TBSBookmarkID; out Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_SMLSTR_ANSI,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallUTF8StringFrom(ID: TBSBookmarkID; out Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_SMLSTR_UTF8,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallWideStringFrom(ID: TBSBookmarkID; out Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_SMLSTR_WIDE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallUnicodeStringFrom(ID: TBSBookmarkID; out Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_SMLSTR_UNICODE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallUCS4StringFrom(ID: TBSBookmarkID; out Value: UCS4String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_SMLSTR_UCS4,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallStringFrom(ID: TBSBookmarkID; out Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_SMLSTR,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadBufferFrom(ID: TBSBookmarkID; out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_BUFFER}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_BUFFER}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_BUFFER,@Buffer,Advance,Size);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadVariantFrom(ID: TBSBookmarkID; out Value: Variant; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_VARIANT}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_VARIANT}{$UNDEF BS_INC_MM_TO}
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_VARIANT,@Value,Advance);
+end;
 
 //==============================================================================
 
 Function TCustomStreamer.ReadBoolFromIndex(Index: Integer; out Value: ByteBool; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_BOOL}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_BOOL}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_BOOL,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadBooleanFromIndex(Index: Integer; out Value: Boolean; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_BOOLEAN}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_BOOLEAN}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_BOOLEAN,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadInt8FromIndex(Index: Integer; out Value: Int8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_INT8}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_INT8}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUInt8FromIndex(Index: Integer; out Value: UInt8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UINT8}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UINT8}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadInt16FromIndex(Index: Integer; out Value: Int16; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_INT16}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_INT16}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUInt16FromIndex(Index: Integer; out Value: UInt16; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UINT16}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UINT16}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadInt32FromIndex(Index: Integer; out Value: Int32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_INT32}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_INT32}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUInt32FromIndex(Index: Integer; out Value: UInt32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UINT32}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UINT32}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadInt64FromIndex(Index: Integer; out Value: Int64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_INT64}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_INT64}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUInt64FromIndex(Index: Integer; out Value: UInt64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UINT64}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UINT64}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadFloat32FromIndex(Index: Integer; out Value: Float32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_FLOAT32}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_FLOAT32}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadFloat64FromIndex(Index: Integer; out Value: Float64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_FLOAT64}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_FLOAT64}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadFloat80FromIndex(Index: Integer; out Value: Float80; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_FLOAT80}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_FLOAT80}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_NUM_10,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadDateTimeFromIndex(Index: Integer; out Value: TDateTime; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_DATETIME}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_DATETIME}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadCurrencyFromIndex(Index: Integer; out Value: Currency; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_CURRENCY}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_CURRENCY}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadAnsiCharFromIndex(Index: Integer; out Value: AnsiChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_ANSICHAR}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_ANSICHAR}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
+
 Function TCustomStreamer.ReadUTF8CharFromIndex(Index: Integer; out Value: UTF8Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UTF8CHAR}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UTF8CHAR}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadWideCharFromIndex(Index: Integer; out Value: WideChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_WIDECHAR}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_WIDECHAR}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUnicodeCharFromIndex(Index: Integer; out Value: UnicodeChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UNICODECHAR}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UNICODECHAR}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUCS4CharFromIndex(Index: Integer; out Value: UCS4Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UCS4CHAR}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UCS4CHAR}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadCharFromIndex(Index: Integer; out Value: Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_CHAR}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_CHAR}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_CHAR,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadShortStringFromIndex(Index: Integer; out Value: ShortString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_SHORTSTRING}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_SHORTSTRING}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_STR_SHORT,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadAnsiStringFromIndex(Index: Integer; out Value: AnsiString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_ANSISTRING}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_ANSISTRING}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_STR_ANSI,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUTF8StringFromIndex(Index: Integer; out Value: UTF8String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UTF8STRING}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UTF8STRING}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_STR_UTF8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadWideStringFromIndex(Index: Integer; out Value: WideString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_WIDESTRING}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_WIDESTRING}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_STR_WIDE,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUnicodeStringFromIndex(Index: Integer; out Value: UnicodeString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UNICODESTRING}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UNICODESTRING}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_STR_UNICODE,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadUCS4StringFromIndex(Index: Integer; out Value: UCS4String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UCS4STRING}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UCS4STRING}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_STR_UCS4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadStringFromIndex(Index: Integer; out Value: String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_STRING}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_STRING}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_STR,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallAnsiStringFromIndex(Index: Integer; out Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_SMLSTR_ANSI,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallUTF8StringFromIndex(Index: Integer; out Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_SMLSTR_UTF8,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallWideStringFromIndex(Index: Integer; out Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_SMLSTR_WIDE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallUnicodeStringFromIndex(Index: Integer; out Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_SMLSTR_UNICODE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallUCS4StringFromIndex(Index: Integer; out Value: UCS4String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_SMLSTR_UCS4,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadSmallStringFromIndex(Index: Integer; out Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_SMLSTR,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadBufferFromIndex(Index: Integer; out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_BUFFER}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_BUFFER}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_BUFFER,@Buffer,Advance,Size);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.ReadVariantFromIndex(Index: Integer; out Value: Variant; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_VARIANT}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_VARIANT}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_VARIANT,@Value,Advance);
+end;
 
 //==============================================================================
 
 Function TCustomStreamer.GetBool(Advance: Boolean = True): ByteBool;
-var
-  Temp: UInt8;
 begin
-ReadValue(BS_VALTYPE_NUM_1,@Temp,Advance);
-Result := NumToBool(Temp);
+ReadValue(BS_VALTYPE_BOOL,@Result,Advance);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetBoolean(Advance: Boolean = True): Boolean;
 begin
-Result := GetBool(Advance);
+ReadValue(BS_VALTYPE_BOOLEAN,@Result,Advance);
 end;
 
 //------------------------------------------------------------------------------
@@ -17236,11 +20524,8 @@ end;
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetChar(Advance: Boolean = True): Char;
-var
-  Temp: UInt16;
 begin
-ReadValue(BS_VALTYPE_NUM_2,@Temp,Advance);
-Result := Char(Temp);
+ReadValue(BS_VALTYPE_CHAR,@Result,Advance);
 end;
 
 //------------------------------------------------------------------------------
@@ -17294,6 +20579,48 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TCustomStreamer.GetSmallAnsiString(Advance: Boolean = True): AnsiString;
+begin
+ReadValue(BS_VALTYPE_SMLSTR_ANSI,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallUTF8String(Advance: Boolean = True): UTF8String;
+begin
+ReadValue(BS_VALTYPE_SMLSTR_UTF8,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallWideString(Advance: Boolean = True): WideString;
+begin
+ReadValue(BS_VALTYPE_SMLSTR_WIDE,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallUnicodeString(Advance: Boolean = True): UnicodeString;
+begin
+ReadValue(BS_VALTYPE_SMLSTR_UNICODE,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallUCS4String(Advance: Boolean = True): UCS4String;
+begin
+ReadValue(BS_VALTYPE_SMLSTR_UCS4,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallString(Advance: Boolean = True): String;
+begin
+ReadValue(BS_VALTYPE_SMLSTR,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
 Function TCustomStreamer.GetVariant(Advance: Boolean = True): Variant;
 begin
 ReadValue(BS_VALTYPE_VARIANT,@Result,Advance)
@@ -17302,814 +20629,982 @@ end;
 //==============================================================================
 
 Function TCustomStreamer.GetBoolAt(Position: Int64; Advance: Boolean = True): ByteBool;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_BOOL}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_BOOL}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_BOOL,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetBooleanAt(Position: Int64; Advance: Boolean = True): Boolean;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_BOOLEAN}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_BOOLEAN}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_BOOLEAN,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetInt8At(Position: Int64; Advance: Boolean = True): Int8;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_INT8}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_INT8}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_NUM_1,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUInt8At(Position: Int64; Advance: Boolean = True): UInt8;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UINT8}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UINT8}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_NUM_1,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetInt16At(Position: Int64; Advance: Boolean = True): Int16;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_INT16}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_INT16}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_NUM_2,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUInt16At(Position: Int64; Advance: Boolean = True): UInt16;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UINT16}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UINT16}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_NUM_2,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetInt32At(Position: Int64; Advance: Boolean = True): Int32;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_INT32}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_INT32}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_NUM_4,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUInt32At(Position: Int64; Advance: Boolean = True): UInt32;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UINT32}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UINT32}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_NUM_4,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetInt64At(Position: Int64; Advance: Boolean = True): Int64;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_INT64}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_INT64}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_NUM_8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUInt64At(Position: Int64; Advance: Boolean = True): UInt64;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UINT64}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UINT64}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_NUM_8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetFloat32At(Position: Int64; Advance: Boolean = True): Float32;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_FLOAT32}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_FLOAT32}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_NUM_4,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetFloat64At(Position: Int64; Advance: Boolean = True): Float64;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_FLOAT64}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_FLOAT64}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_NUM_8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetFloat80At(Position: Int64; Advance: Boolean = True): Float80;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_FLOAT80}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_FLOAT80}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_NUM_10,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetDateTimeAt(Position: Int64; Advance: Boolean = True): TDateTime;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_DATETIME}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_DATETIME}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_NUM_8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetCurrencyAt(Position: Int64; Advance: Boolean = True): Currency;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_CURRENCY}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_CURRENCY}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_NUM_8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetAnsiCharAt(Position: Int64; Advance: Boolean = True): AnsiChar;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_ANSICHAR}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_ANSICHAR}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_NUM_1,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUTF8CharAt(Position: Int64; Advance: Boolean = True): UTF8Char;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UTF8CHAR}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UTF8CHAR}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_NUM_1,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetWideCharAt(Position: Int64; Advance: Boolean = True): WideChar;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_WIDECHAR}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_WIDECHAR}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_NUM_2,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUnicodeCharAt(Position: Int64; Advance: Boolean = True): UnicodeChar;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UNICODECHAR}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UNICODECHAR}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_NUM_2,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUCS4CharAt(Position: Int64; Advance: Boolean = True): UCS4Char;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UCS4CHAR}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UCS4CHAR}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_NUM_4,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetCharAt(Position: Int64; Advance: Boolean = True): Char;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_CHAR}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_CHAR}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_CHAR,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetShortStringAt(Position: Int64; Advance: Boolean = True): ShortString;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_SHORTSTRING}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_SHORTSTRING}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_STR_SHORT,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetAnsiStringAt(Position: Int64; Advance: Boolean = True): AnsiString;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_ANSISTRING}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_ANSISTRING}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_STR_ANSI,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUTF8StringAt(Position: Int64; Advance: Boolean = True): UTF8String;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UTF8STRING}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UTF8STRING}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_STR_UTF8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetWideStringAt(Position: Int64; Advance: Boolean = True): WideString;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_WIDESTRING}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_WIDESTRING}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_STR_WIDE,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUnicodeStringAt(Position: Int64; Advance: Boolean = True): UnicodeString;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UNICODESTRING}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UNICODESTRING}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_STR_UNICODE,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUCS4StringAt(Position: Int64; Advance: Boolean = True): UCS4String;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UCS4STRING}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UCS4STRING}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_STR_UCS4,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetStringAt(Position: Int64; Advance: Boolean = True): String;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_STRING}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_STRING}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_STR,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallAnsiStringAt(Position: Int64; Advance: Boolean = True): AnsiString;
+begin
+ReadValueAt(Position,BS_VALTYPE_SMLSTR_ANSI,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallUTF8StringAt(Position: Int64; Advance: Boolean = True): UTF8String;
+begin
+ReadValueAt(Position,BS_VALTYPE_SMLSTR_UTF8,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallWideStringAt(Position: Int64; Advance: Boolean = True): WideString;
+begin
+ReadValueAt(Position,BS_VALTYPE_SMLSTR_WIDE,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallUnicodeStringAt(Position: Int64; Advance: Boolean = True): UnicodeString;
+begin
+ReadValueAt(Position,BS_VALTYPE_SMLSTR_UNICODE,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallUCS4StringAt(Position: Int64; Advance: Boolean = True): UCS4String;
+begin
+ReadValueAt(Position,BS_VALTYPE_SMLSTR_UCS4,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallStringAt(Position: Int64; Advance: Boolean = True): String;
+begin
+ReadValueAt(Position,BS_VALTYPE_SMLSTR,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetVariantAt(Position: Int64; Advance: Boolean = True): Variant;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_VARIANT}{$DEFINE BS_INC_MM_AT}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_VARIANT}{$UNDEF BS_INC_MM_AT}
+begin
+ReadValueAt(Position,BS_VALTYPE_VARIANT,@Result,Advance);
+end;
 
 //==============================================================================
 
 Function TCustomStreamer.GetBoolAtOffset(Offset: Int64; Advance: Boolean = True): ByteBool;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_BOOL}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_BOOL}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_BOOL,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetBooleanAtOffset(Offset: Int64; Advance: Boolean = True): Boolean;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_BOOLEAN}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_BOOLEAN}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_BOOLEAN,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetInt8AtOffset(Offset: Int64; Advance: Boolean = True): Int8;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_INT8}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_INT8}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_NUM_1,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUInt8AtOffset(Offset: Int64; Advance: Boolean = True): UInt8;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UINT8}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UINT8}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_NUM_1,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetInt16AtOffset(Offset: Int64; Advance: Boolean = True): Int16;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_INT16}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_INT16}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_NUM_2,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUInt16AtOffset(Offset: Int64; Advance: Boolean = True): UInt16;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UINT16}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UINT16}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_NUM_2,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetInt32AtOffset(Offset: Int64; Advance: Boolean = True): Int32;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_INT32}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_INT32}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_NUM_4,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUInt32AtOffset(Offset: Int64; Advance: Boolean = True): UInt32;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UINT32}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UINT32}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_NUM_4,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetInt64AtOffset(Offset: Int64; Advance: Boolean = True): Int64;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_INT64}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_INT64}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_NUM_8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUInt64AtOffset(Offset: Int64; Advance: Boolean = True): UInt64;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UINT64}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UINT64}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_NUM_8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetFloat32AtOffset(Offset: Int64; Advance: Boolean = True): Float32;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_FLOAT32}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_FLOAT32}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_NUM_4,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetFloat64AtOffset(Offset: Int64; Advance: Boolean = True): Float64;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_FLOAT64}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_FLOAT64}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_NUM_8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetFloat80AtOffset(Offset: Int64; Advance: Boolean = True): Float80;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_FLOAT80}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_FLOAT80}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_NUM_10,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetDateTimeAtOffset(Offset: Int64; Advance: Boolean = True): TDateTime;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_DATETIME}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_DATETIME}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_NUM_8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetCurrencyAtOffset(Offset: Int64; Advance: Boolean = True): Currency;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_CURRENCY}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_CURRENCY}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_NUM_8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetAnsiCharAtOffset(Offset: Int64; Advance: Boolean = True): AnsiChar;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_ANSICHAR}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_ANSICHAR}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_NUM_1,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUTF8CharAtOffset(Offset: Int64; Advance: Boolean = True): UTF8Char;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UTF8CHAR}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UTF8CHAR}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_NUM_1,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetWideCharAtOffset(Offset: Int64; Advance: Boolean = True): WideChar;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_WIDECHAR}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_WIDECHAR}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_NUM_2,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUnicodeCharAtOffset(Offset: Int64; Advance: Boolean = True): UnicodeChar;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UNICODECHAR}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UNICODECHAR}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_NUM_2,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUCS4CharAtOffset(Offset: Int64; Advance: Boolean = True): UCS4Char;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UCS4CHAR}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UCS4CHAR}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_NUM_4,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetCharAtOffset(Offset: Int64; Advance: Boolean = True): Char;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_CHAR}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_CHAR}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_CHAR,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetShortStringAtOffset(Offset: Int64; Advance: Boolean = True): ShortString;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_SHORTSTRING}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_SHORTSTRING}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_STR_SHORT,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetAnsiStringAtOffset(Offset: Int64; Advance: Boolean = True): AnsiString;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_ANSISTRING}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_ANSISTRING}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_STR_ANSI,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUTF8StringAtOffset(Offset: Int64; Advance: Boolean = True): UTF8String;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UTF8STRING}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UTF8STRING}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_STR_UTF8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetWideStringAtOffset(Offset: Int64; Advance: Boolean = True): WideString;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_WIDESTRING}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_WIDESTRING}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_STR_WIDE,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUnicodeStringAtOffset(Offset: Int64; Advance: Boolean = True): UnicodeString;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UNICODESTRING}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UNICODESTRING}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_STR_UNICODE,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUCS4StringAtOffset(Offset: Int64; Advance: Boolean = True): UCS4String;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UCS4STRING}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UCS4STRING}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_STR_UCS4,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetStringAtOffset(Offset: Int64; Advance: Boolean = True): String;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_STRING}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_STRING}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_STR,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallAnsiStringAtOffset(Offset: Int64; Advance: Boolean = True): AnsiString;
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_SMLSTR_ANSI,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallUTF8StringAtOffset(Offset: Int64; Advance: Boolean = True): UTF8String;
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_SMLSTR_UTF8,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallWideStringAtOffset(Offset: Int64; Advance: Boolean = True): WideString;
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_SMLSTR_WIDE,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallUnicodeStringAtOffset(Offset: Int64; Advance: Boolean = True): UnicodeString;
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_SMLSTR_UNICODE,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallUCS4StringAtOffset(Offset: Int64; Advance: Boolean = True): UCS4String;
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_SMLSTR_UCS4,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallStringAtOffset(Offset: Int64; Advance: Boolean = True): String;
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_SMLSTR,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetVariantAtOffset(Offset: Int64; Advance: Boolean = True): Variant;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_VARIANT}{$DEFINE BS_INC_MM_AT_OFF}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_VARIANT}{$UNDEF BS_INC_MM_AT_OFF}
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_VARIANT,@Result,Advance);
+end;
 
 //==============================================================================
 
 Function TCustomStreamer.GetBoolFrom(ID: TBSBookmarkID; Advance: Boolean = True): ByteBool;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_BOOL}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_BOOL}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_BOOL,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetBooleanFrom(ID: TBSBookmarkID; Advance: Boolean = True): Boolean;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_BOOLEAN}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_BOOLEAN}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_BOOLEAN,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetInt8From(ID: TBSBookmarkID; Advance: Boolean = True): Int8;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_INT8}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_INT8}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_NUM_1,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUInt8From(ID: TBSBookmarkID; Advance: Boolean = True): UInt8;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UINT8}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UINT8}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_NUM_1,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetInt16From(ID: TBSBookmarkID; Advance: Boolean = True): Int16;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_INT16}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_INT16}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_NUM_2,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUInt16From(ID: TBSBookmarkID; Advance: Boolean = True): UInt16;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UINT16}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UINT16}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_NUM_2,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetInt32From(ID: TBSBookmarkID; Advance: Boolean = True): Int32;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_INT32}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_INT32}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_NUM_4,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUInt32From(ID: TBSBookmarkID; Advance: Boolean = True): UInt32;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UINT32}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UINT32}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_NUM_4,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetInt64From(ID: TBSBookmarkID; Advance: Boolean = True): Int64;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_INT64}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_INT64}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_NUM_8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUInt64From(ID: TBSBookmarkID; Advance: Boolean = True): UInt64;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UINT64}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UINT64}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_NUM_8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetFloat32From(ID: TBSBookmarkID; Advance: Boolean = True): Float32;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_FLOAT32}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_FLOAT32}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_NUM_4,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetFloat64From(ID: TBSBookmarkID; Advance: Boolean = True): Float64;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_FLOAT64}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_FLOAT64}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_NUM_8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetFloat80From(ID: TBSBookmarkID; Advance: Boolean = True): Float80;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_FLOAT80}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_FLOAT80}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_NUM_10,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetDateTimeFrom(ID: TBSBookmarkID; Advance: Boolean = True): TDateTime;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_DATETIME}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_DATETIME}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_NUM_8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetCurrencyFrom(ID: TBSBookmarkID; Advance: Boolean = True): Currency;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_CURRENCY}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_CURRENCY}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_NUM_8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetAnsiCharFrom(ID: TBSBookmarkID; Advance: Boolean = True): AnsiChar;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_ANSICHAR}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_ANSICHAR}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_NUM_1,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUTF8CharFrom(ID: TBSBookmarkID; Advance: Boolean = True): UTF8Char;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UTF8CHAR}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UTF8CHAR}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_NUM_1,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetWideCharFrom(ID: TBSBookmarkID; Advance: Boolean = True): WideChar;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_WIDECHAR}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_WIDECHAR}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_NUM_2,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUnicodeCharFrom(ID: TBSBookmarkID; Advance: Boolean = True): UnicodeChar;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UNICODECHAR}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UNICODECHAR}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_NUM_2,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUCS4CharFrom(ID: TBSBookmarkID; Advance: Boolean = True): UCS4Char;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UCS4CHAR}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UCS4CHAR}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_NUM_4,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetCharFrom(ID: TBSBookmarkID; Advance: Boolean = True): Char;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_CHAR}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_CHAR}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_CHAR,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetShortStringFrom(ID: TBSBookmarkID; Advance: Boolean = True): ShortString;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_SHORTSTRING}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_SHORTSTRING}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_STR_SHORT,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetAnsiStringFrom(ID: TBSBookmarkID; Advance: Boolean = True): AnsiString;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_ANSISTRING}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_ANSISTRING}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_STR_ANSI,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUTF8StringFrom(ID: TBSBookmarkID; Advance: Boolean = True): UTF8String;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UTF8STRING}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UTF8STRING}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_STR_UTF8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetWideStringFrom(ID: TBSBookmarkID; Advance: Boolean = True): WideString;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_WIDESTRING}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_WIDESTRING}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_STR_WIDE,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUnicodeStringFrom(ID: TBSBookmarkID; Advance: Boolean = True): UnicodeString;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UNICODESTRING}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UNICODESTRING}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_STR_UNICODE,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUCS4StringFrom(ID: TBSBookmarkID; Advance: Boolean = True): UCS4String;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UCS4STRING}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UCS4STRING}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_STR_UCS4,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetStringFrom(ID: TBSBookmarkID; Advance: Boolean = True): String;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_STRING}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_STRING}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_STR,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallAnsiStringFrom(ID: TBSBookmarkID; Advance: Boolean = True): AnsiString;
+begin
+ReadValueFrom(ID,BS_VALTYPE_SMLSTR_ANSI,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallUTF8StringFrom(ID: TBSBookmarkID; Advance: Boolean = True): UTF8String;
+begin
+ReadValueFrom(ID,BS_VALTYPE_SMLSTR_UTF8,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallWideStringFrom(ID: TBSBookmarkID; Advance: Boolean = True): WideString;
+begin
+ReadValueFrom(ID,BS_VALTYPE_SMLSTR_WIDE,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallUnicodeStringFrom(ID: TBSBookmarkID; Advance: Boolean = True): UnicodeString;
+begin
+ReadValueFrom(ID,BS_VALTYPE_SMLSTR_UNICODE,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallUCS4StringFrom(ID: TBSBookmarkID; Advance: Boolean = True): UCS4String;
+begin
+ReadValueFrom(ID,BS_VALTYPE_SMLSTR_UCS4,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallStringFrom(ID: TBSBookmarkID; Advance: Boolean = True): String;
+begin
+ReadValueFrom(ID,BS_VALTYPE_SMLSTR,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetVariantFrom(ID: TBSBookmarkID; Advance: Boolean = True): Variant;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_VARIANT}{$DEFINE BS_INC_MM_TO}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_VARIANT}{$UNDEF BS_INC_MM_TO}
+begin
+ReadValueFrom(ID,BS_VALTYPE_VARIANT,@Result,Advance);
+end;
 
 //==============================================================================
 
 Function TCustomStreamer.GetBoolFromIndex(Index: Integer; Advance: Boolean = True): ByteBool;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_BOOL}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_BOOL}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_BOOL,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetBooleanFromIndex(Index: Integer; Advance: Boolean = True): Boolean;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_BOOLEAN}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_BOOLEAN}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_BOOLEAN,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetInt8FromIndex(Index: Integer; Advance: Boolean = True): Int8;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_INT8}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_INT8}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_NUM_1,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUInt8FromIndex(Index: Integer; Advance: Boolean = True): UInt8;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UINT8}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UINT8}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_NUM_1,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetInt16FromIndex(Index: Integer; Advance: Boolean = True): Int16;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_INT16}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_INT16}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_NUM_2,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUInt16FromIndex(Index: Integer; Advance: Boolean = True): UInt16;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UINT16}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UINT16}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_NUM_2,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetInt32FromIndex(Index: Integer; Advance: Boolean = True): Int32;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_INT32}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_INT32}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_NUM_4,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUInt32FromIndex(Index: Integer; Advance: Boolean = True): UInt32;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UINT32}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UINT32}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_NUM_4,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetInt64FromIndex(Index: Integer; Advance: Boolean = True): Int64;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_INT64}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_INT64}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_NUM_8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUInt64FromIndex(Index: Integer; Advance: Boolean = True): UInt64;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UINT64}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UINT64}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_NUM_8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetFloat32FromIndex(Index: Integer; Advance: Boolean = True): Float32;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_FLOAT32}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_FLOAT32}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_NUM_4,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetFloat64FromIndex(Index: Integer; Advance: Boolean = True): Float64;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_FLOAT64}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_FLOAT64}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_NUM_8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetFloat80FromIndex(Index: Integer; Advance: Boolean = True): Float80;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_FLOAT80}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_FLOAT80}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_NUM_10,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetDateTimeFromIndex(Index: Integer; Advance: Boolean = True): TDateTime;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_DATETIME}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_DATETIME}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_NUM_8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetCurrencyFromIndex(Index: Integer; Advance: Boolean = True): Currency;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_CURRENCY}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_CURRENCY}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_NUM_8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetAnsiCharFromIndex(Index: Integer; Advance: Boolean = True): AnsiChar;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_ANSICHAR}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_ANSICHAR}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_NUM_1,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUTF8CharFromIndex(Index: Integer; Advance: Boolean = True): UTF8Char;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UTF8CHAR}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UTF8CHAR}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_NUM_1,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetWideCharFromIndex(Index: Integer; Advance: Boolean = True): WideChar;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_WIDECHAR}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_WIDECHAR}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_NUM_2,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUnicodeCharFromIndex(Index: Integer; Advance: Boolean = True): UnicodeChar;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UNICODECHAR}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UNICODECHAR}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_NUM_2,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUCS4CharFromIndex(Index: Integer; Advance: Boolean = True): UCS4Char;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UCS4CHAR}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UCS4CHAR}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_NUM_4,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetCharFromIndex(Index: Integer; Advance: Boolean = True): Char;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_CHAR}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_CHAR}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_CHAR,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetShortStringFromIndex(Index: Integer; Advance: Boolean = True): ShortString;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_SHORTSTRING}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_SHORTSTRING}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_STR_SHORT,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetAnsiStringFromIndex(Index: Integer; Advance: Boolean = True): AnsiString;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_ANSISTRING}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_ANSISTRING}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_STR_ANSI,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUTF8StringFromIndex(Index: Integer; Advance: Boolean = True): UTF8String;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UTF8STRING}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UTF8STRING}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_STR_UTF8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetWideStringFromIndex(Index: Integer; Advance: Boolean = True): WideString;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_WIDESTRING}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_WIDESTRING}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_STR_WIDE,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUnicodeStringFromIndex(Index: Integer; Advance: Boolean = True): UnicodeString;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UNICODESTRING}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UNICODESTRING}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_STR_UNICODE,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetUCS4StringFromIndex(Index: Integer; Advance: Boolean = True): UCS4String;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UCS4STRING}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UCS4STRING}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_STR_UCS4,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetStringFromIndex(Index: Integer; Advance: Boolean = True): String;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_STRING}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_STRING}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_STR,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallAnsiStringFromIndex(Index: Integer; Advance: Boolean = True): AnsiString;
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_SMLSTR_ANSI,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallUTF8StringFromIndex(Index: Integer; Advance: Boolean = True): UTF8String;
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_SMLSTR_UTF8,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallWideStringFromIndex(Index: Integer; Advance: Boolean = True): WideString;
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_SMLSTR_WIDE,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallUnicodeStringFromIndex(Index: Integer; Advance: Boolean = True): UnicodeString;
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_SMLSTR_UNICODE,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallUCS4StringFromIndex(Index: Integer; Advance: Boolean = True): UCS4String;
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_SMLSTR_UCS4,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetSmallStringFromIndex(Index: Integer; Advance: Boolean = True): String;
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_SMLSTR,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.GetVariantFromIndex(Index: Integer; Advance: Boolean = True): Variant;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_VARIANT}{$DEFINE BS_INC_MM_TO_IDX}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_VARIANT}{$UNDEF BS_INC_MM_TO_IDX}
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_VARIANT,@Result,Advance);
+end;
 
 
 {===============================================================================
@@ -18148,20 +21643,29 @@ end;
 Function TMemoryStreamer.WriteValue(ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize;
 begin
 case ValueType of
-  BS_VALTYPE_NUM_1:       Result := Ptr_WriteUInt8(fPositionAddress,UInt8(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_NUM_2:       Result := Ptr_WriteUInt16(fPositionAddress,UInt16(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_NUM_4:       Result := Ptr_WriteUInt32(fPositionAddress,UInt32(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_NUM_8:       Result := Ptr_WriteUInt64(fPositionAddress,UInt64(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_NUM_10:      Result := Ptr_WriteFloat80(fPositionAddress,Float80(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_STR_SHORT:   Result := Ptr_WriteShortString(fPositionAddress,ShortString(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_STR_ANSI:    Result := Ptr_WriteAnsiString(fPositionAddress,AnsiString(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_STR_UTF8:    Result := Ptr_WriteUTF8String(fPositionAddress,UTF8String(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_STR_WIDE:    Result := Ptr_WriteWideString(fPositionAddress,WideString(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_STR_UNICODE: Result := Ptr_WriteUnicodeString(fPositionAddress,UnicodeString(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_STR_UCS4:    Result := Ptr_WriteUCS4String(fPositionAddress,UCS4String(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_STR:         Result := Ptr_WriteString(fPositionAddress,String(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_FILL:        Result := Ptr_FillBytes(fPositionAddress,Size,UInt8(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_VARIANT:     Result := Ptr_WriteVariant(fPositionAddress,Variant(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_BOOL:            Result := Ptr_WriteUInt8(fPositionAddress,UInt8(BoolToNum(ByteBool(ValuePtr^))),Advance,fEndian);
+  BS_VALTYPE_BOOLEAN:         Result := Ptr_WriteUInt8(fPositionAddress,UInt8(BoolToNum(Boolean(ValuePtr^))),Advance,fEndian);
+  BS_VALTYPE_NUM_1:           Result := Ptr_WriteUInt8(fPositionAddress,UInt8(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_NUM_2:           Result := Ptr_WriteUInt16(fPositionAddress,UInt16(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_NUM_4:           Result := Ptr_WriteUInt32(fPositionAddress,UInt32(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_NUM_8:           Result := Ptr_WriteUInt64(fPositionAddress,UInt64(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_NUM_10:          Result := Ptr_WriteFloat80(fPositionAddress,Float80(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_CHAR:            Result := Ptr_WriteUInt16(fPositionAddress,UInt16(Ord(Char(ValuePtr^))),Advance,fEndian);
+  BS_VALTYPE_STR_SHORT:       Result := Ptr_WriteShortString(fPositionAddress,ShortString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_ANSI:        Result := Ptr_WriteAnsiString(fPositionAddress,AnsiString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_UTF8:        Result := Ptr_WriteUTF8String(fPositionAddress,UTF8String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_WIDE:        Result := Ptr_WriteWideString(fPositionAddress,WideString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_UNICODE:     Result := Ptr_WriteUnicodeString(fPositionAddress,UnicodeString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_UCS4:        Result := Ptr_WriteUCS4String(fPositionAddress,UCS4String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR:             Result := Ptr_WriteString(fPositionAddress,String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_SMLSTR_ANSI:     Result := Ptr_WriteSmallAnsiString(fPositionAddress,AnsiString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_SMLSTR_UTF8:     Result := Ptr_WriteSmallUTF8String(fPositionAddress,UTF8String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_SMLSTR_WIDE:     Result := Ptr_WriteSmallWideString(fPositionAddress,WideString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_SMLSTR_UNICODE:  Result := Ptr_WriteSmallUnicodeString(fPositionAddress,UnicodeString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_SMLSTR_UCS4:     Result := Ptr_WriteSmallUCS4String(fPositionAddress,UCS4String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_SMLSTR:          Result := Ptr_WriteSmallString(fPositionAddress,String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_FILL:            Result := Ptr_FillBytes(fPositionAddress,Size,UInt8(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_VARIANT:         Result := Ptr_WriteVariant(fPositionAddress,Variant(ValuePtr^),Advance,fEndian);
 else
  {BS_VALTYPE_BUFFER}
   Result := Ptr_WriteBuffer(fPositionAddress,ValuePtr^,Size,Advance);
@@ -18170,26 +21674,73 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TMemoryStreamer.WriteValueAtAddr(Address: Pointer; ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize;
+var
+  OldPosition:  Int64;
+begin
+OldPosition := Self.Position;
+MoveAt(Address);
+Result := WriteValue(ValueType,ValuePtr,Advance,Size);
+If not Advance then
+  Self.Position := OldPosition;
+end;
+
+//------------------------------------------------------------------------------
+
 Function TMemoryStreamer.ReadValue(ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize;
+var
+  TempUInt8:  UInt8;
+  TempUInt16: UInt16;
 begin
 case ValueType of
-  BS_VALTYPE_NUM_1:       Result := Ptr_ReadUInt8(fPositionAddress,UInt8(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_NUM_2:       Result := Ptr_ReadUInt16(fPositionAddress,UInt16(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_NUM_4:       Result := Ptr_ReadUInt32(fPositionAddress,UInt32(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_NUM_8:       Result := Ptr_ReadUInt64(fPositionAddress,UInt64(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_NUM_10:      Result := Ptr_ReadFloat80(fPositionAddress,Float80(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_STR_SHORT:   Result := Ptr_ReadShortString(fPositionAddress,ShortString(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_STR_ANSI:    Result := Ptr_ReadAnsiString(fPositionAddress,AnsiString(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_STR_UTF8:    Result := Ptr_ReadUTF8String(fPositionAddress,UTF8String(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_STR_WIDE:    Result := Ptr_ReadWideString(fPositionAddress,WideString(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_STR_UNICODE: Result := Ptr_ReadUnicodeString(fPositionAddress,UnicodeString(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_STR_UCS4:    Result := Ptr_ReadUCS4String(fPositionAddress,UCS4String(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_STR:         Result := Ptr_ReadString(fPositionAddress,String(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_VARIANT:     Result := Ptr_ReadVariant(fPositionAddress,Variant(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_BOOL:            begin
+                                Result := Ptr_ReadUInt8(fPositionAddress,TempUInt8,Advance);
+                                ByteBool(ValuePtr^) := NumToBool(TempUInt8);
+                              end;
+  BS_VALTYPE_BOOLEAN:         begin
+                                Result := Ptr_ReadUInt8(fPositionAddress,TempUInt8,Advance);
+                                Boolean(ValuePtr^) := NumToBool(TempUInt8);
+                              end;
+  BS_VALTYPE_NUM_1:           Result := Ptr_ReadUInt8(fPositionAddress,UInt8(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_NUM_2:           Result := Ptr_ReadUInt16(fPositionAddress,UInt16(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_NUM_4:           Result := Ptr_ReadUInt32(fPositionAddress,UInt32(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_NUM_8:           Result := Ptr_ReadUInt64(fPositionAddress,UInt64(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_NUM_10:          Result := Ptr_ReadFloat80(fPositionAddress,Float80(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_CHAR:            begin
+                                Result := Ptr_ReadUInt16(fPositionAddress,TempUInt16,Advance);
+                                Char(ValuePtr^) := Char(TempUInt16);
+                              end;
+  BS_VALTYPE_STR_SHORT:       Result := Ptr_ReadShortString(fPositionAddress,ShortString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_ANSI:        Result := Ptr_ReadAnsiString(fPositionAddress,AnsiString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_UTF8:        Result := Ptr_ReadUTF8String(fPositionAddress,UTF8String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_WIDE:        Result := Ptr_ReadWideString(fPositionAddress,WideString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_UNICODE:     Result := Ptr_ReadUnicodeString(fPositionAddress,UnicodeString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_UCS4:        Result := Ptr_ReadUCS4String(fPositionAddress,UCS4String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR:             Result := Ptr_ReadString(fPositionAddress,String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_SMLSTR_ANSI:     Result := Ptr_ReadSmallAnsiString(fPositionAddress,AnsiString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_SMLSTR_UTF8:     Result := Ptr_ReadSmallUTF8String(fPositionAddress,UTF8String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_SMLSTR_WIDE:     Result := Ptr_ReadSmallWideString(fPositionAddress,WideString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_SMLSTR_UNICODE:  Result := Ptr_ReadSmallUnicodeString(fPositionAddress,UnicodeString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_SMLSTR_UCS4:     Result := Ptr_ReadSmallUCS4String(fPositionAddress,UCS4String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_SMLSTR:          Result := Ptr_ReadSmallString(fPositionAddress,String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_VARIANT:         Result := Ptr_ReadVariant(fPositionAddress,Variant(ValuePtr^),Advance,fEndian);
 else
  {BS_VALTYPE_FILL,BS_VALTYPE_BUFFER}
   Result := Ptr_ReadBuffer(fPositionAddress,ValuePtr^,Size,Advance);
 end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadValueAtAddr(Address: Pointer; ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize;
+var
+  OldPosition:  Int64;
+begin
+OldPosition := Self.Position;
+MoveAt(Address);
+Result := ReadValue(ValueType,ValuePtr,Advance,Size);
+If not Advance then
+  Self.Position := OldPosition;
 end;
 
 //------------------------------------------------------------------------------
@@ -18267,639 +21818,765 @@ end;
 //==============================================================================
 
 Function TMemoryStreamer.WriteBoolAt(Address: Pointer; Value: ByteBool; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_BOOL}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_BOOL}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_BOOL,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteBooleanAt(Address: Pointer; Value: Boolean; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_BOOLEAN}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_BOOLEAN}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_BOOLEAN,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteInt8At(Address: Pointer; Value: Int8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_INT8}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_INT8}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteUInt8At(Address: Pointer; Value: UInt8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UINT8}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UINT8}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteInt16At(Address: Pointer; Value: Int16; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_INT16}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_INT16}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteUInt16At(Address: Pointer; Value: UInt16; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UINT16}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UINT16}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteInt32At(Address: Pointer; Value: Int32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_INT32}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_INT32}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteUInt32At(Address: Pointer; Value: UInt32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UINT32}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UINT32}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteInt64At(Address: Pointer; Value: Int64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_INT64}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_INT64}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteUInt64At(Address: Pointer; Value: UInt64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UINT64}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UINT64}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteFloat32At(Address: Pointer; Value: Float32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_FLOAT32}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_FLOAT32}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteFloat64At(Address: Pointer; Value: Float64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_FLOAT64}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_FLOAT64}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteFloat80At(Address: Pointer; Value: Float80; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_FLOAT80}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_FLOAT80}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_NUM_10,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteDateTimeAt(Address: Pointer; Value: TDateTime; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_DATETIME}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_DATETIME}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteCurrencyAt(Address: Pointer; Value: Currency; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_CURRENCY}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_CURRENCY}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteAnsiCharAt(Address: Pointer; Value: AnsiChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_ANSICHAR}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_ANSICHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteUTF8CharAt(Address: Pointer; Value: UTF8Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UTF8CHAR}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UTF8CHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteWideCharAt(Address: Pointer; Value: WideChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_WIDECHAR}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_WIDECHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteUnicodeCharAt(Address: Pointer; Value: UnicodeChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UNICODECHAR}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UNICODECHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteUCS4CharAt(Address: Pointer; Value: UCS4Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UCS4CHAR}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UCS4CHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteCharAt(Address: Pointer; Value: Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_CHAR}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_CHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_CHAR,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteShortStringAt(Address: Pointer; const Value: ShortString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_SHORTSTRING}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_SHORTSTRING}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_STR_SHORT,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteAnsiStringAt(Address: Pointer; const Value: AnsiString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_ANSISTRING}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_ANSISTRING}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_STR_ANSI,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteUTF8StringAt(Address: Pointer; const Value: UTF8String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UTF8STRING}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UTF8STRING}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_STR_UTF8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteWideStringAt(Address: Pointer; const Value: WideString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_WIDESTRING}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_WIDESTRING}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_STR_WIDE,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteUnicodeStringAt(Address: Pointer; const Value: UnicodeString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UNICODESTRING}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UNICODESTRING}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_STR_UNICODE,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteUCS4StringAt(Address: Pointer; const Value: UCS4String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_UCS4STRING}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_UCS4STRING}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_STR_UCS4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteStringAt(Address: Pointer; const Value: String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_STRING}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_STRING}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_STR,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteSmallAnsiStringAt(Address: Pointer; const Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_SMLSTR_ANSI,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteSmallUTF8StringAt(Address: Pointer; const Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_SMLSTR_UTF8,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteSmallWideStringAt(Address: Pointer; const Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_SMLSTR_WIDE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteSmallUnicodeStringAt(Address: Pointer; const Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_SMLSTR_UNICODE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteSmallUCS4StringAt(Address: Pointer; const Value: UCS4String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_SMLSTR_UCS4,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteSmallStringAt(Address: Pointer; const Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_SMLSTR,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteBufferAt(Address: Pointer; const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_BUFFER}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_BUFFER}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_BUFFER,@Buffer,Advance,Size);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteBytesAt(Address: Pointer; const Value: array of UInt8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_BYTES}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_BYTES}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_BYTEARRAY,@Value,Advance,TMemSize(Length(Value)));
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.FillBytesAt(Address: Pointer; Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_FILL}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_FILL}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_FILL,@Value,Advance,Count);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.WriteVariantAt(Address: Pointer; const Value: Variant; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_WRITE}{$DEFINE BS_INC_MM_VARIANT}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_WRITE}{$UNDEF BS_INC_MM_VARIANT}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_VARIANT,@Value,Advance);
+end;
 
 //==============================================================================
 
 Function TMemoryStreamer.ReadBoolAt(Address: Pointer; out Value: ByteBool; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_BOOL}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_BOOL}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_BOOL,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadBooleanAt(Address: Pointer; out Value: Boolean; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_BOOLEAN}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_BOOLEAN}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_BOOLEAN,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadInt8At(Address: Pointer; out Value: Int8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_INT8}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_INT8}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadUInt8At(Address: Pointer; out Value: UInt8; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UINT8}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UINT8}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadInt16At(Address: Pointer; out Value: Int16; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_INT16}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_INT16}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadUInt16At(Address: Pointer; out Value: UInt16; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UINT16}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UINT16}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadInt32At(Address: Pointer; out Value: Int32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_INT32}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_INT32}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadUInt32At(Address: Pointer; out Value: UInt32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UINT32}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UINT32}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadInt64At(Address: Pointer; out Value: Int64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_INT64}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_INT64}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadUInt64At(Address: Pointer; out Value: UInt64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UINT64}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UINT64}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadFloat32At(Address: Pointer; out Value: Float32; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_FLOAT32}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_FLOAT32}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadFloat64At(Address: Pointer; out Value: Float64; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_FLOAT64}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_FLOAT64}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadFloat80At(Address: Pointer; out Value: Float80; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_FLOAT80}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_FLOAT80}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_NUM_10,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadDateTimeAt(Address: Pointer; out Value: TDateTime; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_DATETIME}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_DATETIME}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadCurrencyAt(Address: Pointer; out Value: Currency; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_CURRENCY}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_CURRENCY}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_NUM_8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadAnsiCharAt(Address: Pointer; out Value: AnsiChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_ANSICHAR}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_ANSICHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadUTF8CharAt(Address: Pointer; out Value: UTF8Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UTF8CHAR}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UTF8CHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_NUM_1,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadWideCharAt(Address: Pointer; out Value: WideChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_WIDECHAR}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_WIDECHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadUnicodeCharAt(Address: Pointer; out Value: UnicodeChar; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UNICODECHAR}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UNICODECHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_NUM_2,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadUCS4CharAt(Address: Pointer; out Value: UCS4Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UCS4CHAR}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UCS4CHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_NUM_4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadCharAt(Address: Pointer; out Value: Char; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_CHAR}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_CHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_CHAR,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadShortStringAt(Address: Pointer; out Value: ShortString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_SHORTSTRING}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_SHORTSTRING}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_STR_SHORT,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadAnsiStringAt(Address: Pointer; out Value: AnsiString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_ANSISTRING}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_ANSISTRING}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_STR_ANSI,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadUTF8StringAt(Address: Pointer; out Value: UTF8String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UTF8STRING}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UTF8STRING}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_STR_UTF8,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadWideStringAt(Address: Pointer; out Value: WideString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_WIDESTRING}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_WIDESTRING}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_STR_WIDE,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadUnicodeStringAt(Address: Pointer; out Value: UnicodeString; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UNICODESTRING}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UNICODESTRING}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_STR_UNICODE,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadUCS4StringAt(Address: Pointer; out Value: UCS4String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_UCS4STRING}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_UCS4STRING}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_STR_UCS4,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadStringAt(Address: Pointer; out Value: String; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_STRING}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_STRING}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_STR,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadSmallAnsiStringAt(Address: Pointer; out Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_SMLSTR_ANSI,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadSmallUTF8StringAt(Address: Pointer; out Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_SMLSTR_UTF8,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadSmallWideStringAt(Address: Pointer; out Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_SMLSTR_WIDE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadSmallUnicodeStringAt(Address: Pointer; out Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_SMLSTR_UNICODE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadSmallUCS4StringAt(Address: Pointer; out Value: UCS4String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_SMLSTR_UCS4,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadSmallStringAt(Address: Pointer; out Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_SMLSTR,@Value,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadBufferAt(Address: Pointer; out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_BUFFER}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_BUFFER}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_BUFFER,@Buffer,Advance,Size);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.ReadVariantAt(Address: Pointer; out Value: Variant; Advance: Boolean = True): TMemSize;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_READ}{$DEFINE BS_INC_MM_VARIANT}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_READ}{$UNDEF BS_INC_MM_VARIANT}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_VARIANT,@Value,Advance);
+end;
 
 //==============================================================================
 
 Function TMemoryStreamer.GetBoolAt(Address: Pointer; Advance: Boolean = True): ByteBool;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_BOOL}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_BOOL}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_BOOL,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetBooleanAt(Address: Pointer; Advance: Boolean = True): Boolean;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_BOOLEAN}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_BOOLEAN}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_BOOLEAN,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetInt8At(Address: Pointer; Advance: Boolean = True): Int8;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_INT8}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_INT8}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_NUM_1,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetUInt8At(Address: Pointer; Advance: Boolean = True): UInt8;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UINT8}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UINT8}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_NUM_1,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetInt16At(Address: Pointer; Advance: Boolean = True): Int16;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_INT16}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_INT16}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_NUM_2,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetUInt16At(Address: Pointer; Advance: Boolean = True): UInt16;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UINT16}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UINT16}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_NUM_2,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetInt32At(Address: Pointer; Advance: Boolean = True): Int32;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_INT32}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_INT32}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_NUM_4,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetUInt32At(Address: Pointer; Advance: Boolean = True): UInt32;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UINT32}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UINT32}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_NUM_4,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetInt64At(Address: Pointer; Advance: Boolean = True): Int64;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_INT64}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_INT64}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_NUM_8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetUInt64At(Address: Pointer; Advance: Boolean = True): UInt64;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UINT64}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UINT64}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_NUM_8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetFloat32At(Address: Pointer; Advance: Boolean = True): Float32;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_FLOAT32}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_FLOAT32}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_NUM_4,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetFloat64At(Address: Pointer; Advance: Boolean = True): Float64;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_FLOAT64}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_FLOAT64}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_NUM_8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetFloat80At(Address: Pointer; Advance: Boolean = True): Float80;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_FLOAT80}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_FLOAT80}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_NUM_10,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetDateTimeAt(Address: Pointer; Advance: Boolean = True): TDateTime;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_DATETIME}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_DATETIME}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_NUM_8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetCurrencyAt(Address: Pointer; Advance: Boolean = True): Currency;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_CURRENCY}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_CURRENCY}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_NUM_8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetAnsiCharAt(Address: Pointer; Advance: Boolean = True): AnsiChar;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_ANSICHAR}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_ANSICHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_NUM_1,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetUTF8CharAt(Address: Pointer; Advance: Boolean = True): UTF8Char;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UTF8CHAR}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UTF8CHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_NUM_1,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetWideCharAt(Address: Pointer; Advance: Boolean = True): WideChar;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_WIDECHAR}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_WIDECHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_NUM_2,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetUnicodeCharAt(Address: Pointer; Advance: Boolean = True): UnicodeChar;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UNICODECHAR}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UNICODECHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_NUM_2,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetUCS4CharAt(Address: Pointer; Advance: Boolean = True): UCS4Char;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UCS4CHAR}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UCS4CHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_NUM_4,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetCharAt(Address: Pointer; Advance: Boolean = True): Char;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_CHAR}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_CHAR}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_CHAR,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetShortStringAt(Address: Pointer; Advance: Boolean = True): ShortString;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_SHORTSTRING}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_SHORTSTRING}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_STR_SHORT,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetAnsiStringAt(Address: Pointer; Advance: Boolean = True): AnsiString;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_ANSISTRING}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_ANSISTRING}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_STR_ANSI,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetUTF8StringAt(Address: Pointer; Advance: Boolean = True): UTF8String;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UTF8STRING}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UTF8STRING}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_STR_UTF8,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetWideStringAt(Address: Pointer; Advance: Boolean = True): WideString;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_WIDESTRING}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_WIDESTRING}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_STR_WIDE,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetUnicodeStringAt(Address: Pointer; Advance: Boolean = True): UnicodeString;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UNICODESTRING}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UNICODESTRING}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_STR_UNICODE,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetUCS4StringAt(Address: Pointer; Advance: Boolean = True): UCS4String;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_UCS4STRING}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_UCS4STRING}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_STR_UCS4,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetStringAt(Address: Pointer; Advance: Boolean = True): String;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_STRING}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_STRING}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_STR,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetSmallAnsiStringAt(Address: Pointer; Advance: Boolean = True): AnsiString;
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_SMLSTR_ANSI,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetSmallUTF8StringAt(Address: Pointer; Advance: Boolean = True): UTF8String;
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_SMLSTR_UTF8,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetSmallWideStringAt(Address: Pointer; Advance: Boolean = True): WideString;
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_SMLSTR_WIDE,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetSmallUnicodeStringAt(Address: Pointer; Advance: Boolean = True): UnicodeString;
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_SMLSTR_UNICODE,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetSmallUCS4StringAt(Address: Pointer; Advance: Boolean = True): UCS4String;
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_SMLSTR_UCS4,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetSmallStringAt(Address: Pointer; Advance: Boolean = True): String;
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_SMLSTR,@Result,Advance);
+end;
 
 //------------------------------------------------------------------------------
 
 Function TMemoryStreamer.GetVariantAt(Address: Pointer; Advance: Boolean = True): Variant;
-{$DEFINE BS_INC_MM}{$DEFINE BS_INC_MM_GET}{$DEFINE BS_INC_MM_VARIANT}{$DEFINE BS_INC_MM_AT_ADDR}
-  {$INCLUDE '.\BinaryStreaming_smm.inc'}
-{$UNDEF BS_INC_MM}{$UNDEF BS_INC_MM_GET}{$UNDEF BS_INC_MM_VARIANT}{$UNDEF BS_INC_MM_AT_ADDR}
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_VARIANT,@Result,Advance);
+end;
 
 
 {===============================================================================
@@ -18931,20 +22608,30 @@ end;
 Function TStreamStreamer.WriteValue(ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize;
 begin
 case ValueType of
-  BS_VALTYPE_NUM_1:       Result := Stream_WriteUInt8(fTarget,UInt8(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_NUM_2:       Result := Stream_WriteUInt16(fTarget,UInt16(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_NUM_4:       Result := Stream_WriteUInt32(fTarget,UInt32(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_NUM_8:       Result := Stream_WriteUInt64(fTarget,UInt64(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_NUM_10:      Result := Stream_WriteFloat80(fTarget,Float80(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_STR_SHORT:   Result := Stream_WriteShortString(fTarget,ShortString(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_STR_ANSI:    Result := Stream_WriteAnsiString(fTarget,AnsiString(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_STR_UTF8:    Result := Stream_WriteUTF8String(fTarget,UTF8String(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_STR_WIDE:    Result := Stream_WriteWideString(fTarget,WideString(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_STR_UNICODE: Result := Stream_WriteUnicodeString(fTarget,UnicodeString(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_STR_UCS4:    Result := Stream_WriteUCS4String(fTarget,UCS4String(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_STR:         Result := Stream_WriteString(fTarget,String(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_FILL:        Result := Stream_FillBytes(fTarget,Size,UInt8(ValuePtr^),Advance,fEndian);
-  BS_VALTYPE_VARIANT:     Result := Stream_WriteVariant(fTarget,Variant(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_BOOL:            Result := Stream_WriteUInt8(fTarget,UInt8(BoolToNum(ByteBool(ValuePtr^))),Advance,fEndian);
+  BS_VALTYPE_BOOLEAN:         Result := Stream_WriteUInt8(fTarget,UInt8(BoolToNum(Boolean(ValuePtr^))),Advance,fEndian);
+  BS_VALTYPE_NUM_1:           Result := Stream_WriteUInt8(fTarget,UInt8(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_NUM_2:           Result := Stream_WriteUInt16(fTarget,UInt16(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_NUM_4:           Result := Stream_WriteUInt32(fTarget,UInt32(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_NUM_8:           Result := Stream_WriteUInt64(fTarget,UInt64(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_NUM_10:          Result := Stream_WriteFloat80(fTarget,Float80(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_CHAR:            Result := Stream_WriteUInt16(fTarget,UInt16(Ord(Char(ValuePtr^))),Advance,fEndian);
+  BS_VALTYPE_STR_SHORT:       Result := Stream_WriteShortString(fTarget,ShortString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_ANSI:        Result := Stream_WriteAnsiString(fTarget,AnsiString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_UTF8:        Result := Stream_WriteUTF8String(fTarget,UTF8String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_WIDE:        Result := Stream_WriteWideString(fTarget,WideString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_UNICODE:     Result := Stream_WriteUnicodeString(fTarget,UnicodeString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR_UCS4:        Result := Stream_WriteUCS4String(fTarget,UCS4String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_STR:             Result := Stream_WriteString(fTarget,String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_SMLSTR_ANSI:     Result := Stream_WriteSmallAnsiString(fTarget,AnsiString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_SMLSTR_UTF8:     Result := Stream_WriteSmallUTF8String(fTarget,UTF8String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_SMLSTR_WIDE:     Result := Stream_WriteSmallWideString(fTarget,WideString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_SMLSTR_UNICODE:  Result := Stream_WriteSmallUnicodeString(fTarget,UnicodeString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_SMLSTR_UCS4:     Result := Stream_WriteSmallUCS4String(fTarget,UCS4String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_SMLSTR:          Result := Stream_WriteSmallString(fTarget,String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_BYTEARRAY:       Result := WriteOpenByteArray(ValuePtr,Size,Advance);
+  BS_VALTYPE_FILL:            Result := Stream_FillBytes(fTarget,Size,UInt8(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_VARIANT:         Result := Stream_WriteVariant(fTarget,Variant(ValuePtr^),Advance,fEndian);
 else
  {BS_VALTYPE_BUFFER}
   Result := Stream_WriteBuffer(fTarget,ValuePtr^,Size,Advance,fEndian);
@@ -18954,23 +22641,44 @@ end;
 //------------------------------------------------------------------------------
 
 Function TStreamStreamer.ReadValue(ValueType: Integer; ValuePtr: Pointer; Advance: Boolean; Size: TMemSize = 0): TMemSize;
+var
+  TempUInt8:  UInt8;
+  TempUInt16: UInt16;
 begin
 case ValueType of
-  BS_VALTYPE_NUM_1:       Result := Stream_ReadUInt8(fTarget,UInt8(ValuePtr^),Advance);
-  BS_VALTYPE_NUM_2:       Result := Stream_ReadUInt16(fTarget,UInt16(ValuePtr^),Advance);
-  BS_VALTYPE_NUM_4:       Result := Stream_ReadUInt32(fTarget,UInt32(ValuePtr^),Advance);
-  BS_VALTYPE_NUM_8:       Result := Stream_ReadUInt64(fTarget,UInt64(ValuePtr^),Advance);
-  BS_VALTYPE_NUM_10:      Result := Stream_ReadFloat80(fTarget,Float80(ValuePtr^),Advance);
-  BS_VALTYPE_STR_SHORT:   Result := Stream_ReadShortString(fTarget,ShortString(ValuePtr^),Advance);
-  BS_VALTYPE_STR_ANSI:    Result := Stream_ReadAnsiString(fTarget,AnsiString(ValuePtr^),Advance);
-  BS_VALTYPE_STR_UTF8:    Result := Stream_ReadUTF8String(fTarget,UTF8String(ValuePtr^),Advance);
-  BS_VALTYPE_STR_WIDE:    Result := Stream_ReadWideString(fTarget,WideString(ValuePtr^),Advance);
-  BS_VALTYPE_STR_UNICODE: Result := Stream_ReadUnicodeString(fTarget,UnicodeString(ValuePtr^),Advance);
-  BS_VALTYPE_STR_UCS4:    Result := Stream_ReadUCS4String(fTarget,UCS4String(ValuePtr^),Advance);
-  BS_VALTYPE_STR:         Result := Stream_ReadString(fTarget,String(ValuePtr^),Advance);
-  BS_VALTYPE_VARIANT:     Result := Stream_ReadVariant(fTarget,Variant(ValuePtr^),Advance);
+  BS_VALTYPE_BOOL:            begin
+                                Result := Stream_ReadUInt8(fTarget,TempUInt8,Advance);
+                                ByteBool(ValuePtr^) := NumToBool(TempUInt8);
+                              end;
+  BS_VALTYPE_BOOLEAN:         begin
+                                Result := Stream_ReadUInt8(fTarget,TempUInt8,Advance);
+                                Boolean(ValuePtr^) := NumToBool(TempUInt8);
+                              end;
+  BS_VALTYPE_NUM_1:           Result := Stream_ReadUInt8(fTarget,UInt8(ValuePtr^),Advance);
+  BS_VALTYPE_NUM_2:           Result := Stream_ReadUInt16(fTarget,UInt16(ValuePtr^),Advance);
+  BS_VALTYPE_NUM_4:           Result := Stream_ReadUInt32(fTarget,UInt32(ValuePtr^),Advance);
+  BS_VALTYPE_NUM_8:           Result := Stream_ReadUInt64(fTarget,UInt64(ValuePtr^),Advance);
+  BS_VALTYPE_NUM_10:          Result := Stream_ReadFloat80(fTarget,Float80(ValuePtr^),Advance);
+  BS_VALTYPE_CHAR:            begin
+                                Result := Stream_ReadUInt16(fTarget,TempUInt16,Advance);
+                                Char(ValuePtr^) := Char(TempUInt16);
+                              end;
+  BS_VALTYPE_STR_SHORT:       Result := Stream_ReadShortString(fTarget,ShortString(ValuePtr^),Advance);
+  BS_VALTYPE_STR_ANSI:        Result := Stream_ReadAnsiString(fTarget,AnsiString(ValuePtr^),Advance);
+  BS_VALTYPE_STR_UTF8:        Result := Stream_ReadUTF8String(fTarget,UTF8String(ValuePtr^),Advance);
+  BS_VALTYPE_STR_WIDE:        Result := Stream_ReadWideString(fTarget,WideString(ValuePtr^),Advance);
+  BS_VALTYPE_STR_UNICODE:     Result := Stream_ReadUnicodeString(fTarget,UnicodeString(ValuePtr^),Advance);
+  BS_VALTYPE_STR_UCS4:        Result := Stream_ReadUCS4String(fTarget,UCS4String(ValuePtr^),Advance);
+  BS_VALTYPE_STR:             Result := Stream_ReadString(fTarget,String(ValuePtr^),Advance);
+  BS_VALTYPE_SMLSTR_ANSI:     Result := Stream_ReadSmallAnsiString(fTarget,AnsiString(ValuePtr^),Advance);
+  BS_VALTYPE_SMLSTR_UTF8:     Result := Stream_ReadSmallUTF8String(fTarget,UTF8String(ValuePtr^),Advance);
+  BS_VALTYPE_SMLSTR_WIDE:     Result := Stream_ReadSmallWideString(fTarget,WideString(ValuePtr^),Advance);
+  BS_VALTYPE_SMLSTR_UNICODE:  Result := Stream_ReadSmallUnicodeString(fTarget,UnicodeString(ValuePtr^),Advance);
+  BS_VALTYPE_SMLSTR_UCS4:     Result := Stream_ReadSmallUCS4String(fTarget,UCS4String(ValuePtr^),Advance);
+  BS_VALTYPE_SMLSTR:          Result := Stream_ReadSmallString(fTarget,String(ValuePtr^),Advance);
+  BS_VALTYPE_VARIANT:         Result := Stream_ReadVariant(fTarget,Variant(ValuePtr^),Advance);
 else
- {BS_VALTYPE_FILL,BS_VALTYPE_BUFFER}
+ {BS_VALTYPE_BUFFER,BS_VALTYPE_BYTEARRAY,BS_VALTYPE_FILL}
   Result := Stream_ReadBuffer(fTarget,ValuePtr^,Size,Advance);
 end;
 end;
@@ -18994,6 +22702,7 @@ inherited Create;
 Initialize(Target);
 end;
 
+
 {<lite-begin>}
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -19003,7 +22712,7 @@ end;
 
 procedure UnitInitialize;
 
-  Function GetBOAStride(const Arr: array of UInt8): Integer;
+  Function GetOBAStride(const Arr: array of UInt8): Integer;
   begin
     If Length(Arr) >= 2 then
     {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
@@ -19014,8 +22723,9 @@ procedure UnitInitialize;
   end;
 
 begin
+OpenByteArrayStride := GetOBAStride([0,0]);
 // following should be always true, but the paranoia needs feeding...
-ByteOpenArrayIsPacked := GetBOAStride([0,0]) = 1;
+OpenByteArrayIsPacked := OpenByteArrayStride = 1;
 end;
 
 //==============================================================================
@@ -19028,5 +22738,4 @@ initialization
   {<lite-end-ln>}
 
 end.
-
 
