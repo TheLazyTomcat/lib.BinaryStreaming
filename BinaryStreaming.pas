@@ -20,7 +20,7 @@
 
       WARNING - the endianness is not stored with the data, it is up to you
                 to use proper loading function for the byte order used during
-                saving.  
+                saving.
 
     Boolean data are written as one byte, where zero represents false and any
     non-zero value represents true.
@@ -30,23 +30,22 @@
 
     All strings are written with explicit length, and without terminating zero
     character. First a length is stored, followed immediately by the character
-    stream.
+    stream. Length is in characters, not bytes or code points.
 
       Short strings are stored with 8bit unsigned integer length.
 
       Other string types (ansi, wide, unicode, ucs4, ...) are by-default stored
       with 32bit signed integer length (note that the length of 0 or lower
       marks an empty string, such length is not followed by any character
-      belonging to that particular string). Length is in characters, not bytes
-      or code points.
+      belonging to that particular string).
 
       If 32bit length means too much storage overhead and you are certain the
       streamed strings will never exceed 32k characters (32767 to be exact),
       then you can use functions storing the strings as "small", ie. with only
       16bit signed length (eg. function Ptr_WriteSmallAnsiString).
       Note that passing string that is too long for this storage scheme into
-      these functions will raise and exception of class EBSStringTooLong (and
-      nothing will be stored).
+      such function will lead to an exception of class EBSStringTooLong to be
+      raised (nothing will be stored).
 
       It is also possible, in more extreme cases, to save strings as "tiny"
       (eg. function Stream_WriteTinyUnicodeString). In this case the string
@@ -108,11 +107,11 @@
     read (does not apply to Get* functions, as they are returning the value
     being read).
 
-  Version 2.0.3 (2024-04-14)
+  Version 2.1 (2025-01-19)
 
-  Last change 2024-04-14
+  Last change 2025-01-19
 
-  ©2015-2024 František Milt
+  ©2015-2025 František Milt
 
   Contacts:
     František Milt: frantisek.milt@gmail.com
@@ -506,7 +505,7 @@ Function Ptr_WriteFloat32(var Dest: Pointer; Value: Float32; Advance: Boolean; E
 Function Ptr_WriteFloat32(Dest: Pointer; Value: Float32; Endian: TEndian = endDefault): TMemSize; overload;
 
 {<lite-begin>}
-{<lite-block-replace-begin _LE "">} 
+{<lite-block-replace-begin _LE "">}
 //------------------------------------------------------------------------------
 
 Function Ptr_WriteFloat64_LE(var Dest: Pointer; Value: Float64; Advance: Boolean): TMemSize; overload;
@@ -707,7 +706,7 @@ Function Ptr_WriteWideString_BE(Dest: Pointer; const Value: WideString): TMemSiz
 
 Function Ptr_WriteWideString(var Dest: Pointer; const Value: WideString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_WriteWideString(Dest: Pointer; const Value: WideString; Endian: TEndian = endDefault): TMemSize; overload;
- 
+
 {<lite-begin>}
 {<lite-block-replace-begin _LE "">}
 //------------------------------------------------------------------------------
@@ -830,6 +829,61 @@ Function Ptr_WriteTinyAnsiString_BE(Dest: Pointer; const Value: AnsiString): TMe
 
 Function Ptr_WriteTinyAnsiString(var Dest: Pointer; const Value: AnsiString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Ptr_WriteTinyAnsiString(Dest: Pointer; const Value: AnsiString; Endian: TEndian = endDefault): TMemSize; overload;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteTinyUTF8String_LE(var Dest: Pointer; const Value: UTF8String; Advance: Boolean): TMemSize; overload;
+Function Ptr_WriteTinyUTF8String_LE(Dest: Pointer; const Value: UTF8String): TMemSize; overload;
+
+Function Ptr_WriteTinyUTF8String_BE(var Dest: Pointer; const Value: UTF8String; Advance: Boolean): TMemSize; overload;
+Function Ptr_WriteTinyUTF8String_BE(Dest: Pointer; const Value: UTF8String): TMemSize; overload;
+
+Function Ptr_WriteTinyUTF8String(var Dest: Pointer; const Value: UTF8String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Ptr_WriteTinyUTF8String(Dest: Pointer; const Value: UTF8String; Endian: TEndian = endDefault): TMemSize; overload;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteTinyWideString_LE(var Dest: Pointer; const Value: WideString; Advance: Boolean): TMemSize; overload;
+Function Ptr_WriteTinyWideString_LE(Dest: Pointer; const Value: WideString): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_WriteTinyWideString_BE(var Dest: Pointer; const Value: WideString; Advance: Boolean): TMemSize; overload;
+Function Ptr_WriteTinyWideString_BE(Dest: Pointer; const Value: WideString): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_WriteTinyWideString(var Dest: Pointer; const Value: WideString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Ptr_WriteTinyWideString(Dest: Pointer; const Value: WideString; Endian: TEndian = endDefault): TMemSize; overload;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteTinyUnicodeString_LE(var Dest: Pointer; const Value: UnicodeString; Advance: Boolean): TMemSize; overload;
+Function Ptr_WriteTinyUnicodeString_LE(Dest: Pointer; const Value: UnicodeString): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_WriteTinyUnicodeString_BE(var Dest: Pointer; const Value: UnicodeString; Advance: Boolean): TMemSize; overload;
+Function Ptr_WriteTinyUnicodeString_BE(Dest: Pointer; const Value: UnicodeString): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_WriteTinyUnicodeString(var Dest: Pointer; const Value: UnicodeString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Ptr_WriteTinyUnicodeString(Dest: Pointer; const Value: UnicodeString; Endian: TEndian = endDefault): TMemSize; overload;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteTinyUCS4String_LE(var Dest: Pointer; const Value: UCS4String; Advance: Boolean): TMemSize; overload;
+Function Ptr_WriteTinyUCS4String_LE(Dest: Pointer; const Value: UCS4String): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_WriteTinyUCS4String_BE(var Dest: Pointer; const Value: UCS4String; Advance: Boolean): TMemSize; overload;
+Function Ptr_WriteTinyUCS4String_BE(Dest: Pointer; const Value: UCS4String): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_WriteTinyUCS4String(var Dest: Pointer; const Value: UCS4String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Ptr_WriteTinyUCS4String(Dest: Pointer; const Value: UCS4String; Endian: TEndian = endDefault): TMemSize; overload;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteTinyString_LE(var Dest: Pointer; const Value: String; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_WriteTinyString_LE(Dest: Pointer; const Value: String): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_WriteTinyString_BE(var Dest: Pointer; const Value: String; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_WriteTinyString_BE(Dest: Pointer; const Value: String): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_WriteTinyString(var Dest: Pointer; const Value: String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_WriteTinyString(Dest: Pointer; const Value: String; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
 {<lite-begin>}
 {<lite-block-replace-begin _LE "">}
@@ -1360,7 +1414,7 @@ Function Ptr_GetUTF8Char_BE(Src: Pointer): UTF8Char; overload;
 
 Function Ptr_GetUTF8Char(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UTF8Char; overload;
 Function Ptr_GetUTF8Char(Src: Pointer; Endian: TEndian = endDefault): UTF8Char; overload;
- 
+
 {<lite-begin>}
 {<lite-block-replace-begin _LE "">}
 //------------------------------------------------------------------------------
@@ -1386,7 +1440,7 @@ Function Ptr_GetWideChar_BE(Src: Pointer): WideChar; overload;{$IFDEF CanInline}
 
 Function Ptr_GetWideChar(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): WideChar; overload;
 Function Ptr_GetWideChar(Src: Pointer; Endian: TEndian = endDefault): WideChar; overload;
- 
+
 {<lite-begin>}
 {<lite-block-replace-begin _LE "">}
 //------------------------------------------------------------------------------
@@ -1412,9 +1466,9 @@ Function Ptr_GetUnicodeChar_BE(Src: Pointer): UnicodeChar; overload;{$IFDEF CanI
 
 Function Ptr_GetUnicodeChar(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UnicodeChar; overload;
 Function Ptr_GetUnicodeChar(Src: Pointer; Endian: TEndian = endDefault): UnicodeChar; overload;
-   
+
 {<lite-begin>}
-{<lite-block-replace-begin _LE "">}   
+{<lite-block-replace-begin _LE "">}
 //------------------------------------------------------------------------------
 
 Function Ptr_ReadUCS4Char_LE(var Src: Pointer; out Value: UCS4Char; Advance: Boolean): TMemSize; overload;
@@ -1438,7 +1492,7 @@ Function Ptr_GetUCS4Char_BE(Src: Pointer): UCS4Char; overload;{$IFDEF CanInline}
 
 Function Ptr_GetUCS4Char(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UCS4Char; overload;
 Function Ptr_GetUCS4Char(Src: Pointer; Endian: TEndian = endDefault): UCS4Char; overload;
-    
+
 {<lite-begin>}
 {<lite-block-replace-begin _LE "">}
 //------------------------------------------------------------------------------
@@ -1495,9 +1549,9 @@ Function Ptr_GetShortString_BE(Src: Pointer): ShortString; overload;
 
 Function Ptr_GetShortString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): ShortString; overload;
 Function Ptr_GetShortString(Src: Pointer; Endian: TEndian = endDefault): ShortString; overload;
-       
+
 {<lite-begin>}
-{<lite-block-replace-begin _LE "">}    
+{<lite-block-replace-begin _LE "">}
 //------------------------------------------------------------------------------
 
 Function Ptr_ReadAnsiString_LE(var Src: Pointer; out Value: AnsiString; Advance: Boolean): TMemSize; overload;
@@ -1625,9 +1679,9 @@ Function Ptr_GetUCS4String_BE(Src: Pointer): UCS4String; overload;{$IFDEF CanInl
 
 Function Ptr_GetUCS4String(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UCS4String; overload;
 Function Ptr_GetUCS4String(Src: Pointer; Endian: TEndian = endDefault): UCS4String; overload;
-      
+
 {<lite-begin>}
-{<lite-block-replace-begin _LE "">}      
+{<lite-block-replace-begin _LE "">}
 //------------------------------------------------------------------------------
 
 Function Ptr_ReadString_LE(var Src: Pointer; out Value: String; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
@@ -1774,6 +1828,128 @@ Function Ptr_GetSmallString_BE(Src: Pointer): String; overload;{$IFDEF CanInline
 Function Ptr_GetSmallString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function Ptr_GetSmallString(Src: Pointer; Endian: TEndian = endDefault): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
+{-------------------------------------------------------------------------------
+    Tiny strings
+-------------------------------------------------------------------------------}
+
+Function Ptr_ReadTinyAnsiString_LE(var Src: Pointer; out Value: AnsiString; Advance: Boolean): TMemSize; overload;
+Function Ptr_ReadTinyAnsiString_LE(Src: Pointer; out Value: AnsiString): TMemSize; overload;
+
+Function Ptr_ReadTinyAnsiString_BE(var Src: Pointer; out Value: AnsiString; Advance: Boolean): TMemSize; overload;
+Function Ptr_ReadTinyAnsiString_BE(Src: Pointer; out Value: AnsiString): TMemSize; overload;
+
+Function Ptr_ReadTinyAnsiString(var Src: Pointer; out Value: AnsiString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Ptr_ReadTinyAnsiString(Src: Pointer; out Value: AnsiString; Endian: TEndian = endDefault): TMemSize; overload;
+
+Function Ptr_GetTinyAnsiString_LE(var Src: Pointer; Advance: Boolean): AnsiString; overload;
+Function Ptr_GetTinyAnsiString_LE(Src: Pointer): AnsiString; overload;
+
+Function Ptr_GetTinyAnsiString_BE(var Src: Pointer; Advance: Boolean): AnsiString; overload;
+Function Ptr_GetTinyAnsiString_BE(Src: Pointer): AnsiString; overload;
+
+Function Ptr_GetTinyAnsiString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): AnsiString; overload;
+Function Ptr_GetTinyAnsiString(Src: Pointer; Endian: TEndian = endDefault): AnsiString; overload;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadTinyUTF8String_LE(var Src: Pointer; out Value: UTF8String; Advance: Boolean): TMemSize; overload;
+Function Ptr_ReadTinyUTF8String_LE(Src: Pointer; out Value: UTF8String): TMemSize; overload;
+
+Function Ptr_ReadTinyUTF8String_BE(var Src: Pointer; out Value: UTF8String; Advance: Boolean): TMemSize; overload;
+Function Ptr_ReadTinyUTF8String_BE(Src: Pointer; out Value: UTF8String): TMemSize; overload;
+
+Function Ptr_ReadTinyUTF8String(var Src: Pointer; out Value: UTF8String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Ptr_ReadTinyUTF8String(Src: Pointer; out Value: UTF8String; Endian: TEndian = endDefault): TMemSize; overload;
+
+Function Ptr_GetTinyUTF8String_LE(var Src: Pointer; Advance: Boolean): UTF8String; overload;
+Function Ptr_GetTinyUTF8String_LE(Src: Pointer): UTF8String; overload;
+
+Function Ptr_GetTinyUTF8String_BE(var Src: Pointer; Advance: Boolean): UTF8String; overload;
+Function Ptr_GetTinyUTF8String_BE(Src: Pointer): UTF8String; overload;
+
+Function Ptr_GetTinyUTF8String(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UTF8String; overload;
+Function Ptr_GetTinyUTF8String(Src: Pointer; Endian: TEndian = endDefault): UTF8String; overload;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadTinyWideString_LE(var Src: Pointer; out Value: WideString; Advance: Boolean): TMemSize; overload;
+Function Ptr_ReadTinyWideString_LE(Src: Pointer; out Value: WideString): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_ReadTinyWideString_BE(var Src: Pointer; out Value: WideString; Advance: Boolean): TMemSize; overload;
+Function Ptr_ReadTinyWideString_BE(Src: Pointer; out Value: WideString): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_ReadTinyWideString(var Src: Pointer; out Value: WideString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Ptr_ReadTinyWideString(Src: Pointer; out Value: WideString; Endian: TEndian = endDefault): TMemSize; overload;
+
+Function Ptr_GetTinyWideString_LE(var Src: Pointer; Advance: Boolean): WideString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetTinyWideString_LE(Src: Pointer): WideString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_GetTinyWideString_BE(var Src: Pointer; Advance: Boolean): WideString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetTinyWideString_BE(Src: Pointer): WideString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_GetTinyWideString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): WideString; overload;
+Function Ptr_GetTinyWideString(Src: Pointer; Endian: TEndian = endDefault): WideString; overload;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadTinyUnicodeString_LE(var Src: Pointer; out Value: UnicodeString; Advance: Boolean): TMemSize; overload;
+Function Ptr_ReadTinyUnicodeString_LE(Src: Pointer; out Value: UnicodeString): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_ReadTinyUnicodeString_BE(var Src: Pointer; out Value: UnicodeString; Advance: Boolean): TMemSize; overload;
+Function Ptr_ReadTinyUnicodeString_BE(Src: Pointer; out Value: UnicodeString): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_ReadTinyUnicodeString(var Src: Pointer; out Value: UnicodeString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Ptr_ReadTinyUnicodeString(Src: Pointer; out Value: UnicodeString; Endian: TEndian = endDefault): TMemSize; overload;
+
+Function Ptr_GetTinyUnicodeString_LE(var Src: Pointer; Advance: Boolean): UnicodeString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetTinyUnicodeString_LE(Src: Pointer): UnicodeString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_GetTinyUnicodeString_BE(var Src: Pointer; Advance: Boolean): UnicodeString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetTinyUnicodeString_BE(Src: Pointer): UnicodeString; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_GetTinyUnicodeString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UnicodeString; overload;
+Function Ptr_GetTinyUnicodeString(Src: Pointer; Endian: TEndian = endDefault): UnicodeString; overload;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadTinyUCS4String_LE(var Src: Pointer; out Value: UCS4String; Advance: Boolean): TMemSize; overload;
+Function Ptr_ReadTinyUCS4String_LE(Src: Pointer; out Value: UCS4String): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_ReadTinyUCS4String_BE(var Src: Pointer; out Value: UCS4String; Advance: Boolean): TMemSize; overload;
+Function Ptr_ReadTinyUCS4String_BE(Src: Pointer; out Value: UCS4String): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_ReadTinyUCS4String(var Src: Pointer; out Value: UCS4String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Ptr_ReadTinyUCS4String(Src: Pointer; out Value: UCS4String; Endian: TEndian = endDefault): TMemSize; overload;
+
+Function Ptr_GetTinyUCS4String_LE(var Src: Pointer; Advance: Boolean): UCS4String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetTinyUCS4String_LE(Src: Pointer): UCS4String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_GetTinyUCS4String_BE(var Src: Pointer; Advance: Boolean): UCS4String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetTinyUCS4String_BE(Src: Pointer): UCS4String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_GetTinyUCS4String(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UCS4String; overload;
+Function Ptr_GetTinyUCS4String(Src: Pointer; Endian: TEndian = endDefault): UCS4String; overload;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadTinyString_LE(var Src: Pointer; out Value: String; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_ReadTinyString_LE(Src: Pointer; out Value: String): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_ReadTinyString_BE(var Src: Pointer; out Value: String; Advance: Boolean): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_ReadTinyString_BE(Src: Pointer; out Value: String): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_ReadTinyString(var Src: Pointer; out Value: String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_ReadTinyString(Src: Pointer; out Value: String; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_GetTinyString_LE(var Src: Pointer; Advance: Boolean): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetTinyString_LE(Src: Pointer): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_GetTinyString_BE(var Src: Pointer; Advance: Boolean): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetTinyString_BE(Src: Pointer): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Ptr_GetTinyString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Ptr_GetTinyString(Src: Pointer; Endian: TEndian = endDefault): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 {<lite-begin>}
 {<lite-block-replace-begin _LE "">}
 {-------------------------------------------------------------------------------
@@ -1830,8 +2006,8 @@ Function Stream_WriteBool_BE(Stream: TStream; Value: ByteBool; Advance: Boolean 
 
 Function Stream_WriteBool(Stream: TStream; Value: ByteBool; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
 Function Stream_WriteBool(Stream: TStream; Value: ByteBool; Endian: TEndian = endDefault): TMemSize; overload;
-            
-{<lite-begin>}                
+
+{<lite-begin>}
 //------------------------------------------------------------------------------
 
 {<lite-replace _LE "">}
@@ -1843,7 +2019,7 @@ Function Stream_WriteBoolean_BE(Stream: TStream; Value: Boolean; Advance: Boolea
 Function Stream_WriteBoolean(Stream: TStream; Value: Boolean; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function Stream_WriteBoolean(Stream: TStream; Value: Boolean; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
-{<lite-begin>} 
+{<lite-begin>}
 {-------------------------------------------------------------------------------
     Integers
 -------------------------------------------------------------------------------}
@@ -1883,7 +2059,7 @@ Function Stream_WriteInt16(Stream: TStream; Value: Int16; Endian: TEndian = endD
 
 {<lite-begin>}
 //------------------------------------------------------------------------------
- 
+
 {<lite-replace _LE "">}
 Function Stream_WriteUInt16_LE(Stream: TStream; Value: UInt16; Advance: Boolean = True): TMemSize;
 {<lite-end-ln>}
@@ -1969,7 +2145,7 @@ Function Stream_WriteFloat64(Stream: TStream; Value: Float64; Endian: TEndian = 
 
 {<lite-begin>}
 //------------------------------------------------------------------------------
- 
+
 {<lite-replace _LE "">}
 Function Stream_WriteFloat80_LE(Stream: TStream; Value: Float80; Advance: Boolean = True): TMemSize;
 {<lite-end-ln>}
@@ -2218,6 +2394,62 @@ Function Stream_WriteSmallString_BE(Stream: TStream; const Value: String; Advanc
 
 Function Stream_WriteSmallString(Stream: TStream; const Value: String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function Stream_WriteSmallString(Stream: TStream; const Value: String; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+{-------------------------------------------------------------------------------
+    Tiny strings
+-------------------------------------------------------------------------------}
+
+Function Stream_WriteTinyAnsiString_LE(Stream: TStream; const Value: AnsiString; Advance: Boolean = True): TMemSize;
+
+Function Stream_WriteTinyAnsiString_BE(Stream: TStream; const Value: AnsiString; Advance: Boolean = True): TMemSize;
+
+Function Stream_WriteTinyAnsiString(Stream: TStream; const Value: AnsiString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Stream_WriteTinyAnsiString(Stream: TStream; const Value: AnsiString; Endian: TEndian = endDefault): TMemSize; overload;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteTinyUTF8String_LE(Stream: TStream; const Value: UTF8String; Advance: Boolean = True): TMemSize;
+
+Function Stream_WriteTinyUTF8String_BE(Stream: TStream; const Value: UTF8String; Advance: Boolean = True): TMemSize;
+
+Function Stream_WriteTinyUTF8String(Stream: TStream; const Value: UTF8String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Stream_WriteTinyUTF8String(Stream: TStream; const Value: UTF8String; Endian: TEndian = endDefault): TMemSize; overload;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteTinyWideString_LE(Stream: TStream; const Value: WideString; Advance: Boolean = True): TMemSize;
+
+Function Stream_WriteTinyWideString_BE(Stream: TStream; const Value: WideString; Advance: Boolean = True): TMemSize;
+
+Function Stream_WriteTinyWideString(Stream: TStream; const Value: WideString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Stream_WriteTinyWideString(Stream: TStream; const Value: WideString; Endian: TEndian = endDefault): TMemSize; overload;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteTinyUnicodeString_LE(Stream: TStream; const Value: UnicodeString; Advance: Boolean = True): TMemSize;
+
+Function Stream_WriteTinyUnicodeString_BE(Stream: TStream; const Value: UnicodeString; Advance: Boolean = True): TMemSize;
+
+Function Stream_WriteTinyUnicodeString(Stream: TStream; const Value: UnicodeString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Stream_WriteTinyUnicodeString(Stream: TStream; const Value: UnicodeString; Endian: TEndian = endDefault): TMemSize; overload;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteTinyUCS4String_LE(Stream: TStream; const Value: UCS4String; Advance: Boolean = True): TMemSize;
+
+Function Stream_WriteTinyUCS4String_BE(Stream: TStream; const Value: UCS4String; Advance: Boolean = True): TMemSize;
+
+Function Stream_WriteTinyUCS4String(Stream: TStream; const Value: UCS4String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Stream_WriteTinyUCS4String(Stream: TStream; const Value: UCS4String; Endian: TEndian = endDefault): TMemSize; overload;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteTinyString_LE(Stream: TStream; const Value: String; Advance: Boolean = True): TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_WriteTinyString_BE(Stream: TStream; const Value: String; Advance: Boolean = True): TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_WriteTinyString(Stream: TStream; const Value: String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Stream_WriteTinyString(Stream: TStream; const Value: String; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
 {<lite-begin>}
 {-------------------------------------------------------------------------------
@@ -3004,6 +3236,104 @@ Function Stream_GetSmallString_BE(Stream: TStream; Advance: Boolean = True): Str
 Function Stream_GetSmallString(Stream: TStream; Advance: Boolean; Endian: TEndian = endDefault): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function Stream_GetSmallString(Stream: TStream; Endian: TEndian = endDefault): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
+{-------------------------------------------------------------------------------
+    Tiny strings
+-------------------------------------------------------------------------------}
+
+Function Stream_ReadTinyAnsiString_LE(Stream: TStream; out Value: AnsiString; Advance: Boolean = True): TMemSize;
+
+Function Stream_ReadTinyAnsiString_BE(Stream: TStream; out Value: AnsiString; Advance: Boolean = True): TMemSize;
+
+Function Stream_ReadTinyAnsiString(Stream: TStream; out Value: AnsiString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Stream_ReadTinyAnsiString(Stream: TStream; out Value: AnsiString; Endian: TEndian = endDefault): TMemSize; overload;
+
+Function Stream_GetTinyAnsiString_LE(Stream: TStream; Advance: Boolean = True): AnsiString;
+
+Function Stream_GetTinyAnsiString_BE(Stream: TStream; Advance: Boolean = True): AnsiString;
+
+Function Stream_GetTinyAnsiString(Stream: TStream; Advance: Boolean; Endian: TEndian = endDefault): AnsiString; overload;
+Function Stream_GetTinyAnsiString(Stream: TStream; Endian: TEndian = endDefault): AnsiString; overload;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadTinyUTF8String_LE(Stream: TStream; out Value: UTF8String; Advance: Boolean = True): TMemSize;
+
+Function Stream_ReadTinyUTF8String_BE(Stream: TStream; out Value: UTF8String; Advance: Boolean = True): TMemSize;
+
+Function Stream_ReadTinyUTF8String(Stream: TStream; out Value: UTF8String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Stream_ReadTinyUTF8String(Stream: TStream; out Value: UTF8String; Endian: TEndian = endDefault): TMemSize; overload;
+
+Function Stream_GetTinyUTF8String_LE(Stream: TStream; Advance: Boolean = True): UTF8String;
+
+Function Stream_GetTinyUTF8String_BE(Stream: TStream; Advance: Boolean = True): UTF8String;
+
+Function Stream_GetTinyUTF8String(Stream: TStream; Advance: Boolean; Endian: TEndian = endDefault): UTF8String; overload;
+Function Stream_GetTinyUTF8String(Stream: TStream; Endian: TEndian = endDefault): UTF8String; overload;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadTinyWideString_LE(Stream: TStream; out Value: WideString; Advance: Boolean = True): TMemSize;
+
+Function Stream_ReadTinyWideString_BE(Stream: TStream; out Value: WideString; Advance: Boolean = True): TMemSize;
+
+Function Stream_ReadTinyWideString(Stream: TStream; out Value: WideString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Stream_ReadTinyWideString(Stream: TStream; out Value: WideString; Endian: TEndian = endDefault): TMemSize; overload;
+
+Function Stream_GetTinyWideString_LE(Stream: TStream; Advance: Boolean = True): WideString;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_GetTinyWideString_BE(Stream: TStream; Advance: Boolean = True): WideString;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_GetTinyWideString(Stream: TStream; Advance: Boolean; Endian: TEndian = endDefault): WideString; overload;
+Function Stream_GetTinyWideString(Stream: TStream; Endian: TEndian = endDefault): WideString; overload;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadTinyUnicodeString_LE(Stream: TStream; out Value: UnicodeString; Advance: Boolean = True): TMemSize;
+
+Function Stream_ReadTinyUnicodeString_BE(Stream: TStream; out Value: UnicodeString; Advance: Boolean = True): TMemSize;
+
+Function Stream_ReadTinyUnicodeString(Stream: TStream; out Value: UnicodeString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Stream_ReadTinyUnicodeString(Stream: TStream; out Value: UnicodeString; Endian: TEndian = endDefault): TMemSize; overload;
+
+Function Stream_GetTinyUnicodeString_LE(Stream: TStream; Advance: Boolean = True): UnicodeString;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_GetTinyUnicodeString_BE(Stream: TStream; Advance: Boolean = True): UnicodeString;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_GetTinyUnicodeString(Stream: TStream; Advance: Boolean; Endian: TEndian = endDefault): UnicodeString; overload;
+Function Stream_GetTinyUnicodeString(Stream: TStream; Endian: TEndian = endDefault): UnicodeString; overload;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadTinyUCS4String_LE(Stream: TStream; out Value: UCS4String; Advance: Boolean = True): TMemSize;
+
+Function Stream_ReadTinyUCS4String_BE(Stream: TStream; out Value: UCS4String; Advance: Boolean = True): TMemSize;
+
+Function Stream_ReadTinyUCS4String(Stream: TStream; out Value: UCS4String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;
+Function Stream_ReadTinyUCS4String(Stream: TStream; out Value: UCS4String; Endian: TEndian = endDefault): TMemSize; overload;
+
+Function Stream_GetTinyUCS4String_LE(Stream: TStream; Advance: Boolean = True): UCS4String;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_GetTinyUCS4String_BE(Stream: TStream; Advance: Boolean = True): UCS4String;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_GetTinyUCS4String(Stream: TStream; Advance: Boolean; Endian: TEndian = endDefault): UCS4String; overload;
+Function Stream_GetTinyUCS4String(Stream: TStream; Endian: TEndian = endDefault): UCS4String; overload;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadTinyString_LE(Stream: TStream; out Value: String; Advance: Boolean = True): TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_ReadTinyString_BE(Stream: TStream; out Value: String; Advance: Boolean = True): TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_ReadTinyString(Stream: TStream; out Value: String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Stream_ReadTinyString(Stream: TStream; out Value: String; Endian: TEndian = endDefault): TMemSize; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_GetTinyString_LE(Stream: TStream; Advance: Boolean = True): String;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_GetTinyString_BE(Stream: TStream; Advance: Boolean = True): String;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function Stream_GetTinyString(Stream: TStream; Advance: Boolean; Endian: TEndian = endDefault): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function Stream_GetTinyString(Stream: TStream; Endian: TEndian = endDefault): String; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 {<lite-begin>}
 {-------------------------------------------------------------------------------
     General data buffers
@@ -3157,6 +3487,12 @@ type
     Function WriteSmallUnicodeString(const Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
     Function WriteSmallUCS4String(const Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
     Function WriteSmallString(const Value: String; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteTinyAnsiString(const Value: AnsiString; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteTinyUTF8String(const Value: UTF8String; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteTinyWideString(const Value: WideString; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteTinyUnicodeString(const Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteTinyUCS4String(const Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteTinyString(const Value: String; Advance: Boolean = True): TMemSize; virtual;
     Function WriteBuffer(const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; virtual;
     Function WriteBytes(const Value: array of UInt8; Advance: Boolean = True): TMemSize; virtual;
     Function FillBytes(Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize; virtual;
@@ -3195,7 +3531,13 @@ type
     Function WriteSmallWideStringAt(Position: Int64; const Value: WideString; Advance: Boolean = True): TMemSize; overload; virtual;
     Function WriteSmallUnicodeStringAt(Position: Int64; const Value: UnicodeString; Advance: Boolean = True): TMemSize; overload; virtual;
     Function WriteSmallUCS4StringAt(Position: Int64; const Value: UCS4String; Advance: Boolean = True): TMemSize; overload; virtual;
-    Function WriteSmallStringAt(Position: Int64; const Value: String; Advance: Boolean = True): TMemSize; overload; virtual;  
+    Function WriteSmallStringAt(Position: Int64; const Value: String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteTinyAnsiStringAt(Position: Int64; const Value: AnsiString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteTinyUTF8StringAt(Position: Int64; const Value: UTF8String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteTinyWideStringAt(Position: Int64; const Value: WideString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteTinyUnicodeStringAt(Position: Int64; const Value: UnicodeString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteTinyUCS4StringAt(Position: Int64; const Value: UCS4String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteTinyStringAt(Position: Int64; const Value: String; Advance: Boolean = True): TMemSize; overload; virtual;
     Function WriteBufferAt(Position: Int64; const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; overload; virtual;
     Function WriteBytesAt(Position: Int64; const Value: array of UInt8; Advance: Boolean = True): TMemSize; overload; virtual;
     Function FillBytesAt(Position: Int64; Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize; overload; virtual;
@@ -3235,6 +3577,12 @@ type
     Function WriteSmallUnicodeStringAtOffset(Offset: Int64; const Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
     Function WriteSmallUCS4StringAtOffset(Offset: Int64; const Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
     Function WriteSmallStringAtOffset(Offset: Int64; const Value: String; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteTinyAnsiStringAtOffset(Offset: Int64; const Value: AnsiString; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteTinyUTF8StringAtOffset(Offset: Int64; const Value: UTF8String; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteTinyWideStringAtOffset(Offset: Int64; const Value: WideString; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteTinyUnicodeStringAtOffset(Offset: Int64; const Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteTinyUCS4StringAtOffset(Offset: Int64; const Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteTinyStringAtOffset(Offset: Int64; const Value: String; Advance: Boolean = True): TMemSize; virtual;
     Function WriteBufferAtOffset(Offset: Int64; const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; virtual;
     Function WriteBytesAtOffset(Offset: Int64; const Value: array of UInt8; Advance: Boolean = True): TMemSize; virtual;
     Function FillBytesAtOffset(Offset: Int64; Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize; virtual;
@@ -3274,6 +3622,12 @@ type
     Function WriteSmallUnicodeStringTo(ID: TBSBookmarkID; const Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
     Function WriteSmallUCS4StringTo(ID: TBSBookmarkID; const Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
     Function WriteSmallStringTo(ID: TBSBookmarkID; const Value: String; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteTinyAnsiStringTo(ID: TBSBookmarkID; const Value: AnsiString; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteTinyUTF8StringTo(ID: TBSBookmarkID; const Value: UTF8String; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteTinyWideStringTo(ID: TBSBookmarkID; const Value: WideString; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteTinyUnicodeStringTo(ID: TBSBookmarkID; const Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteTinyUCS4StringTo(ID: TBSBookmarkID; const Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteTinyStringTo(ID: TBSBookmarkID; const Value: String; Advance: Boolean = True): TMemSize; virtual;
     Function WriteBufferTo(ID: TBSBookmarkID; const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; virtual;
     Function WriteBytesTo(ID: TBSBookmarkID; const Value: array of UInt8; Advance: Boolean = True): TMemSize; virtual;
     Function FillBytesTo(ID: TBSBookmarkID; Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize; virtual;
@@ -3313,6 +3667,12 @@ type
     Function WriteSmallUnicodeStringToIndex(Index: Integer; const Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
     Function WriteSmallUCS4StringToIndex(Index: Integer; const Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
     Function WriteSmallStringToIndex(Index: Integer; const Value: String; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteTinyAnsiStringToIndex(Index: Integer; const Value: AnsiString; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteTinyUTF8StringToIndex(Index: Integer; const Value: UTF8String; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteTinyWideStringToIndex(Index: Integer; const Value: WideString; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteTinyUnicodeStringToIndex(Index: Integer; const Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteTinyUCS4StringToIndex(Index: Integer; const Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
+    Function WriteTinyStringToIndex(Index: Integer; const Value: String; Advance: Boolean = True): TMemSize; virtual;
     Function WriteBufferToIndex(Index: Integer; const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; virtual;
     Function WriteBytesToIndex(Index: Integer; const Value: array of UInt8; Advance: Boolean = True): TMemSize; virtual;
     Function FillBytesToIndex(Index: Integer; Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize; virtual;
@@ -3352,6 +3712,12 @@ type
     Function ReadSmallUnicodeString(out Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
     Function ReadSmallUCS4String(out Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
     Function ReadSmallString(out Value: String; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadTinyAnsiString(out Value: AnsiString; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadTinyUTF8String(out Value: UTF8String; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadTinyWideString(out Value: WideString; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadTinyUnicodeString(out Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadTinyUCS4String(out Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadTinyString(out Value: String; Advance: Boolean = True): TMemSize; virtual;
     Function ReadBuffer(out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; virtual;
     Function ReadVariant(out Value: Variant; Advance: Boolean = True): TMemSize; virtual;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -3389,6 +3755,12 @@ type
     Function ReadSmallUnicodeStringAt(Position: Int64; out Value: UnicodeString; Advance: Boolean = True): TMemSize; overload; virtual;
     Function ReadSmallUCS4StringAt(Position: Int64; out Value: UCS4String; Advance: Boolean = True): TMemSize; overload; virtual;
     Function ReadSmallStringAt(Position: Int64; out Value: String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadTinyAnsiStringAt(Position: Int64; out Value: AnsiString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadTinyUTF8StringAt(Position: Int64; out Value: UTF8String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadTinyWideStringAt(Position: Int64; out Value: WideString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadTinyUnicodeStringAt(Position: Int64; out Value: UnicodeString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadTinyUCS4StringAt(Position: Int64; out Value: UCS4String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadTinyStringAt(Position: Int64; out Value: String; Advance: Boolean = True): TMemSize; overload; virtual;
     Function ReadBufferAt(Position: Int64; out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; overload; virtual;
     Function ReadVariantAt(Position: Int64; out Value: Variant; Advance: Boolean = True): TMemSize; overload; virtual;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -3426,6 +3798,12 @@ type
     Function ReadSmallUnicodeStringAtOffset(Offset: Int64; out Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
     Function ReadSmallUCS4StringAtOffset(Offset: Int64; out Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
     Function ReadSmallStringAtOffset(Offset: Int64; out Value: String; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadTinyAnsiStringAtOffset(Offset: Int64; out Value: AnsiString; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadTinyUTF8StringAtOffset(Offset: Int64; out Value: UTF8String; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadTinyWideStringAtOffset(Offset: Int64; out Value: WideString; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadTinyUnicodeStringAtOffset(Offset: Int64; out Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadTinyUCS4StringAtOffset(Offset: Int64; out Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadTinyStringAtOffset(Offset: Int64; out Value: String; Advance: Boolean = True): TMemSize; virtual;
     Function ReadBufferAtOffset(Offset: Int64; out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; virtual;
     Function ReadVariantAtOffset(Offset: Int64; out Value: Variant; Advance: Boolean = True): TMemSize; virtual;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -3463,6 +3841,12 @@ type
     Function ReadSmallUnicodeStringFrom(ID: TBSBookmarkID; out Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
     Function ReadSmallUCS4StringFrom(ID: TBSBookmarkID; out Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
     Function ReadSmallStringFrom(ID: TBSBookmarkID; out Value: String; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadTinyAnsiStringFrom(ID: TBSBookmarkID; out Value: AnsiString; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadTinyUTF8StringFrom(ID: TBSBookmarkID; out Value: UTF8String; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadTinyWideStringFrom(ID: TBSBookmarkID; out Value: WideString; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadTinyUnicodeStringFrom(ID: TBSBookmarkID; out Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadTinyUCS4StringFrom(ID: TBSBookmarkID; out Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadTinyStringFrom(ID: TBSBookmarkID; out Value: String; Advance: Boolean = True): TMemSize; virtual;
     Function ReadBufferFrom(ID: TBSBookmarkID; out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; virtual;
     Function ReadVariantFrom(ID: TBSBookmarkID; out Value: Variant; Advance: Boolean = True): TMemSize; virtual;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -3500,6 +3884,12 @@ type
     Function ReadSmallUnicodeStringFromIndex(Index: Integer; out Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
     Function ReadSmallUCS4StringFromIndex(Index: Integer; out Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
     Function ReadSmallStringFromIndex(Index: Integer; out Value: String; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadTinyAnsiStringFromIndex(Index: Integer; out Value: AnsiString; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadTinyUTF8StringFromIndex(Index: Integer; out Value: UTF8String; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadTinyWideStringFromIndex(Index: Integer; out Value: WideString; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadTinyUnicodeStringFromIndex(Index: Integer; out Value: UnicodeString; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadTinyUCS4StringFromIndex(Index: Integer; out Value: UCS4String; Advance: Boolean = True): TMemSize; virtual;
+    Function ReadTinyStringFromIndex(Index: Integer; out Value: String; Advance: Boolean = True): TMemSize; virtual;
     Function ReadBufferFromIndex(Index: Integer; out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; virtual;
     Function ReadVariantFromIndex(Index: Integer; out Value: Variant; Advance: Boolean = True): TMemSize; virtual;
     // reading into result
@@ -3537,6 +3927,12 @@ type
     Function GetSmallUnicodeString(Advance: Boolean = True): UnicodeString; virtual;
     Function GetSmallUCS4String(Advance: Boolean = True): UCS4String; virtual;
     Function GetSmallString(Advance: Boolean = True): String; virtual;
+    Function GetTinyAnsiString(Advance: Boolean = True): AnsiString; virtual;
+    Function GetTinyUTF8String(Advance: Boolean = True): UTF8String; virtual;
+    Function GetTinyWideString(Advance: Boolean = True): WideString; virtual;
+    Function GetTinyUnicodeString(Advance: Boolean = True): UnicodeString; virtual;
+    Function GetTinyUCS4String(Advance: Boolean = True): UCS4String; virtual;
+    Function GetTinyString(Advance: Boolean = True): String; virtual;
     Function GetVariant(Advance: Boolean = True): Variant; virtual;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     Function GetBoolAt(Position: Int64; Advance: Boolean = True): ByteBool; overload; virtual;
@@ -3573,6 +3969,12 @@ type
     Function GetSmallUnicodeStringAt(Position: Int64; Advance: Boolean = True): UnicodeString; overload; virtual;
     Function GetSmallUCS4StringAt(Position: Int64; Advance: Boolean = True): UCS4String; overload; virtual;
     Function GetSmallStringAt(Position: Int64; Advance: Boolean = True): String; overload; virtual;
+    Function GetTinyAnsiStringAt(Position: Int64; Advance: Boolean = True): AnsiString; overload; virtual;
+    Function GetTinyUTF8StringAt(Position: Int64; Advance: Boolean = True): UTF8String; overload; virtual;
+    Function GetTinyWideStringAt(Position: Int64; Advance: Boolean = True): WideString; overload; virtual;
+    Function GetTinyUnicodeStringAt(Position: Int64; Advance: Boolean = True): UnicodeString; overload; virtual;
+    Function GetTinyUCS4StringAt(Position: Int64; Advance: Boolean = True): UCS4String; overload; virtual;
+    Function GetTinyStringAt(Position: Int64; Advance: Boolean = True): String; overload; virtual;
     Function GetVariantAt(Position: Int64; Advance: Boolean = True): Variant; overload; virtual;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     Function GetBoolAtOffset(Offset: Int64; Advance: Boolean = True): ByteBool; virtual;
@@ -3609,6 +4011,12 @@ type
     Function GetSmallUnicodeStringAtOffset(Offset: Int64; Advance: Boolean = True): UnicodeString; virtual;
     Function GetSmallUCS4StringAtOffset(Offset: Int64; Advance: Boolean = True): UCS4String; virtual;
     Function GetSmallStringAtOffset(Offset: Int64; Advance: Boolean = True): String; virtual;
+    Function GetTinyAnsiStringAtOffset(Offset: Int64; Advance: Boolean = True): AnsiString; virtual;
+    Function GetTinyUTF8StringAtOffset(Offset: Int64; Advance: Boolean = True): UTF8String; virtual;
+    Function GetTinyWideStringAtOffset(Offset: Int64; Advance: Boolean = True): WideString; virtual;
+    Function GetTinyUnicodeStringAtOffset(Offset: Int64; Advance: Boolean = True): UnicodeString; virtual;
+    Function GetTinyUCS4StringAtOffset(Offset: Int64; Advance: Boolean = True): UCS4String; virtual;
+    Function GetTinyStringAtOffset(Offset: Int64; Advance: Boolean = True): String; virtual;
     Function GetVariantAtOffset(Offset: Int64; Advance: Boolean = True): Variant; virtual;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     Function GetBoolFrom(ID: TBSBookmarkID; Advance: Boolean = True): ByteBool; virtual;
@@ -3645,6 +4053,12 @@ type
     Function GetSmallUnicodeStringFrom(ID: TBSBookmarkID; Advance: Boolean = True): UnicodeString; virtual;
     Function GetSmallUCS4StringFrom(ID: TBSBookmarkID; Advance: Boolean = True): UCS4String; virtual;
     Function GetSmallStringFrom(ID: TBSBookmarkID; Advance: Boolean = True): String; virtual;
+    Function GetTinyAnsiStringFrom(ID: TBSBookmarkID; Advance: Boolean = True): AnsiString; virtual;
+    Function GetTinyUTF8StringFrom(ID: TBSBookmarkID; Advance: Boolean = True): UTF8String; virtual;
+    Function GetTinyWideStringFrom(ID: TBSBookmarkID; Advance: Boolean = True): WideString; virtual;
+    Function GetTinyUnicodeStringFrom(ID: TBSBookmarkID; Advance: Boolean = True): UnicodeString; virtual;
+    Function GetTinyUCS4StringFrom(ID: TBSBookmarkID; Advance: Boolean = True): UCS4String; virtual;
+    Function GetTinyStringFrom(ID: TBSBookmarkID; Advance: Boolean = True): String; virtual;
     Function GetVariantFrom(ID: TBSBookmarkID; Advance: Boolean = True): Variant; virtual;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     Function GetBoolFromIndex(Index: Integer; Advance: Boolean = True): ByteBool; virtual;
@@ -3681,6 +4095,12 @@ type
     Function GetSmallUnicodeStringFromIndex(Index: Integer; Advance: Boolean = True): UnicodeString; virtual;
     Function GetSmallUCS4StringFromIndex(Index: Integer; Advance: Boolean = True): UCS4String; virtual;
     Function GetSmallStringFromIndex(Index: Integer; Advance: Boolean = True): String; virtual;
+    Function GetTinyAnsiStringFromIndex(Index: Integer; Advance: Boolean = True): AnsiString; virtual;
+    Function GetTinyUTF8StringFromIndex(Index: Integer; Advance: Boolean = True): UTF8String; virtual;
+    Function GetTinyWideStringFromIndex(Index: Integer; Advance: Boolean = True): WideString; virtual;
+    Function GetTinyUnicodeStringFromIndex(Index: Integer; Advance: Boolean = True): UnicodeString; virtual;
+    Function GetTinyUCS4StringFromIndex(Index: Integer; Advance: Boolean = True): UCS4String; virtual;
+    Function GetTinyStringFromIndex(Index: Integer; Advance: Boolean = True): String; virtual;
     Function GetVariantFromIndex(Index: Integer; Advance: Boolean = True): Variant; virtual;
     // properties
     property Endian: TEndian read fEndian write fEndian;
@@ -3692,7 +4112,7 @@ type
     property BookmarkCount: Integer read GetCount;
     property OnChange: TNotifyEvent read fOnChangeEvent write fOnChangeEvent;
     property OnChangeEvent: TNotifyEvent read fOnChangeEvent write fOnChangeEvent;
-    property OnChangeCallback: TNotifyCallback read fOnChangeCallback write fOnChangeCallback;    
+    property OnChangeCallback: TNotifyCallback read fOnChangeCallback write fOnChangeCallback;
   end;
 
 
@@ -3753,13 +4173,19 @@ type
     Function WriteWideStringAt(Address: Pointer; const Value: WideString; Advance: Boolean = True): TMemSize; overload; virtual;
     Function WriteUnicodeStringAt(Address: Pointer; const Value: UnicodeString; Advance: Boolean = True): TMemSize; overload; virtual;
     Function WriteUCS4StringAt(Address: Pointer; const Value: UCS4String; Advance: Boolean = True): TMemSize; overload; virtual;
-    Function WriteStringAt(Address: Pointer; const Value: String; Advance: Boolean = True): TMemSize; overload; virtual; 
+    Function WriteStringAt(Address: Pointer; const Value: String; Advance: Boolean = True): TMemSize; overload; virtual;
     Function WriteSmallAnsiStringAt(Address: Pointer; const Value: AnsiString; Advance: Boolean = True): TMemSize; overload; virtual;
     Function WriteSmallUTF8StringAt(Address: Pointer; const Value: UTF8String; Advance: Boolean = True): TMemSize; overload; virtual;
     Function WriteSmallWideStringAt(Address: Pointer; const Value: WideString; Advance: Boolean = True): TMemSize; overload; virtual;
     Function WriteSmallUnicodeStringAt(Address: Pointer; const Value: UnicodeString; Advance: Boolean = True): TMemSize; overload; virtual;
     Function WriteSmallUCS4StringAt(Address: Pointer; const Value: UCS4String; Advance: Boolean = True): TMemSize; overload; virtual;
     Function WriteSmallStringAt(Address: Pointer; const Value: String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteTinyAnsiStringAt(Address: Pointer; const Value: AnsiString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteTinyUTF8StringAt(Address: Pointer; const Value: UTF8String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteTinyWideStringAt(Address: Pointer; const Value: WideString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteTinyUnicodeStringAt(Address: Pointer; const Value: UnicodeString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteTinyUCS4StringAt(Address: Pointer; const Value: UCS4String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function WriteTinyStringAt(Address: Pointer; const Value: String; Advance: Boolean = True): TMemSize; overload; virtual;
     Function WriteBufferAt(Address: Pointer; const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; overload; virtual;
     Function WriteBytesAt(Address: Pointer; const Value: array of UInt8; Advance: Boolean = True): TMemSize; overload; virtual;
     Function FillBytesAt(Address: Pointer; Count: TMemSize; Value: UInt8; Advance: Boolean = True): TMemSize; overload; virtual;
@@ -3799,6 +4225,12 @@ type
     Function ReadSmallUnicodeStringAt(Address: Pointer; out Value: UnicodeString; Advance: Boolean = True): TMemSize; overload; virtual;
     Function ReadSmallUCS4StringAt(Address: Pointer; out Value: UCS4String; Advance: Boolean = True): TMemSize; overload; virtual;
     Function ReadSmallStringAt(Address: Pointer; out Value: String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadTinyAnsiStringAt(Address: Pointer; out Value: AnsiString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadTinyUTF8StringAt(Address: Pointer; out Value: UTF8String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadTinyWideStringAt(Address: Pointer; out Value: WideString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadTinyUnicodeStringAt(Address: Pointer; out Value: UnicodeString; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadTinyUCS4StringAt(Address: Pointer; out Value: UCS4String; Advance: Boolean = True): TMemSize; overload; virtual;
+    Function ReadTinyStringAt(Address: Pointer; out Value: String; Advance: Boolean = True): TMemSize; overload; virtual;
     Function ReadBufferAt(Address: Pointer; out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize; overload; virtual;
     Function ReadVariantAt(Address: Pointer; out Value: Variant; Advance: Boolean = True): TMemSize; overload; virtual;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -3836,6 +4268,12 @@ type
     Function GetSmallUnicodeStringAt(Address: Pointer; Advance: Boolean = True): UnicodeString; overload; virtual;
     Function GetSmallUCS4StringAt(Address: Pointer; Advance: Boolean = True): UCS4String; overload; virtual;
     Function GetSmallStringAt(Address: Pointer; Advance: Boolean = True): String; overload; virtual;
+    Function GetTinyAnsiStringAt(Address: Pointer; Advance: Boolean = True): AnsiString; overload; virtual;
+    Function GetTinyUTF8StringAt(Address: Pointer; Advance: Boolean = True): UTF8String; overload; virtual;
+    Function GetTinyWideStringAt(Address: Pointer; Advance: Boolean = True): WideString; overload; virtual;
+    Function GetTinyUnicodeStringAt(Address: Pointer; Advance: Boolean = True): UnicodeString; overload; virtual;
+    Function GetTinyUCS4StringAt(Address: Pointer; Advance: Boolean = True): UCS4String; overload; virtual;
+    Function GetTinyStringAt(Address: Pointer; Advance: Boolean = True): String; overload; virtual;
     Function GetVariantAt(Address: Pointer; Advance: Boolean = True): Variant; overload; virtual;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     property StartAddress: Pointer read GetStartAddress;
@@ -3887,7 +4325,7 @@ uses
     {$DEFINE W6058:=}
   {$IFEND}
   {$POP}
-{$ENDIF} 
+{$ENDIF}
 
 {$IF SizeOf(UInt32) <> SizeOf(UCS4Char)}  // just to be sure
   {$MESSAGE ERROR 'Type size mismatch (UInt32 - UCS4Char).'}
@@ -3897,8 +4335,8 @@ uses
     Internal variables
 ===============================================================================}
 var
-  OpenByteArrayIsPacked: Boolean = True;
-  OpenByteArrayStride:   TMemSize = 1;
+  OpenByteArrayPacked:  Boolean = True;
+  OpenByteArrayStride:  TMemSize = 1;
 
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -4499,7 +4937,7 @@ end;
 Function StreamedSize_ShortString(const Value: ShortString): TMemSize;
 begin
 Result := StreamedSize_UInt8 + TMemSize(Length(Value));
-end;     
+end;
 
 //------------------------------------------------------------------------------
 
@@ -4548,97 +4986,148 @@ end;
 Function StreamedSize_String(const Value: String): TMemSize;
 begin
 Result := StreamedSize_UTF8String(StrToUTF8(Value));
-end; 
+end;
 {<lite-end-ln>}
 //==============================================================================
 
 Function StreamedSize_SmallAnsiString(const Value: AnsiString): TMemSize;
 begin
-Result := StreamedSize_Int16 + TMemSize(Length(Value) * SizeOf(AnsiChar));
+If Length(Value) <= High(Int16) then
+  Result := StreamedSize_Int16 + TMemSize(Length(Value) * SizeOf(AnsiChar))
+else
+  raise EBSStringTooLong.CreateFmt('StreamedSize_SmallAnsiString: String is too long (%d) to small storage.',[Length(Value)]);
 end;
 
 //------------------------------------------------------------------------------
 
 Function StreamedSize_SmallUTF8String(const Value: UTF8String): TMemSize;
 begin
-Result := StreamedSize_Int16 + TMemSize(Length(Value) * SizeOf(UTF8Char));
+If Length(Value) <= High(Int16) then
+  Result := StreamedSize_Int16 + TMemSize(Length(Value) * SizeOf(UTF8Char))
+else
+  raise EBSStringTooLong.CreateFmt('StreamedSize_SmallUTF8String: String is too long (%d) to small storage.',[Length(Value)]);
 end;
 
 //------------------------------------------------------------------------------
 
 Function StreamedSize_SmallWideString(const Value: WideString): TMemSize;
 begin
-Result := StreamedSize_Int16 + TMemSize(Length(Value) * SizeOf(WideChar));
+If Length(Value) <= High(Int16) then
+  Result := StreamedSize_Int16 + TMemSize(Length(Value) * SizeOf(WideChar))
+else
+  raise EBSStringTooLong.CreateFmt('StreamedSize_SmallWideString: String is too long (%d) to small storage.',[Length(Value)]);
 end;
 
 //------------------------------------------------------------------------------
 
 Function StreamedSize_SmallUnicodeString(const Value: UnicodeString): TMemSize;
 begin
-Result := StreamedSize_Int16 + TMemSize(Length(Value) * SizeOf(UnicodeChar));
+If Length(Value) <= High(Int16) then
+  Result := StreamedSize_Int16 + TMemSize(Length(Value) * SizeOf(UnicodeChar))
+else
+  raise EBSStringTooLong.CreateFmt('StreamedSize_SmallUnicodeString: String is too long (%d) to small storage.',[Length(Value)]);
 end;
 
 //------------------------------------------------------------------------------
 
 Function StreamedSize_SmallUCS4String(const Value: UCS4String): TMemSize;
+var
+  TrueLen:  TStrSize;
 begin
 If Length(Value) > 0 then
-  Result := StreamedSize_Int16 + TMemSize(IfThen(Value[High(Value)] = 0,Pred(Length(Value)),Length(Value)) * SizeOf(UCS4Char))
-else
-  Result := StreamedSize_Int16;
+  begin
+    TrueLen := IfThen(Value[High(Value)] = 0,Pred(Length(Value)),Length(Value));
+    If TrueLen <= High(Int16) then
+      Result := StreamedSize_Int16 + TMemSize(TrueLen * SizeOf(UCS4Char))
+    else
+      raise EBSStringTooLong.CreateFmt('StreamedSize_SmallUCS4String: String is too long (%d) to small storage.',[TrueLen]);
+  end
+else Result := StreamedSize_Int16;
 end;
 
 //------------------------------------------------------------------------------
 
 Function StreamedSize_SmallString(const Value: String): TMemSize;
+var
+  TrueLen:  TStrSize;
 begin
-Result := StreamedSize_SmallUTF8String(StrToUTF8(Value));
+TrueLen := Length(StrToUTF8(Value));
+If TrueLen <= High(Int16) then
+  Result := StreamedSize_Int16 + TMemSize(TrueLen * SizeOf(UTF8Char))
+else
+  raise EBSStringTooLong.CreateFmt('StreamedSize_SmallString: String is too long (%d) to small storage.',[Length(Value)]);
 end;
 
 //==============================================================================
 
 Function StreamedSize_TinyAnsiString(const Value: AnsiString): TMemSize;
 begin
-Result := StreamedSize_UInt8 + TMemSize(Length(Value) * SizeOf(AnsiChar));
+If Length(Value) <= High(UInt8) then
+  Result := StreamedSize_UInt8 + TMemSize(Length(Value) * SizeOf(AnsiChar))
+else
+  raise EBSStringTooLong.CreateFmt('StreamedSize_TinyAnsiString: String is too long (%d) to tiny storage.',[Length(Value)]);
 end;
 
 //------------------------------------------------------------------------------
 
 Function StreamedSize_TinyUTF8String(const Value: UTF8String): TMemSize;
 begin
-Result := StreamedSize_UInt8 + TMemSize(Length(Value) * SizeOf(UTF8Char));
+If Length(Value) <= High(UInt8) then
+  Result := StreamedSize_UInt8 + TMemSize(Length(Value) * SizeOf(UTF8Char))
+else
+  raise EBSStringTooLong.CreateFmt('StreamedSize_TinyUTF8String: String is too long (%d) to tiny storage.',[Length(Value)]);
 end;
 
 //------------------------------------------------------------------------------
 
 Function StreamedSize_TinyWideString(const Value: WideString): TMemSize;
 begin
-Result := StreamedSize_UInt8 + TMemSize(Length(Value) * SizeOf(WideChar));
+If Length(Value) <= High(UInt8) then
+  Result := StreamedSize_UInt8 + TMemSize(Length(Value) * SizeOf(WideChar))
+else
+  raise EBSStringTooLong.CreateFmt('StreamedSize_TinyWideString: String is too long (%d) to tiny storage.',[Length(Value)]);
 end;
 
 //------------------------------------------------------------------------------
 
 Function StreamedSize_TinyUnicodeString(const Value: UnicodeString): TMemSize;
 begin
-Result := StreamedSize_UInt8 + TMemSize(Length(Value) * SizeOf(UnicodeChar));
+If Length(Value) <= High(UInt8) then
+  Result := StreamedSize_UInt8 + TMemSize(Length(Value) * SizeOf(UnicodeChar))
+else
+  raise EBSStringTooLong.CreateFmt('StreamedSize_TinyUnicodeString: String is too long (%d) to tiny storage.',[Length(Value)]);
 end;
 
 //------------------------------------------------------------------------------
 
 Function StreamedSize_TinyUCS4String(const Value: UCS4String): TMemSize;
+var
+  TrueLen:  TStrSize;
 begin
 If Length(Value) > 0 then
-  Result := StreamedSize_UInt8 + TMemSize(IfThen(Value[High(Value)] = 0,Pred(Length(Value)),Length(Value)) * SizeOf(UCS4Char))
-else
-  Result := StreamedSize_UInt8;
+  begin
+    TrueLen := IfThen(Value[High(Value)] = 0,Pred(Length(Value)),Length(Value));
+    If TrueLen <= High(UInt8) then
+      Result := StreamedSize_UInt8 + TMemSize(TrueLen * SizeOf(UCS4Char))
+    else
+      raise EBSStringTooLong.CreateFmt('StreamedSize_TinyUCS4String: String is too long (%d) to tiny storage.',[TrueLen]);
+  end
+else Result := StreamedSize_UInt8;
 end;
 
 //------------------------------------------------------------------------------
 
 Function StreamedSize_TinyString(const Value: String): TMemSize;
+var
+  TrueLen:  TStrSize;
 begin
-Result := StreamedSize_TinyUTF8String(StrToUTF8(Value));
+TrueLen := Length(StrToUTF8(Value));
+If TrueLen <= High(UInt8) then
+  Result := StreamedSize_UInt8 + TMemSize(TrueLen * SizeOf(UTF8Char))
+else
+  raise EBSStringTooLong.CreateFmt('StreamedSize_TinyString: String is too long (%d) to tiny storage.',[Length(Value)]);
 end;
+
 {<lite-begin>}
 //==============================================================================
 
@@ -4697,7 +5186,7 @@ else
     // simple type
     If VarType(Value) <> (varVariant or varByRef) then
       begin
-        case VarType(Value) and varTypeMask of  
+        case VarType(Value) and varTypeMask of
           varBoolean:   Result := StreamedSize_Boolean;
           varShortInt:  Result := StreamedSize_Int8;
           varSmallint:  Result := StreamedSize_Int16;
@@ -4903,7 +5392,7 @@ var
 begin
 Ptr := Dest;
 Result := _Ptr_WriteInt8(Ptr,Value,False);
-end;     
+end;
 
 //------------------------------------------------------------------------------
 
@@ -5072,7 +5561,7 @@ If ResolveEndian(Endian) = endBig then
 else
   Result := Ptr_WriteInt16_LE(Ptr,Value,False);
 end;
- 
+
 {<lite-begin>}
 {<lite-block-replace-begin _LE "">}
 //==============================================================================
@@ -5275,7 +5764,7 @@ If ResolveEndian(Endian) = endBig then
 else
   Result := Ptr_WriteUInt32_LE(Dest,Value,Advance);
 end;
- 
+
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Ptr_WriteUInt32(Dest: Pointer; Value: UInt32; Endian: TEndian = endDefault): TMemSize;
@@ -5288,7 +5777,7 @@ If ResolveEndian(Endian) = endBig then
 else
   Result := Ptr_WriteUInt32_LE(Ptr,Value,False);
 end;
-  
+
 {<lite-begin>}
 {<lite-block-replace-begin _LE "">}
 //==============================================================================
@@ -5869,8 +6358,8 @@ end;
 
 {<lite-begin>}
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-              
-{<lite-replace _LE "">}            
+
+{<lite-replace _LE "">}
 Function Ptr_WriteUTF8Char_LE(Dest: Pointer; Value: UTF8Char): TMemSize;
 var
   Ptr:  Pointer;
@@ -5922,7 +6411,7 @@ else
 end;
 
 {<lite-begin>}
-{<lite-block-replace-begin _LE "">}  
+{<lite-block-replace-begin _LE "">}
 //==============================================================================
 
 Function Ptr_WriteWideChar_LE(var Dest: Pointer; Value: WideChar; Advance: Boolean): TMemSize;
@@ -5994,7 +6483,7 @@ else
 end;
 
 {<lite-begin>}
-{<lite-block-replace-begin _LE "">} 
+{<lite-block-replace-begin _LE "">}
 //==============================================================================
 
 Function Ptr_WriteUnicodeChar_LE(var Dest: Pointer; Value: UnicodeChar; Advance: Boolean): TMemSize;
@@ -6066,7 +6555,7 @@ else
 end;
 
 {<lite-begin>}
-{<lite-block-replace-begin _LE "">} 
+{<lite-block-replace-begin _LE "">}
 //==============================================================================
 
 Function Ptr_WriteUCS4Char_LE(var Dest: Pointer; Value: UCS4Char; Advance: Boolean): TMemSize;
@@ -6138,7 +6627,7 @@ else
 end;
 
 {<lite-begin>}
-{<lite-block-replace-begin _LE "">} 
+{<lite-block-replace-begin _LE "">}
 //==============================================================================
 
 Function Ptr_WriteChar_LE(var Dest: Pointer; Value: Char; Advance: Boolean): TMemSize;
@@ -6354,7 +6843,7 @@ If Advance then
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  
+
 Function Ptr_WriteUTF8String_LE(Dest: Pointer; const Value: UTF8String): TMemSize;
 var
   Ptr:  Pointer;
@@ -6379,7 +6868,7 @@ If Advance then
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  
+
 Function Ptr_WriteUTF8String_BE(Dest: Pointer; const Value: UTF8String): TMemSize;
 var
   Ptr:  Pointer;
@@ -6399,7 +6888,7 @@ else
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  
+
 Function Ptr_WriteUTF8String(Dest: Pointer; const Value: UTF8String; Endian: TEndian = endDefault): TMemSize;
 var
   Ptr:  Pointer;
@@ -6593,7 +7082,7 @@ If Length(Value) > 0 then
       TrueLen := Length(Value);
     If TrueLen > 0 then
       begin
-        Result := Ptr_WriteInt32_LE(WorkPtr,TrueLen,True);
+        Result := Ptr_WriteInt32_LE(WorkPtr,Int32(TrueLen),True);
       {$IFDEF ENDIAN_BIG}
         Inc(Result,Ptr_WriteUInt32Arr_SwapEndian(PUInt32(WorkPtr),PUInt32(Addr(Value[Low(Value)])),TrueLen));
       {$ELSE}
@@ -6634,7 +7123,7 @@ If Length(Value) > 0 then
       TrueLen := Length(Value);
     If TrueLen > 0 then
       begin
-        Result := Ptr_WriteInt32_BE(WorkPtr,TrueLen,True);
+        Result := Ptr_WriteInt32_BE(WorkPtr,Int32(TrueLen),True);
       {$IFDEF ENDIAN_BIG}
         Inc(Result,Ptr_WriteBuffer_BE(WorkPtr,Addr(Value[Low(Value)])^,TrueLen * SizeOf(UCS4Char),True));
       {$ELSE}
@@ -7078,7 +7567,7 @@ If Length(Value) > 0 then
       raise EBSStringTooLong.CreateFmt('Ptr_WriteSmallUCS4String_LE: String is too long (%d) for small storage.',[Length(Value)])
     else If TrueLen > 0 then
       begin
-        Result := Ptr_WriteInt16_LE(WorkPtr,TrueLen,True);
+        Result := Ptr_WriteInt16_LE(WorkPtr,Int16(TrueLen),True);
       {$IFDEF ENDIAN_BIG}
         Inc(Result,Ptr_WriteUInt32Arr_SwapEndian(PUInt32(WorkPtr),PUInt32(Addr(Value[Low(Value)])),TrueLen));
       {$ELSE}
@@ -7120,7 +7609,7 @@ If Length(Value) > 0 then
       raise EBSStringTooLong.CreateFmt('Ptr_WriteSmallUCS4String_BE: String is too long (%d) for small storage.',[Length(Value)])
     else If TrueLen > 0 then
       begin
-        Result := Ptr_WriteInt16_BE(WorkPtr,TrueLen,True);
+        Result := Ptr_WriteInt16_BE(WorkPtr,Int16(TrueLen),True);
       {$IFDEF ENDIAN_BIG}
         Inc(Result,Ptr_WriteBuffer_BE(WorkPtr,Addr(Value[Low(Value)])^,TrueLen * SizeOf(UCS4Char),True));
       {$ELSE}
@@ -7250,7 +7739,7 @@ end;
 
 Function Ptr_WriteTinyAnsiString_BE(var Dest: Pointer; const Value: AnsiString; Advance: Boolean): TMemSize;
 begin
-Result := _Ptr_WriteShortString(Dest,Value,Advance);
+Result := _Ptr_WriteTinyAnsiString(Dest,Value,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -7288,6 +7777,402 @@ end;
 
 //==============================================================================
 
+Function _Ptr_WriteTinyUTF8String(var Dest: Pointer; const Value: UTF8String; Advance: Boolean): TMemSize;
+var
+  WorkPtr:  Pointer;
+begin
+If Length(Value) <= High(UInt8) then
+  begin
+    WorkPtr := Dest;
+    Result := Ptr_WriteUInt8_LE(WorkPtr,UInt8(Length(Value)),True);
+    If Length(Value) > 0 then
+      Inc(Result,Ptr_WriteBuffer_LE(WorkPtr,PUTF8Char(Value)^,Length(Value) * SizeOf(UTF8Char),True));
+    If Advance then
+      Dest := WorkPtr;
+  end
+else raise EBSStringTooLong.CreateFmt('_Ptr_WriteTinyUTF8String: String is too long (%d) for tiny storage.',[Length(Value)]);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteTinyUTF8String_LE(var Dest: Pointer; const Value: UTF8String; Advance: Boolean): TMemSize;
+begin
+Result := _Ptr_WriteTinyUTF8String(Dest,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteTinyUTF8String_LE(Dest: Pointer; const Value: UTF8String): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+Result := _Ptr_WriteTinyUTF8String(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteTinyUTF8String_BE(var Dest: Pointer; const Value: UTF8String; Advance: Boolean): TMemSize;
+begin
+Result := _Ptr_WriteTinyUTF8String(Dest,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteTinyUTF8String_BE(Dest: Pointer; const Value: UTF8String): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+Result := _Ptr_WriteTinyUTF8String(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteTinyUTF8String(var Dest: Pointer; const Value: UTF8String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_WriteTinyUTF8String_BE(Dest,Value,Advance)
+else
+  Result := Ptr_WriteTinyUTF8String_LE(Dest,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteTinyUTF8String(Dest: Pointer; const Value: UTF8String; Endian: TEndian = endDefault): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_WriteTinyUTF8String_BE(Ptr,Value,False)
+else
+  Result := Ptr_WriteTinyUTF8String_LE(Ptr,Value,False);
+end;
+
+//==============================================================================
+
+Function Ptr_WriteTinyWideString_LE(var Dest: Pointer; const Value: WideString; Advance: Boolean): TMemSize;
+var
+  WorkPtr:  Pointer;
+begin
+If Length(Value) <= High(UInt8) then
+  begin
+    WorkPtr := Dest;
+    Result := Ptr_WriteUInt8_LE(WorkPtr,UInt8(Length(Value)),True);
+    If Length(Value) > 0 then
+    {$IFDEF ENDIAN_BIG}
+      Inc(Result,Ptr_WriteUInt16Arr_SwapEndian(PUInt16(WorkPtr),PUInt16(PWideChar(Value)),Length(Value)));
+    {$ELSE}
+      Inc(Result,Ptr_WriteBuffer_LE(WorkPtr,PWideChar(Value)^,Length(Value) * SizeOf(WideChar),True));
+    {$ENDIF}
+    If Advance then
+      Dest := WorkPtr;
+  end
+else raise EBSStringTooLong.CreateFmt('Ptr_WriteTinyWideString_LE: String is too long (%d) for tiny storage.',[Length(Value)]);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteTinyWideString_LE(Dest: Pointer; const Value: WideString): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+Result := Ptr_WriteTinyWideString_LE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteTinyWideString_BE(var Dest: Pointer; const Value: WideString; Advance: Boolean): TMemSize;
+var
+  WorkPtr:  Pointer;
+begin
+If Length(Value) <= High(UInt8) then
+  begin
+    WorkPtr := Dest;
+    Result := Ptr_WriteUInt8_BE(WorkPtr,UInt8(Length(Value)),True);
+    If Length(Value) > 0 then
+    {$IFDEF ENDIAN_BIG}
+      Inc(Result,Ptr_WriteBuffer_BE(WorkPtr,PWideChar(Value)^,Length(Value) * SizeOf(WideChar),True));
+    {$ELSE}
+      Inc(Result,Ptr_WriteUInt16Arr_SwapEndian(PUInt16(WorkPtr),PUInt16(PWideChar(Value)),Length(Value)));
+    {$ENDIF}
+    If Advance then
+      Dest := WorkPtr;
+  end
+else raise EBSStringTooLong.CreateFmt('Ptr_WriteTinyWideString_BE: String is too long (%d) for tiny storage.',[Length(Value)]);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteTinyWideString_BE(Dest: Pointer; const Value: WideString): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+Result := Ptr_WriteTinyWideString_BE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteTinyWideString(var Dest: Pointer; const Value: WideString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_WriteTinyWideString_BE(Dest,Value,Advance)
+else
+  Result := Ptr_WriteTinyWideString_LE(Dest,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteTinyWideString(Dest: Pointer; const Value: WideString; Endian: TEndian = endDefault): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_WriteTinyWideString_BE(Ptr,Value,False)
+else
+  Result := Ptr_WriteTinyWideString_LE(Ptr,Value,False);
+end;
+
+//==============================================================================
+
+Function Ptr_WriteTinyUnicodeString_LE(var Dest: Pointer; const Value: UnicodeString; Advance: Boolean): TMemSize;
+var
+  WorkPtr:  Pointer;
+begin
+If Length(Value) <= High(UInt8) then
+  begin
+    WorkPtr := Dest;
+    Result := Ptr_WriteUInt8_LE(WorkPtr,UInt8(Length(Value)),True);
+    If Length(Value) > 0 then
+    {$IFDEF ENDIAN_BIG}
+      Inc(Result,Ptr_WriteUInt16Arr_SwapEndian(PUInt16(WorkPtr),PUInt16(PUnicodeChar(Value)),Length(Value)));
+    {$ELSE}
+      Inc(Result,Ptr_WriteBuffer_LE(WorkPtr,PUnicodeChar(Value)^,Length(Value) * SizeOf(UnicodeChar),True));
+    {$ENDIF}
+    If Advance then
+      Dest := WorkPtr;
+  end
+else raise EBSStringTooLong.CreateFmt('Ptr_WriteTinyUnicodeString_LE: String is too long (%d) for tiny storage.',[Length(Value)]);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteTinyUnicodeString_LE(Dest: Pointer; const Value: UnicodeString): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+Result := Ptr_WriteTinyUnicodeString_LE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteTinyUnicodeString_BE(var Dest: Pointer; const Value: UnicodeString; Advance: Boolean): TMemSize;
+var
+  WorkPtr:  Pointer;
+begin
+If Length(Value) <= High(UInt8) then
+  begin
+    WorkPtr := Dest;
+    Result := Ptr_WriteUInt8_BE(WorkPtr,UInt8(Length(Value)),True);
+    If Length(Value) > 0 then
+    {$IFDEF ENDIAN_BIG}
+      Inc(Result,Ptr_WriteBuffer_BE(WorkPtr,PUnicodeChar(Value)^,Length(Value) * SizeOf(UnicodeChar),True));
+    {$ELSE}
+      Inc(Result,Ptr_WriteUInt16Arr_SwapEndian(PUInt16(WorkPtr),PUInt16(PUnicodeChar(Value)),Length(Value)));
+    {$ENDIF}
+    If Advance then
+      Dest := WorkPtr;
+  end
+else raise EBSStringTooLong.CreateFmt('Ptr_WriteTinyUnicodeString_BE: String is too long (%d) for tiny storage.',[Length(Value)]);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteTinyUnicodeString_BE(Dest: Pointer; const Value: UnicodeString): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+Result := Ptr_WriteTinyUnicodeString_BE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteTinyUnicodeString(var Dest: Pointer; const Value: UnicodeString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_WriteTinyUnicodeString_BE(Dest,Value,Advance)
+else
+  Result := Ptr_WriteTinyUnicodeString_LE(Dest,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteTinyUnicodeString(Dest: Pointer; const Value: UnicodeString; Endian: TEndian = endDefault): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_WriteTinyUnicodeString_BE(Ptr,Value,False)
+else
+  Result := Ptr_WriteTinyUnicodeString_LE(Ptr,Value,False);
+end;
+
+//==============================================================================
+
+Function Ptr_WriteTinyUCS4String_LE(var Dest: Pointer; const Value: UCS4String; Advance: Boolean): TMemSize;
+var
+  WorkPtr:  Pointer;
+  TrueLen:  TStrSize;
+begin
+WorkPtr := Dest;
+If Length(Value) > 0 then
+  begin
+    If Value[High(Value)] = 0 then
+      TrueLen := Pred(Length(Value))
+    else
+      TrueLen := Length(Value);
+    If TrueLen > High(UInt8) then
+      raise EBSStringTooLong.CreateFmt('Ptr_WriteTinyUCS4String_LE: String is too long (%d) for tiny storage.',[Length(Value)])
+    else If TrueLen > 0 then
+      begin
+        Result := Ptr_WriteUInt8_LE(WorkPtr,UInt8(TrueLen),True);
+      {$IFDEF ENDIAN_BIG}
+        Inc(Result,Ptr_WriteUInt32Arr_SwapEndian(PUInt32(WorkPtr),PUInt32(Addr(Value[Low(Value)])),TrueLen));
+      {$ELSE}
+        Inc(Result,Ptr_WriteBuffer_LE(WorkPtr,Addr(Value[Low(Value)])^,TrueLen * SizeOf(UCS4Char),True));
+      {$ENDIF}
+      end
+    else Result := Ptr_WriteUInt8_LE(WorkPtr,0,True);
+  end
+else Result := Ptr_WriteUInt8_LE(WorkPtr,0,True);
+If Advance then
+  Dest := WorkPtr;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteTinyUCS4String_LE(Dest: Pointer; const Value: UCS4String): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+Result := Ptr_WriteTinyUCS4String_LE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteTinyUCS4String_BE(var Dest: Pointer; const Value: UCS4String; Advance: Boolean): TMemSize;
+var
+  WorkPtr:  Pointer;
+  TrueLen:  TStrSize;
+begin
+WorkPtr := Dest;
+If Length(Value) > 0 then
+  begin
+    If Value[High(Value)] = 0 then
+      TrueLen := Pred(Length(Value))
+    else
+      TrueLen := Length(Value);
+    If TrueLen > High(UInt8) then
+      raise EBSStringTooLong.CreateFmt('Ptr_WriteTinyUCS4String_BE: String is too long (%d) for tiny storage.',[Length(Value)])
+    else If TrueLen > 0 then
+      begin
+        Result := Ptr_WriteUInt8_BE(WorkPtr,UInt8(TrueLen),True);
+      {$IFDEF ENDIAN_BIG}
+        Inc(Result,Ptr_WriteBuffer_BE(WorkPtr,Addr(Value[Low(Value)])^,TrueLen * SizeOf(UCS4Char),True));
+      {$ELSE}
+        Inc(Result,Ptr_WriteUInt32Arr_SwapEndian(PUInt32(WorkPtr),PUInt32(Addr(Value[Low(Value)])),TrueLen));
+      {$ENDIF}
+      end
+    else Result := Ptr_WriteUInt8_BE(WorkPtr,0,True);
+  end
+else Result := Ptr_WriteUInt8_BE(WorkPtr,0,True);
+If Advance then
+  Dest := WorkPtr;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteTinyUCS4String_BE(Dest: Pointer; const Value: UCS4String): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+Result := Ptr_WriteTinyUCS4String_BE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteTinyUCS4String(var Dest: Pointer; const Value: UCS4String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_WriteTinyUCS4String_BE(Dest,Value,Advance)
+else
+  Result := Ptr_WriteTinyUCS4String_LE(Dest,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteTinyUCS4String(Dest: Pointer; const Value: UCS4String; Endian: TEndian = endDefault): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Dest;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_WriteTinyUCS4String_BE(Ptr,Value,False)
+else
+  Result := Ptr_WriteTinyUCS4String_LE(Ptr,Value,False);
+end;
+
+//==============================================================================
+
+Function Ptr_WriteTinyString_LE(var Dest: Pointer; const Value: String; Advance: Boolean): TMemSize;
+begin
+Result := Ptr_WriteTinyUTF8String_LE(Dest,StrToUTF8(Value),Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteTinyString_LE(Dest: Pointer; const Value: String): TMemSize;
+begin
+Result := Ptr_WriteTinyUTF8String_LE(Dest,StrToUTF8(Value));
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteTinyString_BE(var Dest: Pointer; const Value: String; Advance: Boolean): TMemSize;
+begin
+Result := Ptr_WriteTinyUTF8String_BE(Dest,StrToUTF8(Value),Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteTinyString_BE(Dest: Pointer; const Value: String): TMemSize;
+begin
+Result := Ptr_WriteTinyUTF8String_BE(Dest,StrToUTF8(Value));
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_WriteTinyString(var Dest: Pointer; const Value: String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+Result := Ptr_WriteTinyUTF8String(Dest,StrToUTF8(Value),Advance,Endian);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_WriteTinyString(Dest: Pointer; const Value: String; Endian: TEndian = endDefault): TMemSize;
+begin
+Result := Ptr_WriteTinyUTF8String(Dest,StrToUTF8(Value),Endian);
+end;
+
 {<lite-begin>}
 {-------------------------------------------------------------------------------
     General data buffers
@@ -7311,7 +8196,7 @@ end;
 
 {<lite-begin>}
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    
+
 {<lite-replace _LE "">}
 Function Ptr_WriteBuffer_LE(Dest: Pointer; const Buffer; Size: TMemSize): TMemSize;
 var
@@ -7331,7 +8216,7 @@ Result := _Ptr_WriteBuffer(Dest,Buffer,Size,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    
+
 Function Ptr_WriteBuffer_BE(Dest: Pointer; const Buffer; Size: TMemSize): TMemSize;
 var
   Ptr:  Pointer;
@@ -7351,7 +8236,7 @@ else
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    
+
 Function Ptr_WriteBuffer(Dest: Pointer; const Buffer; Size: TMemSize; Endian: TEndian = endDefault): TMemSize;
 var
   Ptr:  Pointer;
@@ -7372,7 +8257,7 @@ var
   WorkPtr:  PUInt8;
   i:        Integer;
 begin
-If OpenByteArrayIsPacked then
+If OpenByteArrayPacked then
   begin
     // write whole array
     If Length(Value) > 0 then
@@ -7380,7 +8265,7 @@ If OpenByteArrayIsPacked then
     Result := TMemSize(Length(Value));
     AdvancePointer(Advance,Dest,Result);
   end
-else 
+else
   begin
   {
     write byte-by-byte
@@ -7394,7 +8279,7 @@ else
         WorkPtr^ := Value[i];
         Inc(WorkPtr);
       end;
-    Result := TMemSize(Length(Value));      
+    Result := TMemSize(Length(Value));
     If Advance then
       Dest := WorkPtr;
   end;
@@ -7410,7 +8295,7 @@ end;
 
 {<lite-begin>}
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  
+
 {<lite-replace _LE "">}
 Function Ptr_WriteBytes_LE(Dest: Pointer; const Value: array of UInt8): TMemSize;
 var
@@ -7430,7 +8315,7 @@ Result := _Ptr_WriteBytes(Dest,Value,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  
+
 Function Ptr_WriteBytes_BE(Dest: Pointer; const Value: array of UInt8): TMemSize;
 var
   Ptr:  Pointer;
@@ -7544,7 +8429,7 @@ Function Ptr_WriteVariant_LE(var Dest: Pointer; const Value: Variant; Advance: B
 var
   Ptr:        Pointer;
   Dimensions: Integer;
-  i:          Integer;       
+  i:          Integer;
   Indices:    array of Integer;
 
   Function WriteVarArrayDimension(Dimension: Integer): TMemSize;
@@ -7646,7 +8531,7 @@ Function Ptr_WriteVariant_BE(var Dest: Pointer; const Value: Variant; Advance: B
 var
   Ptr:        Pointer;
   Dimensions: Integer;
-  i:          Integer;       
+  i:          Integer;
   Indices:    array of Integer;
 
   Function WriteVarArrayDimension(Dimension: Integer): TMemSize;
@@ -7821,7 +8706,7 @@ else
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-       
+
 Function Ptr_ReadBool(Src: Pointer; out Value: ByteBool; Endian: TEndian = endDefault): TMemSize;
 var
   Ptr:  Pointer;
@@ -7882,7 +8767,7 @@ else
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-      
+
 Function Ptr_GetBool(Src: Pointer; Endian: TEndian = endDefault): ByteBool;
 var
   Ptr:  Pointer;
@@ -8025,8 +8910,8 @@ end;
 
 {<lite-begin>}
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        
-{<lite-replace _LE "">}        
+
+{<lite-replace _LE "">}
 Function Ptr_ReadInt8_LE(Src: Pointer; out Value: Int8): TMemSize;
 var
   Ptr:  Pointer;
@@ -8045,7 +8930,7 @@ Result := _Ptr_ReadInt8(Src,Value,Advance);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        
+
 Function Ptr_ReadInt8_BE(Src: Pointer; out Value: Int8): TMemSize;
 var
   Ptr:  Pointer;
@@ -8065,7 +8950,7 @@ else
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        
+
 Function Ptr_ReadInt8(Src: Pointer; out Value: Int8; Endian: TEndian = endDefault): TMemSize;
 var
   Ptr:  Pointer;
@@ -8113,7 +8998,7 @@ var
 begin
 Ptr := Src;
 _Ptr_ReadInt8(Ptr,Result,False);
-end; 
+end;
 
 //------------------------------------------------------------------------------
 
@@ -8188,7 +9073,7 @@ Ptr := Src;
 Result := _Ptr_ReadUInt8(Ptr,Value,False);
 end;
 
-//------------------------------------------------------------------------------ 
+//------------------------------------------------------------------------------
 
 Function Ptr_ReadUInt8(var Src: Pointer; out Value: UInt8; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
 begin
@@ -8260,7 +9145,7 @@ else
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-               
+
 Function Ptr_GetUInt8(Src: Pointer; Endian: TEndian = endDefault): UInt8;
 var
   Ptr:  Pointer;
@@ -8799,7 +9684,7 @@ If ResolveEndian(Endian) = endBig then
 else
   Result := Ptr_GetUInt32_LE(Ptr,False);
 end;
- 
+
  {<lite-begin>}
 {<lite-block-replace-begin _LE "">}
 //==============================================================================
@@ -9186,7 +10071,7 @@ else
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-                 
+
 Function Ptr_GetFloat32(Src: Pointer; Endian: TEndian = endDefault): Float32;
 var
   Ptr:  Pointer;
@@ -9318,7 +10203,7 @@ else
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-                 
+
 Function Ptr_GetFloat64(Src: Pointer; Endian: TEndian = endDefault): Float64;
 var
   Ptr:  Pointer;
@@ -9450,7 +10335,7 @@ else
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-                 
+
 Function Ptr_GetFloat80(Src: Pointer; Endian: TEndian = endDefault): Float80;
 var
   Ptr:  Pointer;
@@ -10022,7 +10907,7 @@ else
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-                
+
 Function Ptr_ReadWideChar(Src: Pointer; out Value: WideChar; Endian: TEndian = endDefault): TMemSize;
 var
   Ptr:  Pointer;
@@ -10154,7 +11039,7 @@ else
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-                
+
 Function Ptr_ReadUnicodeChar(Src: Pointer; out Value: UnicodeChar; Endian: TEndian = endDefault): TMemSize;
 var
   Ptr:  Pointer;
@@ -12265,6 +13150,800 @@ begin
 Result := UTF8ToStr(Ptr_GetSmallUTF8String(Src,Endian));
 end;
 
+{-------------------------------------------------------------------------------
+    Tiny strings
+-------------------------------------------------------------------------------}
+
+Function _Ptr_ReadTinyAnsiString(var Src: Pointer; out Value: AnsiString; Advance: Boolean): TMemSize;
+var
+  StrLength:  UInt8;
+  WorkPtr:    Pointer;
+begin
+WorkPtr := Src;
+Result := Ptr_ReadUInt8_LE(WorkPtr,StrLength,True);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+  Inc(Result,Ptr_ReadBuffer_LE(WorkPtr,PAnsiChar(Value)^,StrLength,True));
+If Advance then
+  Src := WorkPtr;
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadTinyAnsiString_LE(var Src: Pointer; out Value: AnsiString; Advance: Boolean): TMemSize; overload;
+begin
+Result := _Ptr_ReadTinyAnsiString(Src,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadTinyAnsiString_LE(Src: Pointer; out Value: AnsiString): TMemSize; overload;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Result := _Ptr_ReadTinyAnsiString(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadTinyAnsiString_BE(var Src: Pointer; out Value: AnsiString; Advance: Boolean): TMemSize;
+begin
+Result := _Ptr_ReadTinyAnsiString(Src,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadTinyAnsiString_BE(Src: Pointer; out Value: AnsiString): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Result := _Ptr_ReadTinyAnsiString(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadTinyAnsiString(var Src: Pointer; out Value: AnsiString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_ReadTinyAnsiString_BE(Src,Value,Advance)
+else
+  Result := Ptr_ReadTinyAnsiString_LE(Src,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadTinyAnsiString(Src: Pointer; out Value: AnsiString; Endian: TEndian = endDefault): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_ReadTinyAnsiString_BE(Ptr,Value,False)
+else
+  Result := Ptr_ReadTinyAnsiString_LE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetTinyAnsiString_LE(var Src: Pointer; Advance: Boolean): AnsiString;
+begin
+_Ptr_ReadTinyAnsiString(Src,Result,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetTinyAnsiString_LE(Src: Pointer): AnsiString;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+_Ptr_ReadTinyAnsiString(Ptr,Result,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetTinyAnsiString_BE(var Src: Pointer; Advance: Boolean): AnsiString;
+begin
+_Ptr_ReadTinyAnsiString(Src,Result,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetTinyAnsiString_BE(Src: Pointer): AnsiString;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+_Ptr_ReadTinyAnsiString(Ptr,Result,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetTinyAnsiString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): AnsiString;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_GetTinyAnsiString_BE(Src,Advance)
+else
+  Result := Ptr_GetTinyAnsiString_LE(Src,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetTinyAnsiString(Src: Pointer; Endian: TEndian = endDefault): AnsiString;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_GetTinyAnsiString_BE(Ptr,False)
+else
+  Result := Ptr_GetTinyAnsiString_LE(Ptr,False);
+end;
+
+//==============================================================================
+
+Function _Ptr_ReadTinyUTF8String(var Src: Pointer; out Value: UTF8String; Advance: Boolean): TMemSize;
+var
+  StrLength:  UInt8;
+  WorkPtr:    Pointer;
+begin
+WorkPtr := Src;
+Result := Ptr_ReadUInt8_LE(WorkPtr,StrLength,True);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+  Inc(Result,Ptr_ReadBuffer_LE(WorkPtr,PUTF8Char(Value)^,StrLength,True));
+If Advance then
+  Src := WorkPtr;
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadTinyUTF8String_LE(var Src: Pointer; out Value: UTF8String; Advance: Boolean): TMemSize; overload;
+begin
+Result := _Ptr_ReadTinyUTF8String(Src,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadTinyUTF8String_LE(Src: Pointer; out Value: UTF8String): TMemSize; overload;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Result := _Ptr_ReadTinyUTF8String(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadTinyUTF8String_BE(var Src: Pointer; out Value: UTF8String; Advance: Boolean): TMemSize;
+begin
+Result := _Ptr_ReadTinyUTF8String(Src,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadTinyUTF8String_BE(Src: Pointer; out Value: UTF8String): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Result := _Ptr_ReadTinyUTF8String(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadTinyUTF8String(var Src: Pointer; out Value: UTF8String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_ReadTinyUTF8String_BE(Src,Value,Advance)
+else
+  Result := Ptr_ReadTinyUTF8String_LE(Src,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadTinyUTF8String(Src: Pointer; out Value: UTF8String; Endian: TEndian = endDefault): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_ReadTinyUTF8String_BE(Ptr,Value,False)
+else
+  Result := Ptr_ReadTinyUTF8String_LE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetTinyUTF8String_LE(var Src: Pointer; Advance: Boolean): UTF8String;
+begin
+_Ptr_ReadTinyUTF8String(Src,Result,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetTinyUTF8String_LE(Src: Pointer): UTF8String;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+_Ptr_ReadTinyUTF8String(Ptr,Result,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetTinyUTF8String_BE(var Src: Pointer; Advance: Boolean): UTF8String;
+begin
+_Ptr_ReadTinyUTF8String(Src,Result,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetTinyUTF8String_BE(Src: Pointer): UTF8String;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+_Ptr_ReadTinyUTF8String(Ptr,Result,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetTinyUTF8String(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UTF8String;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_GetTinyUTF8String_BE(Src,Advance)
+else
+  Result := Ptr_GetTinyUTF8String_LE(Src,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetTinyUTF8String(Src: Pointer; Endian: TEndian = endDefault): UTF8String;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_GetTinyUTF8String_BE(Ptr,False)
+else
+  Result := Ptr_GetTinyUTF8String_LE(Ptr,False);
+end;
+
+//==============================================================================
+
+Function Ptr_ReadTinyWideString_LE(var Src: Pointer; out Value: WideString; Advance: Boolean): TMemSize;
+var
+  StrLength:  UInt8;
+  WorkPtr:    Pointer;
+begin
+WorkPtr := Src;
+Result := Ptr_ReadUInt8_LE(WorkPtr,StrLength,True);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+{$IFDEF ENDIAN_BIG}
+  Inc(Result,Ptr_ReadUInt16Arr_SwapEndian(PUInt16(WorkPtr),PUInt16(PWideChar(Value)),StrLength));
+{$ELSE}
+  Inc(Result,Ptr_ReadBuffer_LE(WorkPtr,PWideChar(Value)^,StrLength * SizeOf(WideChar),True));
+{$ENDIF}
+If Advance then
+  Src := WorkPtr;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadTinyWideString_LE(Src: Pointer; out Value: WideString): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Result := Ptr_ReadTinyWideString_LE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadTinyWideString_BE(var Src: Pointer; out Value: WideString; Advance: Boolean): TMemSize;
+var
+  StrLength:  UInt8;
+  WorkPtr:    Pointer;
+begin
+WorkPtr := Src;
+Result := Ptr_ReadUInt8_BE(WorkPtr,StrLength,True);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+{$IFDEF ENDIAN_BIG}
+  Inc(Result,Ptr_ReadBuffer_BE(WorkPtr,PWideChar(Value)^,StrLength * SizeOf(WideChar),True));
+{$ELSE}
+  Inc(Result,Ptr_ReadUInt16Arr_SwapEndian(PUInt16(WorkPtr),PUInt16(PWideChar(Value)),StrLength));
+{$ENDIF}
+If Advance then
+  Src := WorkPtr;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadTinyWideString_BE(Src: Pointer; out Value: WideString): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Result := Ptr_ReadTinyWideString_BE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadTinyWideString(var Src: Pointer; out Value: WideString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_ReadTinyWideString_BE(Src,Value,Advance)
+else
+  Result := Ptr_ReadTinyWideString_LE(Src,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadTinyWideString(Src: Pointer; out Value: WideString; Endian: TEndian = endDefault): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_ReadTinyWideString_BE(Ptr,Value,False)
+else
+  Result := Ptr_ReadTinyWideString_LE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetTinyWideString_LE(var Src: Pointer; Advance: Boolean): WideString;
+begin
+Ptr_ReadTinyWideString_LE(Src,Result,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetTinyWideString_LE(Src: Pointer): WideString;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Ptr_ReadTinyWideString_LE(Ptr,Result,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetTinyWideString_BE(var Src: Pointer; Advance: Boolean): WideString;
+begin
+Ptr_ReadTinyWideString_BE(Src,Result,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetTinyWideString_BE(Src: Pointer): WideString;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Ptr_ReadTinyWideString_BE(Ptr,Result,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetTinyWideString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): WideString;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_GetTinyWideString_BE(Src,Advance)
+else
+  Result := Ptr_GetTinyWideString_LE(Src,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetTinyWideString(Src: Pointer; Endian: TEndian = endDefault): WideString;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_GetTinyWideString_BE(Ptr,False)
+else
+  Result := Ptr_GetTinyWideString_LE(Ptr,False);
+end;
+
+//==============================================================================
+
+Function Ptr_ReadTinyUnicodeString_LE(var Src: Pointer; out Value: UnicodeString; Advance: Boolean): TMemSize;
+var
+  StrLength:  UInt8;
+  WorkPtr:    Pointer;
+begin
+WorkPtr := Src;
+Result := Ptr_ReadUInt8_LE(WorkPtr,StrLength,True);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+{$IFDEF ENDIAN_BIG}
+  Inc(Result,Ptr_ReadUInt16Arr_SwapEndian(PUInt16(WorkPtr),PUInt16(PUnicodeChar(Value)),StrLength));
+{$ELSE}
+  Inc(Result,Ptr_ReadBuffer_LE(WorkPtr,PUnicodeChar(Value)^,StrLength * SizeOf(UnicodeChar),True));
+{$ENDIF}
+If Advance then
+  Src := WorkPtr;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadTinyUnicodeString_LE(Src: Pointer; out Value: UnicodeString): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Result := Ptr_ReadTinyUnicodeString_LE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadTinyUnicodeString_BE(var Src: Pointer; out Value: UnicodeString; Advance: Boolean): TMemSize;
+var
+  StrLength:  UInt8;
+  WorkPtr:    Pointer;
+begin
+WorkPtr := Src;
+Result := Ptr_ReadUInt8_BE(WorkPtr,StrLength,True);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+{$IFDEF ENDIAN_BIG}
+  Inc(Result,Ptr_ReadBuffer_BE(WorkPtr,PUnicodeChar(Value)^,StrLength * SizeOf(UnicodeChar),True));
+{$ELSE}
+  Inc(Result,Ptr_ReadUInt16Arr_SwapEndian(PUInt16(WorkPtr),PUInt16(PUnicodeChar(Value)),StrLength));
+{$ENDIF}
+If Advance then
+  Src := WorkPtr;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadTinyUnicodeString_BE(Src: Pointer; out Value: UnicodeString): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Result := Ptr_ReadTinyUnicodeString_BE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadTinyUnicodeString(var Src: Pointer; out Value: UnicodeString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_ReadTinyUnicodeString_BE(Src,Value,Advance)
+else
+  Result := Ptr_ReadTinyUnicodeString_LE(Src,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadTinyUnicodeString(Src: Pointer; out Value: UnicodeString; Endian: TEndian = endDefault): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_ReadTinyUnicodeString_BE(Ptr,Value,False)
+else
+  Result := Ptr_ReadTinyUnicodeString_LE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetTinyUnicodeString_LE(var Src: Pointer; Advance: Boolean): UnicodeString;
+begin
+Ptr_ReadTinyUnicodeString_LE(Src,Result,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetTinyUnicodeString_LE(Src: Pointer): UnicodeString;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Ptr_ReadTinyUnicodeString_LE(Ptr,Result,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetTinyUnicodeString_BE(var Src: Pointer; Advance: Boolean): UnicodeString;
+begin
+Ptr_ReadTinyUnicodeString_BE(Src,Result,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetTinyUnicodeString_BE(Src: Pointer): UnicodeString;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Ptr_ReadTinyUnicodeString_BE(Ptr,Result,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetTinyUnicodeString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UnicodeString;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_GetTinyUnicodeString_BE(Src,Advance)
+else
+  Result := Ptr_GetTinyUnicodeString_LE(Src,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetTinyUnicodeString(Src: Pointer; Endian: TEndian = endDefault): UnicodeString;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_GetTinyUnicodeString_BE(Ptr,False)
+else
+  Result := Ptr_GetTinyUnicodeString_LE(Ptr,False);
+end;
+
+//==============================================================================
+
+Function Ptr_ReadTinyUCS4String_LE(var Src: Pointer; out Value: UCS4String; Advance: Boolean): TMemSize;
+var
+  StrLength:  UInt8;
+  WorkPtr:    Pointer;
+begin
+WorkPtr := Src;
+Result := Ptr_ReadUInt8_LE(WorkPtr,StrLength,True);
+Value := nil;
+SetLength(Value,StrLength + 1);
+Value[High(Value)] := 0;
+If StrLength > 0 then
+{$IFDEF ENDIAN_BIG}
+  Inc(Result,Ptr_ReadUInt32Arr_SwapEndian(PUInt32(WorkPtr),PUInt32(Addr(Value[Low(Value)])),StrLength));
+{$ELSE}
+  Inc(Result,Ptr_ReadBuffer_LE(WorkPtr,Addr(Value[Low(Value)])^,StrLength * SizeOf(UCS4Char),True));
+{$ENDIF}
+If Advance then
+  Src := WorkPtr;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadTinyUCS4String_LE(Src: Pointer; out Value: UCS4String): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Result := Ptr_ReadTinyUCS4String_LE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadTinyUCS4String_BE(var Src: Pointer; out Value: UCS4String; Advance: Boolean): TMemSize;
+var
+  StrLength:  UInt8;
+  WorkPtr:    Pointer;
+begin
+WorkPtr := Src;
+Result := Ptr_ReadUInt8_BE(WorkPtr,StrLength,True);
+Value := nil;
+SetLength(Value,StrLength + 1);
+Value[High(Value)] := 0;
+If StrLength > 0 then
+{$IFDEF ENDIAN_BIG}
+  Inc(Result,Ptr_ReadBuffer_BE(WorkPtr,Addr(Value[Low(Value)])^,StrLength * SizeOf(UCS4Char),True));
+{$ELSE}
+  Inc(Result,Ptr_ReadUInt32Arr_SwapEndian(PUInt32(WorkPtr),PUInt32(Addr(Value[Low(Value)])),StrLength));
+{$ENDIF}
+If Advance then
+  Src := WorkPtr;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadTinyUCS4String_BE(Src: Pointer; out Value: UCS4String): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Result := Ptr_ReadTinyUCS4String_BE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadTinyUCS4String(var Src: Pointer; out Value: UCS4String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_ReadTinyUCS4String_BE(Src,Value,Advance)
+else
+  Result := Ptr_ReadTinyUCS4String_LE(Src,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadTinyUCS4String(Src: Pointer; out Value: UCS4String; Endian: TEndian = endDefault): TMemSize;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_ReadTinyUCS4String_BE(Ptr,Value,False)
+else
+  Result := Ptr_ReadTinyUCS4String_LE(Ptr,Value,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetTinyUCS4String_LE(var Src: Pointer; Advance: Boolean): UCS4String;
+begin
+Ptr_ReadTinyUCS4String_LE(Src,Result,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetTinyUCS4String_LE(Src: Pointer): UCS4String;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Ptr_ReadTinyUCS4String_LE(Ptr,Result,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetTinyUCS4String_BE(var Src: Pointer; Advance: Boolean): UCS4String;
+begin
+Ptr_ReadTinyUCS4String_BE(Src,Result,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetTinyUCS4String_BE(Src: Pointer): UCS4String;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+Ptr_ReadTinyUCS4String_BE(Ptr,Result,False);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetTinyUCS4String(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): UCS4String;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_GetTinyUCS4String_BE(Src,Advance)
+else
+  Result := Ptr_GetTinyUCS4String_LE(Src,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetTinyUCS4String(Src: Pointer; Endian: TEndian = endDefault): UCS4String;
+var
+  Ptr:  Pointer;
+begin
+Ptr := Src;
+If ResolveEndian(Endian) = endBig then
+  Result := Ptr_GetTinyUCS4String_BE(Ptr,False)
+else
+  Result := Ptr_GetTinyUCS4String_LE(Ptr,False);
+end;
+
+//==============================================================================
+
+Function Ptr_ReadTinyString_LE(var Src: Pointer; out Value: String; Advance: Boolean): TMemSize;
+var
+  TempStr:  UTF8String;
+begin
+Result := Ptr_ReadTinyUTF8String_LE(Src,TempStr,Advance);
+Value := UTF8ToStr(TempStr);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadTinyString_LE(Src: Pointer; out Value: String): TMemSize;
+var
+  TempStr:  UTF8String;
+begin
+Result := Ptr_ReadTinyUTF8String_LE(Src,TempStr);
+Value := UTF8ToStr(TempStr);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadTinyString_BE(var Src: Pointer; out Value: String; Advance: Boolean): TMemSize;
+var
+  TempStr:  UTF8String;
+begin
+Result := Ptr_ReadTinyUTF8String_BE(Src,TempStr,Advance);
+Value := UTF8ToStr(TempStr);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadTinyString_BE(Src: Pointer; out Value: String): TMemSize;
+var
+  TempStr:  UTF8String;
+begin
+Result := Ptr_ReadTinyUTF8String_BE(Src,TempStr);
+Value := UTF8ToStr(TempStr);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_ReadTinyString(var Src: Pointer; out Value: String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+var
+  TempStr:  UTF8String;
+begin
+Result := Ptr_ReadTinyUTF8String(Src,TempStr,Advance,Endian);
+Value := UTF8ToStr(TempStr);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_ReadTinyString(Src: Pointer; out Value: String; Endian: TEndian = endDefault): TMemSize;
+var
+  TempStr:  UTF8String;
+begin
+Result := Ptr_ReadTinyUTF8String(Src,TempStr,Endian);
+Value := UTF8ToStr(TempStr);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetTinyString_LE(var Src: Pointer; Advance: Boolean): String;
+begin
+Result := UTF8ToStr(Ptr_GetTinyUTF8String_LE(Src,Advance));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetTinyString_LE(Src: Pointer): String;
+begin
+Result := UTF8ToStr(Ptr_GetTinyUTF8String_LE(Src));
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetTinyString_BE(var Src: Pointer; Advance: Boolean): String;
+begin
+Result := UTF8ToStr(Ptr_GetTinyUTF8String_BE(Src,Advance));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetTinyString_BE(Src: Pointer): String;
+begin
+Result := UTF8ToStr(Ptr_GetTinyUTF8String_BE(Src));
+end;
+
+//------------------------------------------------------------------------------
+
+Function Ptr_GetTinyString(var Src: Pointer; Advance: Boolean; Endian: TEndian = endDefault): String;
+begin
+Result := UTF8ToStr(Ptr_GetTinyUTF8String(Src,Advance,Endian));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Ptr_GetTinyString(Src: Pointer; Endian: TEndian = endDefault): String;
+begin
+Result := UTF8ToStr(Ptr_GetTinyUTF8String(Src,Endian));
+end;
+
 {<lite-begin>}
 {-------------------------------------------------------------------------------
     General data buffers
@@ -12864,7 +14543,7 @@ end;
 Function Stream_WriteInt16_BE(Stream: TStream; Value: Int16; Advance: Boolean = True): TMemSize;
 begin
 {$IFNDEF ENDIAN_BIG}
-Value := Int16(SwapEndian(UInt16(Value))); 
+Value := Int16(SwapEndian(UInt16(Value)));
 {$ENDIF}
 Stream.WriteBuffer(Value,SizeOf(Value));
 Result := SizeOf(Value);
@@ -12891,7 +14570,7 @@ else
   Result := Stream_WriteInt16_LE(Stream,Value);
 end;
 
-{<lite-begin>} 
+{<lite-begin>}
 //==============================================================================
 
 {<lite-replace _LE "">}
@@ -12938,7 +14617,7 @@ else
   Result := Stream_WriteUInt16_LE(Stream,Value);
 end;
 
-{<lite-begin>} 
+{<lite-begin>}
 //==============================================================================
 
 {<lite-replace _LE "">}
@@ -12958,7 +14637,7 @@ end;
 Function Stream_WriteInt32_BE(Stream: TStream; Value: Int32; Advance: Boolean = True): TMemSize;
 begin
 {$IFNDEF ENDIAN_BIG}
-Value := Int32(SwapEndian(UInt32(Value))); 
+Value := Int32(SwapEndian(UInt32(Value)));
 {$ENDIF}
 Stream.WriteBuffer(Value,SizeOf(Value));
 Result := SizeOf(Value);
@@ -12985,7 +14664,7 @@ else
   Result := Stream_WriteInt32_LE(Stream,Value);
 end;
 
-{<lite-begin>} 
+{<lite-begin>}
 //==============================================================================
 
 {<lite-replace _LE "">}
@@ -13032,7 +14711,7 @@ else
   Result := Stream_WriteUInt32_LE(Stream,Value);
 end;
 
-{<lite-begin>} 
+{<lite-begin>}
 //==============================================================================
 
 {<lite-replace _LE "">}
@@ -13052,7 +14731,7 @@ end;
 Function Stream_WriteInt64_BE(Stream: TStream; Value: Int64; Advance: Boolean = True): TMemSize;
 begin
 {$IFNDEF ENDIAN_BIG}
-Value := Int64(SwapEndian(UInt64(Value))); 
+Value := Int64(SwapEndian(UInt64(Value)));
 {$ENDIF}
 Stream.WriteBuffer(Value,SizeOf(Value));
 Result := SizeOf(Value);
@@ -13079,7 +14758,7 @@ else
   Result := Stream_WriteInt64_LE(Stream,Value);
 end;
 
-{<lite-begin>} 
+{<lite-begin>}
 //==============================================================================
 
 {<lite-replace _LE "">}
@@ -13126,7 +14805,7 @@ else
   Result := Stream_WriteUInt64_LE(Stream,Value);
 end;
 
-{<lite-begin>} 
+{<lite-begin>}
 {-------------------------------------------------------------------------------
     Floating point numbers
 -------------------------------------------------------------------------------}
@@ -13181,7 +14860,7 @@ end;
 
 {<lite-begin>}
 //==============================================================================
- 
+
 {<lite-replace _LE "">}
 Function Stream_WriteFloat64_LE(Stream: TStream; Value: Float64; Advance: Boolean = True): TMemSize;
 var
@@ -13232,7 +14911,7 @@ end;
 
 {<lite-begin>}
 //==============================================================================
- 
+
 {<lite-replace _LE "">}
 Function Stream_WriteFloat80_LE(Stream: TStream; Value: Float80; Advance: Boolean = True): TMemSize;
 var
@@ -13887,7 +15566,7 @@ If Length(Value) > 0 then
       TrueLen := Length(Value);
     If TrueLen > 0 then
       begin
-        Result := Stream_WriteInt32_LE(Stream,TrueLen,True);
+        Result := Stream_WriteInt32_LE(Stream,Int32(TrueLen),True);
       {$IFDEF ENDIAN_BIG}
         Inc(Result,Stream_WriteUInt32Arr_SwapEndian(Stream,PUInt32(Addr(Value[Low(Value)])),TrueLen));
       {$ELSE}
@@ -13915,7 +15594,7 @@ If Length(Value) > 0 then
       TrueLen := Length(Value);
     If TrueLen > 0 then
       begin
-        Result := Stream_WriteInt32_BE(Stream,TrueLen,True);
+        Result := Stream_WriteInt32_BE(Stream,Int32(TrueLen),True);
       {$IFDEF ENDIAN_BIG}
         Inc(Result,Stream_WriteBuffer_BE(Stream,Addr(Value[Low(Value)])^,TrueLen * SizeOf(UCS4Char),True));
       {$ELSE}
@@ -14205,7 +15884,7 @@ If Length(Value) > 0 then
       raise EBSStringTooLong.CreateFmt('Stream_WriteSmallUCS4String_LE: String is too long (%d) for small storage.',[Length(Value)])
     else If TrueLen > 0 then
       begin
-        Result := Stream_WriteInt16_LE(Stream,TrueLen,True);
+        Result := Stream_WriteInt16_LE(Stream,Int16(TrueLen),True);
       {$IFDEF ENDIAN_BIG}
         Inc(Result,Stream_WriteUInt32Arr_SwapEndian(Stream,PUInt32(Addr(Value[Low(Value)])),TrueLen));
       {$ELSE}
@@ -14234,7 +15913,7 @@ If Length(Value) > 0 then
       raise EBSStringTooLong.CreateFmt('Stream_WriteSmallUCS4String_BE: String is too long (%d) for small storage.',[Length(Value)])
     else If TrueLen > 0 then
       begin
-        Result := Stream_WriteInt16_BE(Stream,TrueLen,True);
+        Result := Stream_WriteInt16_BE(Stream,Int16(TrueLen),True);
       {$IFDEF ENDIAN_BIG}
         Inc(Result,Stream_WriteBuffer_BE(Stream,Addr(Value[Low(Value)])^,TrueLen * SizeOf(UCS4Char),True));
       {$ELSE}
@@ -14293,6 +15972,322 @@ end;
 Function Stream_WriteSmallString(Stream: TStream; const Value: String; Endian: TEndian = endDefault): TMemSize;
 begin
 Result := Stream_WriteSmallUTF8String(Stream,StrToUTF8(Value),Endian);
+end;
+
+{-------------------------------------------------------------------------------
+    Tiny strings
+-------------------------------------------------------------------------------}
+
+Function _Stream_WriteTinyAnsiString(Stream: TStream; const Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+If Length(Value) <= High(UInt8) then
+  begin
+    Result := Stream_WriteUInt8_LE(Stream,UInt8(Length(Value)),True);
+    If Length(Value) > 0 then
+      Inc(Result,Stream_WriteBuffer_LE(Stream,PAnsiChar(Value)^,Length(Value) * SizeOf(AnsiChar),True));
+    AdvanceStream(Advance,Stream,Result);
+  end
+else raise EBSStringTooLong.CreateFmt('_Stream_WriteTinyAnsiString: String is too long (%d) for tiny storage.',[Length(Value)]);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteTinyAnsiString_LE(Stream: TStream; const Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := _Stream_WriteTinyAnsiString(Stream,Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteTinyAnsiString_BE(Stream: TStream; const Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := _Stream_WriteTinyAnsiString(Stream,Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteTinyAnsiString(Stream: TStream; const Value: AnsiString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_WriteTinyAnsiString_BE(Stream,Value,Advance)
+else
+  Result := Stream_WriteTinyAnsiString_LE(Stream,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_WriteTinyAnsiString(Stream: TStream; const Value: AnsiString; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_WriteTinyAnsiString_BE(Stream,Value)
+else
+  Result := Stream_WriteTinyAnsiString_LE(Stream,Value);
+end;
+
+//==============================================================================
+
+Function _Stream_WriteTinyUTF8String(Stream: TStream; const Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+If Length(Value) <= High(UInt8) then
+  begin
+    Result := Stream_WriteUInt8_LE(Stream,UInt8(Length(Value)),True);
+    If Length(Value) > 0 then
+      Inc(Result,Stream_WriteBuffer_LE(Stream,PUTF8Char(Value)^,Length(Value) * SizeOf(UTF8Char),True));
+    AdvanceStream(Advance,Stream,Result);
+  end
+else raise EBSStringTooLong.CreateFmt('_Stream_WriteTinyUTF8String: String is too long (%d) for tiny storage.',[Length(Value)]);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteTinyUTF8String_LE(Stream: TStream; const Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := _Stream_WriteTinyUTF8String(Stream,Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteTinyUTF8String_BE(Stream: TStream; const Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := _Stream_WriteTinyUTF8String(Stream,Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteTinyUTF8String(Stream: TStream; const Value: UTF8String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_WriteTinyUTF8String_BE(Stream,Value,Advance)
+else
+  Result := Stream_WriteTinyUTF8String_LE(Stream,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_WriteTinyUTF8String(Stream: TStream; const Value: UTF8String; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_WriteTinyUTF8String_BE(Stream,Value)
+else
+  Result := Stream_WriteTinyUTF8String_LE(Stream,Value);
+end;
+
+//==============================================================================
+
+Function Stream_WriteTinyWideString_LE(Stream: TStream; const Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+If Length(Value) <= High(UInt8) then
+  begin
+    Result := Stream_WriteUInt8_LE(Stream,UInt8(Length(Value)),True);
+    If Length(Value) > 0 then
+    {$IFDEF ENDIAN_BIG}
+      Inc(Result,Stream_WriteUInt16Arr_SwapEndian(Stream,PUInt16(PWideChar(Value)),Length(Value)));
+    {$ELSE}
+      Inc(Result,Stream_WriteBuffer_LE(Stream,PWideChar(Value)^,Length(Value) * SizeOf(WideChar),True));
+    {$ENDIF}
+    AdvanceStream(Advance,Stream,Result);
+  end
+else raise EBSStringTooLong.CreateFmt('Stream_WriteTinyWideString_LE: String is too long (%d) for tiny storage.',[Length(Value)]);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteTinyWideString_BE(Stream: TStream; const Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+If Length(Value) <= High(UInt8) then
+  begin
+    Result := Stream_WriteUInt8_BE(Stream,UInt8(Length(Value)),True);
+    If Length(Value) > 0 then
+    {$IFDEF ENDIAN_BIG}
+      Inc(Result,Stream_WriteBuffer_BE(Stream,PWideChar(Value)^,Length(Value) * SizeOf(WideChar),True));
+    {$ELSE}
+      Inc(Result,Stream_WriteUInt16Arr_SwapEndian(Stream,PUInt16(PWideChar(Value)),Length(Value)));
+    {$ENDIF}
+    AdvanceStream(Advance,Stream,Result);
+  end
+else raise EBSStringTooLong.CreateFmt('Stream_WriteTinyWideString_BE: String is too long (%d) for tiny storage.',[Length(Value)]);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteTinyWideString(Stream: TStream; const Value: WideString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_WriteTinyWideString_BE(Stream,Value,Advance)
+else
+  Result := Stream_WriteTinyWideString_LE(Stream,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_WriteTinyWideString(Stream: TStream; const Value: WideString; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_WriteTinyWideString_BE(Stream,Value)
+else
+  Result := Stream_WriteTinyWideString_LE(Stream,Value);
+end;
+
+//==============================================================================
+
+Function Stream_WriteTinyUnicodeString_LE(Stream: TStream; const Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+If Length(Value) <= High(UInt8) then
+  begin
+    Result := Stream_WriteUInt8_LE(Stream,UInt8(Length(Value)),True);
+    If Length(Value) > 0 then
+    {$IFDEF ENDIAN_BIG}
+      Inc(Result,Stream_WriteUInt16Arr_SwapEndian(Stream,PUInt16(PUnicodeChar(Value)),Length(Value)));
+    {$ELSE}
+      Inc(Result,Stream_WriteBuffer_LE(Stream,PUnicodeChar(Value)^,Length(Value) * SizeOf(UnicodeChar),True));
+    {$ENDIF}
+    AdvanceStream(Advance,Stream,Result);
+  end
+else raise EBSStringTooLong.CreateFmt('Stream_WriteTinyUnicodeString_LE: String is too long (%d) for tiny storage.',[Length(Value)]);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteTinyUnicodeString_BE(Stream: TStream; const Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+If Length(Value) <= High(UInt8) then
+  begin
+    Result := Stream_WriteUInt8_BE(Stream,UInt8(Length(Value)),True);
+    If Length(Value) > 0 then
+    {$IFDEF ENDIAN_BIG}
+      Inc(Result,Stream_WriteBuffer_BE(Stream,PUnicodeChar(Value)^,Length(Value) * SizeOf(UnicodeChar),True));
+    {$ELSE}
+      Inc(Result,Stream_WriteUInt16Arr_SwapEndian(Stream,PUInt16(PUnicodeChar(Value)),Length(Value)));
+    {$ENDIF}
+    AdvanceStream(Advance,Stream,Result);
+  end
+else raise EBSStringTooLong.CreateFmt('Stream_WriteTinyUnicodeString_BE: String is too long (%d) for tiny storage.',[Length(Value)]);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteTinyUnicodeString(Stream: TStream; const Value: UnicodeString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_WriteTinyUnicodeString_BE(Stream,Value,Advance)
+else
+  Result := Stream_WriteTinyUnicodeString_LE(Stream,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_WriteTinyUnicodeString(Stream: TStream; const Value: UnicodeString; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_WriteTinyUnicodeString_BE(Stream,Value)
+else
+  Result := Stream_WriteTinyUnicodeString_LE(Stream,Value);
+end;
+
+//==============================================================================
+
+Function Stream_WriteTinyUCS4String_LE(Stream: TStream; const Value: UCS4String; Advance: Boolean = True): TMemSize;
+var
+  TrueLen:  TStrSize;
+begin
+If Length(Value) > 0 then
+  begin
+    If Value[High(Value)] = 0 then
+      TrueLen := Pred(Length(Value))
+    else
+      TrueLen := Length(Value);
+    If TrueLen > High(UInt8) then
+      raise EBSStringTooLong.CreateFmt('Stream_WriteTinyUCS4String_LE: String is too long (%d) for tiny storage.',[Length(Value)])
+    else If TrueLen > 0 then
+      begin
+        Result := Stream_WriteUInt8_LE(Stream,UInt8(TrueLen),True);
+      {$IFDEF ENDIAN_BIG}
+        Inc(Result,Stream_WriteUInt32Arr_SwapEndian(Stream,PUInt32(Addr(Value[Low(Value)])),TrueLen));
+      {$ELSE}
+        Inc(Result,Stream_WriteBuffer_LE(Stream,Addr(Value[Low(Value)])^,TrueLen * SizeOf(UCS4Char),True));
+      {$ENDIF}
+      end
+    else Result := Stream_WriteUInt8_LE(Stream,0,True);
+  end
+else Result := Stream_WriteUInt8_LE(Stream,0,True);
+AdvanceStream(Advance,Stream,Result);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteTinyUCS4String_BE(Stream: TStream; const Value: UCS4String; Advance: Boolean = True): TMemSize;
+var
+  TrueLen:  TStrSize;
+begin
+If Length(Value) > 0 then
+  begin
+    If Value[High(Value)] = 0 then
+      TrueLen := Pred(Length(Value))
+    else
+      TrueLen := Length(Value);
+    If TrueLen > High(UInt8) then
+      raise EBSStringTooLong.CreateFmt('Stream_WriteTinyUCS4String_BE: String is too long (%d) for tiny storage.',[Length(Value)])
+    else If TrueLen > 0 then
+      begin
+        Result := Stream_WriteUInt8_BE(Stream,UInt8(TrueLen),True);
+      {$IFDEF ENDIAN_BIG}
+        Inc(Result,Stream_WriteBuffer_BE(Stream,Addr(Value[Low(Value)])^,TrueLen * SizeOf(UCS4Char),True));
+      {$ELSE}
+        Inc(Result,Stream_WriteUInt32Arr_SwapEndian(Stream,PUInt32(Addr(Value[Low(Value)])),TrueLen));
+      {$ENDIF}
+      end
+    else Result := Stream_WriteUInt8_BE(Stream,0,True);
+  end
+else Result := Stream_WriteUInt8_BE(Stream,0,True);
+AdvanceStream(Advance,Stream,Result);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteTinyUCS4String(Stream: TStream; const Value: UCS4String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_WriteTinyUCS4String_BE(Stream,Value,Advance)
+else
+  Result := Stream_WriteTinyUCS4String_LE(Stream,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_WriteTinyUCS4String(Stream: TStream; const Value: UCS4String; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_WriteTinyUCS4String_BE(Stream,Value)
+else
+  Result := Stream_WriteTinyUCS4String_LE(Stream,Value);
+end;
+
+//==============================================================================
+
+Function Stream_WriteTinyString_LE(Stream: TStream; const Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := Stream_WriteTinyUTF8String_LE(Stream,StrToUTF8(Value),Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteTinyString_BE(Stream: TStream; const Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := Stream_WriteTinyUTF8String_BE(Stream,StrToUTF8(Value),Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_WriteTinyString(Stream: TStream; const Value: String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+Result := Stream_WriteTinyUTF8String(Stream,StrToUTF8(Value),Advance,Endian);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_WriteTinyString(Stream: TStream; const Value: String; Endian: TEndian = endDefault): TMemSize;
+begin
+Result := Stream_WriteTinyUTF8String(Stream,StrToUTF8(Value),Endian);
 end;
 
 {<lite-begin>}
@@ -14355,7 +16350,7 @@ var
   CopyCnt:  Integer;
   i:        Integer;
 begin
-If not OpenByteArrayIsPacked then
+If not OpenByteArrayPacked then
   begin
     Remain := Length(Value);
     Offset := 0;
@@ -14486,7 +16481,7 @@ end;
 Function Stream_WriteVariant_LE(Stream: TStream; const Value: Variant; Advance: Boolean = True): TMemSize;
 var
   Dimensions: Integer;
-  i:          Integer;       
+  i:          Integer;
   Indices:    array of Integer;
 
   Function WriteVarArrayDimension(Dimension: Integer): TMemSize;
@@ -14566,7 +16561,7 @@ end;
 Function Stream_WriteVariant_BE(Stream: TStream; const Value: Variant; Advance: Boolean = True): TMemSize;
 var
   Dimensions: Integer;
-  i:          Integer;       
+  i:          Integer;
   Indices:    array of Integer;
 
   Function WriteVarArrayDimension(Dimension: Integer): TMemSize;
@@ -14828,7 +16823,7 @@ Function Stream_GetBoolean(Stream: TStream; Endian: TEndian = endDefault): Boole
 begin
 Result := Stream_GetBool(Stream,Endian);
 end;
-        
+
 {<lite-begin>}
 {-------------------------------------------------------------------------------
     Integers
@@ -16088,7 +18083,7 @@ If ResolveEndian(Endian) = endBig then
 else
   Result := Stream_GetUTF8Char_LE(Stream);
 end;
- 
+
 {<lite-begin>}
 //==============================================================================
 
@@ -16341,7 +18336,7 @@ else
   Result := Stream_GetUCS4Char_LE(Stream);
 end;
 
-{<lite-begin>} 
+{<lite-begin>}
 //==============================================================================
 
 {<lite-block-replace-begin _LE "">}
@@ -17158,7 +19153,6 @@ If StrLength > 0 then
 AdvanceStream(Advance,Stream,Result);
 end;
 
-
 //------------------------------------------------------------------------------
 
 Function Stream_ReadSmallUTF8String_BE(Stream: TStream; out Value: UTF8String; Advance: Boolean = True): TMemSize;
@@ -17574,6 +19568,512 @@ begin
 Result := UTF8ToStr(Stream_GetSmallUTF8String(Stream,Endian));
 end;
 
+{-------------------------------------------------------------------------------
+    Tiny strings
+-------------------------------------------------------------------------------}
+
+Function _Stream_ReadTinyAnsiString(Stream: TStream; out Value: AnsiString; Advance: Boolean): TMemSize;
+var
+  StrLength:  UInt8;
+begin
+Result := Stream_ReadUInt8_LE(Stream,StrLength,True);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+  Inc(Result,Stream_ReadBuffer_LE(Stream,PAnsiChar(Value)^,StrLength,True));
+AdvanceStream(Advance,Stream,Result);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadTinyAnsiString_LE(Stream: TStream; out Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := _Stream_ReadTinyAnsiString(Stream,Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadTinyAnsiString_BE(Stream: TStream; out Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := _Stream_ReadTinyAnsiString(Stream,Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadTinyAnsiString(Stream: TStream; out Value: AnsiString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_ReadTinyAnsiString_BE(Stream,Value,Advance)
+else
+  Result := Stream_ReadTinyAnsiString_LE(Stream,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_ReadTinyAnsiString(Stream: TStream; out Value: AnsiString; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_ReadTinyAnsiString_BE(Stream,Value)
+else
+  Result := Stream_ReadTinyAnsiString_LE(Stream,Value);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetTinyAnsiString_LE(Stream: TStream; Advance: Boolean = True): AnsiString;
+begin
+_Stream_ReadTinyAnsiString(Stream,Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetTinyAnsiString_BE(Stream: TStream; Advance: Boolean = True): AnsiString;
+begin
+_Stream_ReadTinyAnsiString(Stream,Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetTinyAnsiString(Stream: TStream; Advance: Boolean; Endian: TEndian = endDefault): AnsiString;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_GetTinyAnsiString_BE(Stream,Advance)
+else
+  Result := Stream_GetTinyAnsiString_LE(Stream,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_GetTinyAnsiString(Stream: TStream; Endian: TEndian = endDefault): AnsiString;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_GetTinyAnsiString_BE(Stream)
+else
+  Result := Stream_GetTinyAnsiString_LE(Stream);
+end;
+
+//==============================================================================
+
+Function _Stream_ReadTinyUTF8String(Stream: TStream; out Value: UTF8String; Advance: Boolean): TMemSize;
+var
+  StrLength:  UInt8;
+begin
+Result := Stream_ReadUInt8_LE(Stream,StrLength,True);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+  Inc(Result,Stream_ReadBuffer_LE(Stream,PUTF8Char(Value)^,StrLength,True));
+AdvanceStream(Advance,Stream,Result);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadTinyUTF8String_LE(Stream: TStream; out Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := _Stream_ReadTinyUTF8String(Stream,Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadTinyUTF8String_BE(Stream: TStream; out Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := _Stream_ReadTinyUTF8String(Stream,Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadTinyUTF8String(Stream: TStream; out Value: UTF8String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_ReadTinyUTF8String_BE(Stream,Value,Advance)
+else
+  Result := Stream_ReadTinyUTF8String_LE(Stream,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_ReadTinyUTF8String(Stream: TStream; out Value: UTF8String; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_ReadTinyUTF8String_BE(Stream,Value)
+else
+  Result := Stream_ReadTinyUTF8String_LE(Stream,Value);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetTinyUTF8String_LE(Stream: TStream; Advance: Boolean = True): UTF8String;
+begin
+_Stream_ReadTinyUTF8String(Stream,Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetTinyUTF8String_BE(Stream: TStream; Advance: Boolean = True): UTF8String;
+begin
+_Stream_ReadTinyUTF8String(Stream,Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetTinyUTF8String(Stream: TStream; Advance: Boolean; Endian: TEndian = endDefault): UTF8String;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_GetTinyUTF8String_BE(Stream,Advance)
+else
+  Result := Stream_GetTinyUTF8String_LE(Stream,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_GetTinyUTF8String(Stream: TStream; Endian: TEndian = endDefault): UTF8String;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_GetTinyUTF8String_BE(Stream)
+else
+  Result := Stream_GetTinyUTF8String_LE(Stream);
+end;
+
+//==============================================================================
+
+Function Stream_ReadTinyWideString_LE(Stream: TStream; out Value: WideString; Advance: Boolean = True): TMemSize;
+var
+  StrLength:  UInt8;
+begin
+Result := Stream_ReadUInt8_LE(Stream,StrLength,True);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+{$IFDEF ENDIAN_BIG}
+  Inc(Result,Stream_ReadUInt16Arr_SwapEndian(Stream,PUInt16(PWideChar(Value)),StrLength));
+{$ELSE}
+  Inc(Result,Stream_ReadBuffer_LE(Stream,PWideChar(Value)^,StrLength * SizeOf(WideChar),True));
+{$ENDIF}
+AdvanceStream(Advance,Stream,Result);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadTinyWideString_BE(Stream: TStream; out Value: WideString; Advance: Boolean = True): TMemSize;
+var
+  StrLength:  UInt8;
+begin
+Result := Stream_ReadUInt8_BE(Stream,StrLength,True);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+{$IFDEF ENDIAN_BIG}
+  Inc(Result,Stream_ReadBuffer_BE(Stream,PWideChar(Value)^,StrLength * SizeOf(WideChar),True));
+{$ELSE}
+  Inc(Result,Stream_ReadUInt16Arr_SwapEndian(Stream,PUInt16(PWideChar(Value)),StrLength));
+{$ENDIF}
+AdvanceStream(Advance,Stream,Result);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadTinyWideString(Stream: TStream; out Value: WideString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_ReadTinyWideString_BE(Stream,Value,Advance)
+else
+  Result := Stream_ReadTinyWideString_LE(Stream,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_ReadTinyWideString(Stream: TStream; out Value: WideString; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_ReadTinyWideString_BE(Stream,Value)
+else
+  Result := Stream_ReadTinyWideString_LE(Stream,Value);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetTinyWideString_LE(Stream: TStream; Advance: Boolean = True): WideString;
+begin
+Stream_ReadTinyWideString_LE(Stream,Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetTinyWideString_BE(Stream: TStream; Advance: Boolean = True): WideString;
+begin
+Stream_ReadTinyWideString_BE(Stream,Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetTinyWideString(Stream: TStream; Advance: Boolean; Endian: TEndian = endDefault): WideString;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_GetTinyWideString_BE(Stream,Advance)
+else
+  Result := Stream_GetTinyWideString_LE(Stream,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_GetTinyWideString(Stream: TStream; Endian: TEndian = endDefault): WideString;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_GetTinyWideString_BE(Stream)
+else
+  Result := Stream_GetTinyWideString_LE(Stream);
+end;
+
+//==============================================================================
+
+Function Stream_ReadTinyUnicodeString_LE(Stream: TStream; out Value: UnicodeString; Advance: Boolean = True): TMemSize;
+var
+  StrLength:  UInt8;
+begin
+Result := Stream_ReadUInt8_LE(Stream,StrLength,True);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+{$IFDEF ENDIAN_BIG}
+  Inc(Result,Stream_ReadUInt16Arr_SwapEndian(Stream,PUInt16(PUnicodeChar(Value)),StrLength));
+{$ELSE}
+  Inc(Result,Stream_ReadBuffer_LE(Stream,PUnicodeChar(Value)^,StrLength * SizeOf(UnicodeChar),True));
+{$ENDIF}
+AdvanceStream(Advance,Stream,Result);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadTinyUnicodeString_BE(Stream: TStream; out Value: UnicodeString; Advance: Boolean = True): TMemSize;
+var
+  StrLength:  UInt8;
+begin
+Result := Stream_ReadUInt8_BE(Stream,StrLength,True);
+Value := '';
+SetLength(Value,StrLength);
+If StrLength > 0 then
+{$IFDEF ENDIAN_BIG}
+  Inc(Result,Stream_ReadBuffer_BE(Stream,PUnicodeChar(Value)^,StrLength * SizeOf(UnicodeChar),True));
+{$ELSE}
+  Inc(Result,Stream_ReadUInt16Arr_SwapEndian(Stream,PUInt16(PUnicodeChar(Value)),StrLength));
+{$ENDIF}
+AdvanceStream(Advance,Stream,Result);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadTinyUnicodeString(Stream: TStream; out Value: UnicodeString; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_ReadTinyUnicodeString_BE(Stream,Value,Advance)
+else
+  Result := Stream_ReadTinyUnicodeString_LE(Stream,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_ReadTinyUnicodeString(Stream: TStream; out Value: UnicodeString; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_ReadTinyUnicodeString_BE(Stream,Value)
+else
+  Result := Stream_ReadTinyUnicodeString_LE(Stream,Value);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetTinyUnicodeString_LE(Stream: TStream; Advance: Boolean = True): UnicodeString;
+begin
+Stream_ReadTinyUnicodeString_LE(Stream,Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetTinyUnicodeString_BE(Stream: TStream; Advance: Boolean = True): UnicodeString;
+begin
+Stream_ReadTinyUnicodeString_BE(Stream,Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetTinyUnicodeString(Stream: TStream; Advance: Boolean; Endian: TEndian = endDefault): UnicodeString;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_GetTinyUnicodeString_BE(Stream,Advance)
+else
+  Result := Stream_GetTinyUnicodeString_LE(Stream,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_GetTinyUnicodeString(Stream: TStream; Endian: TEndian = endDefault): UnicodeString;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_GetTinyUnicodeString_BE(Stream)
+else
+  Result := Stream_GetTinyUnicodeString_LE(Stream);
+end;
+
+//==============================================================================
+
+Function Stream_ReadTinyUCS4String_LE(Stream: TStream; out Value: UCS4String; Advance: Boolean = True): TMemSize;
+var
+  StrLength:  UInt8;
+begin
+Result := Stream_ReadUInt8_LE(Stream,StrLength,True);
+Value := nil;
+SetLength(Value,StrLength + 1);
+Value[High(Value)] := 0;
+If StrLength > 0 then
+{$IFDEF ENDIAN_BIG}
+  Inc(Result,Stream_ReadUInt32Arr_SwapEndian(Stream,PUInt32(Addr(Value[Low(Value)])),StrLength));
+{$ELSE}
+  Inc(Result,Stream_ReadBuffer_LE(Stream,Addr(Value[Low(Value)])^,StrLength * SizeOf(UCS4Char),True));
+{$ENDIF}
+AdvanceStream(Advance,Stream,Result);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadTinyUCS4String_BE(Stream: TStream; out Value: UCS4String; Advance: Boolean = True): TMemSize;
+var
+  StrLength:  UInt8;
+begin
+Result := Stream_ReadUInt8_BE(Stream,StrLength,True);
+Value := nil;
+SetLength(Value,StrLength + 1);
+Value[High(Value)] := 0;
+If StrLength > 0 then
+{$IFDEF ENDIAN_BIG}
+  Inc(Result,Stream_ReadBuffer_BE(Stream,Addr(Value[Low(Value)])^,StrLength * SizeOf(UCS4Char),True));
+{$ELSE}
+  Inc(Result,Stream_ReadUInt32Arr_SwapEndian(Stream,PUInt32(Addr(Value[Low(Value)])),StrLength));
+{$ENDIF}
+AdvanceStream(Advance,Stream,Result);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadTinyUCS4String(Stream: TStream; out Value: UCS4String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_ReadTinyUCS4String_BE(Stream,Value,Advance)
+else
+  Result := Stream_ReadTinyUCS4String_LE(Stream,Value,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_ReadTinyUCS4String(Stream: TStream; out Value: UCS4String; Endian: TEndian = endDefault): TMemSize;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_ReadTinyUCS4String_BE(Stream,Value)
+else
+  Result := Stream_ReadTinyUCS4String_LE(Stream,Value);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetTinyUCS4String_LE(Stream: TStream; Advance: Boolean = True): UCS4String;
+begin
+Stream_ReadTinyUCS4String_LE(Stream,Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetTinyUCS4String_BE(Stream: TStream; Advance: Boolean = True): UCS4String;
+begin
+Stream_ReadTinyUCS4String_BE(Stream,Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetTinyUCS4String(Stream: TStream; Advance: Boolean; Endian: TEndian = endDefault): UCS4String;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_GetTinyUCS4String_BE(Stream,Advance)
+else
+  Result := Stream_GetTinyUCS4String_LE(Stream,Advance);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_GetTinyUCS4String(Stream: TStream; Endian: TEndian = endDefault): UCS4String;
+begin
+If ResolveEndian(Endian) = endBig then
+  Result := Stream_GetTinyUCS4String_BE(Stream)
+else
+  Result := Stream_GetTinyUCS4String_LE(Stream);
+end;
+
+//==============================================================================
+
+Function Stream_ReadTinyString_LE(Stream: TStream; out Value: String; Advance: Boolean = True): TMemSize;
+var
+  TempStr:  UTF8String;
+begin
+Result := Stream_ReadTinyUTF8String_LE(Stream,TempStr,Advance);
+Value := UTF8ToStr(TempStr);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadTinyString_BE(Stream: TStream; out Value: String; Advance: Boolean = True): TMemSize;
+var
+  TempStr:  UTF8String;
+begin
+Result := Stream_ReadTinyUTF8String_BE(Stream,TempStr,Advance);
+Value := UTF8ToStr(TempStr);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_ReadTinyString(Stream: TStream; out Value: String; Advance: Boolean; Endian: TEndian = endDefault): TMemSize;
+var
+  TempStr:  UTF8String;
+begin
+Result := Stream_ReadTinyUTF8String(Stream,TempStr,Advance,Endian);
+Value := UTF8ToStr(TempStr);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_ReadTinyString(Stream: TStream; out Value: String; Endian: TEndian = endDefault): TMemSize;
+var
+  TempStr:  UTF8String;
+begin
+Result := Stream_ReadTinyUTF8String(Stream,TempStr,Endian);
+Value := UTF8ToStr(TempStr);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetTinyString_LE(Stream: TStream; Advance: Boolean = True): String;
+begin
+Result := UTF8ToStr(Stream_GetTinyUTF8String_LE(Stream,Advance));
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetTinyString_BE(Stream: TStream; Advance: Boolean = True): String;
+begin
+Result := UTF8ToStr(Stream_GetTinyUTF8String_BE(Stream,Advance));
+end;
+
+//------------------------------------------------------------------------------
+
+Function Stream_GetTinyString(Stream: TStream; Advance: Boolean; Endian: TEndian = endDefault): String;
+begin
+Result := UTF8ToStr(Stream_GetTinyUTF8String(Stream,Advance,Endian));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function Stream_GetTinyString(Stream: TStream; Endian: TEndian = endDefault): String;
+begin
+Result := UTF8ToStr(Stream_GetTinyUTF8String(Stream,Endian));
+end;
+
 {<lite-begin>}
 {-------------------------------------------------------------------------------
     General data buffers
@@ -17908,7 +20408,12 @@ const
   BS_VALTYPE_SMLSTR_UNICODE = 18;
   BS_VALTYPE_SMLSTR_UCS4    = 19;
   BS_VALTYPE_SMLSTR         = 20;
-  
+  BS_VALTYPE_TNYSTR_ANSI    = 21;
+  BS_VALTYPE_TNYSTR_UTF8    = 22;
+  BS_VALTYPE_TNYSTR_WIDE    = 23;
+  BS_VALTYPE_TNYSTR_UNICODE = 24;
+  BS_VALTYPE_TNYSTR_UCS4    = 25;
+  BS_VALTYPE_TNYSTR         = 26;
   BS_VALTYPE_BUFFER         = 27;
   BS_VALTYPE_BYTEARRAY      = 28;
   BS_VALTYPE_FILL           = 29;
@@ -18020,12 +20525,12 @@ var
   i:        Integer;
 begin
 Result := 0;
-If not OpenByteArrayIsPacked then
+If not OpenByteArrayPacked then
   begin
     OldPos := Position;
     InputPtr := Ptr;
     Remain := Count;
-    // so we do not constantly access global variable...    
+    // so we do not constantly access global variable...
     Stride := OpenByteArrayStride;
     while Remain > 0 do
       begin
@@ -18040,7 +20545,7 @@ If not OpenByteArrayIsPacked then
         Result := Result + TMemSize(CopyCnt);
       end;
     If not Advance then
-      Position := OldPos;      
+      Position := OldPos;
   end
 else If Count > 0 then
   Result := WriteValue(BS_VALTYPE_BUFFER,Ptr,Advance,Count);
@@ -18160,7 +20665,7 @@ If fChangingCounter <= 0 then
       fOnChangeEvent(Self)
     else If Assigned(fOnChangeCallback) then
       fOnChangeCallback(Self);
-    fChanged := False;  
+    fChanged := False;
   end
 else fChanged := True;
 end;
@@ -18172,7 +20677,7 @@ begin
 fEndian := endDefault;
 fStart := 0;
 SetLength(fBookmarks,0);
-fBookmarkCount := 0; 
+fBookmarkCount := 0;
 fChanged := False;
 fChangingCounter := 0;
 fOnChangeEvent := nil;
@@ -18532,7 +21037,7 @@ Function TCustomStreamer.WriteUInt8(Value: UInt8; Advance: Boolean = True): TMem
 begin
 Result := WriteValue(BS_VALTYPE_NUM_1,@Value,Advance);
 end;
- 
+
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteInt16(Value: Int16; Advance: Boolean = True): TMemSize;
@@ -18608,7 +21113,7 @@ end;
 Function TCustomStreamer.WriteCurrency(Value: Currency; Advance: Boolean = True): TMemSize;
 begin
 Result := WriteValue(BS_VALTYPE_NUM_8,@Value,Advance);
-end;   
+end;
 
 //------------------------------------------------------------------------------
 
@@ -18679,7 +21184,7 @@ Function TCustomStreamer.WriteWideString(const Value: WideString; Advance: Boole
 begin
 Result := WriteValue(BS_VALTYPE_STR_WIDE,@Value,Advance);
 end;
- 
+
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteUnicodeString(const Value: UnicodeString; Advance: Boolean = True): TMemSize;
@@ -18689,11 +21194,11 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TCustomStreamer.WriteUCS4String(const Value: UCS4String; Advance: Boolean = True): TMemSize; 
+Function TCustomStreamer.WriteUCS4String(const Value: UCS4String; Advance: Boolean = True): TMemSize;
 begin
 Result := WriteValue(BS_VALTYPE_STR_UCS4,@Value,Advance);
 end;
-  
+
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteString(const Value: String; Advance: Boolean = True): TMemSize;
@@ -18721,7 +21226,7 @@ Function TCustomStreamer.WriteSmallWideString(const Value: WideString; Advance: 
 begin
 Result := WriteValue(BS_VALTYPE_SMLSTR_WIDE,@Value,Advance);
 end;
- 
+
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteSmallUnicodeString(const Value: UnicodeString; Advance: Boolean = True): TMemSize;
@@ -18735,14 +21240,56 @@ Function TCustomStreamer.WriteSmallUCS4String(const Value: UCS4String; Advance: 
 begin
 Result := WriteValue(BS_VALTYPE_SMLSTR_UCS4,@Value,Advance);
 end;
-  
+
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteSmallString(const Value: String; Advance: Boolean = True): TMemSize;
 begin
 Result := WriteValue(BS_VALTYPE_SMLSTR,@Value,Advance);
 end;
-  
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyAnsiString(const Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(BS_VALTYPE_TNYSTR_ANSI,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyUTF8String(const Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(BS_VALTYPE_TNYSTR_UTF8,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyWideString(const Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(BS_VALTYPE_TNYSTR_WIDE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyUnicodeString(const Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(BS_VALTYPE_TNYSTR_UNICODE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyUCS4String(const Value: UCS4String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(BS_VALTYPE_TNYSTR_UCS4,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyString(const Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValue(BS_VALTYPE_TNYSTR,@Value,Advance);
+end;
+
 //------------------------------------------------------------------------------
 
 Function TCustomStreamer.WriteBuffer(const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
@@ -19007,6 +21554,48 @@ end;
 Function TCustomStreamer.WriteSmallStringAt(Position: Int64; const Value: String; Advance: Boolean = True): TMemSize;
 begin
 Result := WriteValueAt(Position,BS_VALTYPE_SMLSTR,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyAnsiStringAt(Position: Int64; const Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_TNYSTR_ANSI,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyUTF8StringAt(Position: Int64; const Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_TNYSTR_UTF8,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyWideStringAt(Position: Int64; const Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_TNYSTR_WIDE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyUnicodeStringAt(Position: Int64; const Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_TNYSTR_UNICODE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyUCS4StringAt(Position: Int64; const Value: UCS4String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_TNYSTR_UCS4,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyStringAt(Position: Int64; const Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAt(Position,BS_VALTYPE_TNYSTR,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
@@ -19277,6 +21866,48 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TCustomStreamer.WriteTinyAnsiStringAtOffset(Offset: Int64; const Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_TNYSTR_ANSI,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyUTF8StringAtOffset(Offset: Int64; const Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_TNYSTR_UTF8,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyWideStringAtOffset(Offset: Int64; const Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_TNYSTR_WIDE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyUnicodeStringAtOffset(Offset: Int64; const Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_TNYSTR_UNICODE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyUCS4StringAtOffset(Offset: Int64; const Value: UCS4String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_TNYSTR_UCS4,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyStringAtOffset(Offset: Int64; const Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAtOffset(Offset,BS_VALTYPE_TNYSTR,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
 Function TCustomStreamer.WriteBufferAtOffset(Offset: Int64; const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
 begin
 Result := WriteValueAtOffset(Offset,BS_VALTYPE_BUFFER,@Buffer,Advance,Size);
@@ -19539,6 +22170,48 @@ end;
 Function TCustomStreamer.WriteSmallStringTo(ID: TBSBookmarkID; const Value: String; Advance: Boolean = True): TMemSize;
 begin
 Result := WriteValueTo(ID,BS_VALTYPE_SMLSTR,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyAnsiStringTo(ID: TBSBookmarkID; const Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_TNYSTR_ANSI,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyUTF8StringTo(ID: TBSBookmarkID; const Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_TNYSTR_UTF8,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyWideStringTo(ID: TBSBookmarkID; const Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_TNYSTR_WIDE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyUnicodeStringTo(ID: TBSBookmarkID; const Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_TNYSTR_UNICODE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyUCS4StringTo(ID: TBSBookmarkID; const Value: UCS4String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_TNYSTR_UCS4,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyStringTo(ID: TBSBookmarkID; const Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueTo(ID,BS_VALTYPE_TNYSTR,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
@@ -19809,6 +22482,48 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TCustomStreamer.WriteTinyAnsiStringToIndex(Index: Integer; const Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_TNYSTR_ANSI,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyUTF8StringToIndex(Index: Integer; const Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_TNYSTR_UTF8,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyWideStringToIndex(Index: Integer; const Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_TNYSTR_WIDE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyUnicodeStringToIndex(Index: Integer; const Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_TNYSTR_UNICODE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyUCS4StringToIndex(Index: Integer; const Value: UCS4String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_TNYSTR_UCS4,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.WriteTinyStringToIndex(Index: Integer; const Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueToIndex(Index,BS_VALTYPE_TNYSTR,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
 Function TCustomStreamer.WriteBufferToIndex(Index: Integer; const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
 begin
 Result := WriteValueToIndex(Index,BS_VALTYPE_BUFFER,@Buffer,Advance,Size);
@@ -20075,6 +22790,48 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TCustomStreamer.ReadTinyAnsiString(out Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(BS_VALTYPE_TNYSTR_ANSI,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadTinyUTF8String(out Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(BS_VALTYPE_TNYSTR_UTF8,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadTinyWideString(out Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(BS_VALTYPE_TNYSTR_WIDE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadTinyUnicodeString(out Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(BS_VALTYPE_TNYSTR_UNICODE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadTinyUCS4String(out Value: UCS4String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(BS_VALTYPE_TNYSTR_UCS4,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadTinyString(out Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValue(BS_VALTYPE_TNYSTR,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
 Function TCustomStreamer.ReadBuffer(out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
 begin
 Result := ReadValue(BS_VALTYPE_BUFFER,@Buffer,Advance,Size);
@@ -20323,6 +23080,48 @@ end;
 Function TCustomStreamer.ReadSmallStringAt(Position: Int64; out Value: String; Advance: Boolean = True): TMemSize;
 begin
 Result := ReadValueAt(Position,BS_VALTYPE_SMLSTR,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadTinyAnsiStringAt(Position: Int64; out Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_TNYSTR_ANSI,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadTinyUTF8StringAt(Position: Int64; out Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_TNYSTR_UTF8,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadTinyWideStringAt(Position: Int64; out Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_TNYSTR_WIDE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadTinyUnicodeStringAt(Position: Int64; out Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_TNYSTR_UNICODE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadTinyUCS4StringAt(Position: Int64; out Value: UCS4String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_TNYSTR_UCS4,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadTinyStringAt(Position: Int64; out Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAt(Position,BS_VALTYPE_TNYSTR,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
@@ -20579,6 +23378,48 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TCustomStreamer.ReadTinyAnsiStringAtOffset(Offset: Int64; out Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_TNYSTR_ANSI,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadTinyUTF8StringAtOffset(Offset: Int64; out Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_TNYSTR_UTF8,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadTinyWideStringAtOffset(Offset: Int64; out Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_TNYSTR_WIDE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadTinyUnicodeStringAtOffset(Offset: Int64; out Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_TNYSTR_UNICODE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadTinyUCS4StringAtOffset(Offset: Int64; out Value: UCS4String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_TNYSTR_UCS4,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadTinyStringAtOffset(Offset: Int64; out Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAtOffset(Offset,BS_VALTYPE_TNYSTR,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
 Function TCustomStreamer.ReadBufferAtOffset(Offset: Int64; out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
 begin
 Result := ReadValueAtOffset(Offset,BS_VALTYPE_BUFFER,@Buffer,Advance,Size);
@@ -20827,6 +23668,48 @@ end;
 Function TCustomStreamer.ReadSmallStringFrom(ID: TBSBookmarkID; out Value: String; Advance: Boolean = True): TMemSize;
 begin
 Result := ReadValueFrom(ID,BS_VALTYPE_SMLSTR,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadTinyAnsiStringFrom(ID: TBSBookmarkID; out Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_TNYSTR_ANSI,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadTinyUTF8StringFrom(ID: TBSBookmarkID; out Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_TNYSTR_UTF8,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadTinyWideStringFrom(ID: TBSBookmarkID; out Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_TNYSTR_WIDE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadTinyUnicodeStringFrom(ID: TBSBookmarkID; out Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_TNYSTR_UNICODE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadTinyUCS4StringFrom(ID: TBSBookmarkID; out Value: UCS4String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_TNYSTR_UCS4,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadTinyStringFrom(ID: TBSBookmarkID; out Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueFrom(ID,BS_VALTYPE_TNYSTR,@Value,Advance);
 end;
 
 //------------------------------------------------------------------------------
@@ -21083,6 +23966,48 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TCustomStreamer.ReadTinyAnsiStringFromIndex(Index: Integer; out Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_TNYSTR_ANSI,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadTinyUTF8StringFromIndex(Index: Integer; out Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_TNYSTR_UTF8,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadTinyWideStringFromIndex(Index: Integer; out Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_TNYSTR_WIDE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadTinyUnicodeStringFromIndex(Index: Integer; out Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_TNYSTR_UNICODE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadTinyUCS4StringFromIndex(Index: Integer; out Value: UCS4String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_TNYSTR_UCS4,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.ReadTinyStringFromIndex(Index: Integer; out Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueFromIndex(Index,BS_VALTYPE_TNYSTR,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
 Function TCustomStreamer.ReadBufferFromIndex(Index: Integer; out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
 begin
 Result := ReadValueFromIndex(Index,BS_VALTYPE_BUFFER,@Buffer,Advance,Size);
@@ -21335,6 +24260,48 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TCustomStreamer.GetTinyAnsiString(Advance: Boolean = True): AnsiString;
+begin
+ReadValue(BS_VALTYPE_TNYSTR_ANSI,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetTinyUTF8String(Advance: Boolean = True): UTF8String;
+begin
+ReadValue(BS_VALTYPE_TNYSTR_UTF8,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetTinyWideString(Advance: Boolean = True): WideString;
+begin
+ReadValue(BS_VALTYPE_TNYSTR_WIDE,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetTinyUnicodeString(Advance: Boolean = True): UnicodeString;
+begin
+ReadValue(BS_VALTYPE_TNYSTR_UNICODE,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetTinyUCS4String(Advance: Boolean = True): UCS4String;
+begin
+ReadValue(BS_VALTYPE_TNYSTR_UCS4,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetTinyString(Advance: Boolean = True): String;
+begin
+ReadValue(BS_VALTYPE_TNYSTR,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
 Function TCustomStreamer.GetVariant(Advance: Boolean = True): Variant;
 begin
 ReadValue(BS_VALTYPE_VARIANT,@Result,Advance)
@@ -21576,6 +24543,48 @@ end;
 Function TCustomStreamer.GetSmallStringAt(Position: Int64; Advance: Boolean = True): String;
 begin
 ReadValueAt(Position,BS_VALTYPE_SMLSTR,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetTinyAnsiStringAt(Position: Int64; Advance: Boolean = True): AnsiString;
+begin
+ReadValueAt(Position,BS_VALTYPE_TNYSTR_ANSI,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetTinyUTF8StringAt(Position: Int64; Advance: Boolean = True): UTF8String;
+begin
+ReadValueAt(Position,BS_VALTYPE_TNYSTR_UTF8,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetTinyWideStringAt(Position: Int64; Advance: Boolean = True): WideString;
+begin
+ReadValueAt(Position,BS_VALTYPE_TNYSTR_WIDE,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetTinyUnicodeStringAt(Position: Int64; Advance: Boolean = True): UnicodeString;
+begin
+ReadValueAt(Position,BS_VALTYPE_TNYSTR_UNICODE,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetTinyUCS4StringAt(Position: Int64; Advance: Boolean = True): UCS4String;
+begin
+ReadValueAt(Position,BS_VALTYPE_TNYSTR_UCS4,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetTinyStringAt(Position: Int64; Advance: Boolean = True): String;
+begin
+ReadValueAt(Position,BS_VALTYPE_TNYSTR,@Result,Advance);
 end;
 
 //------------------------------------------------------------------------------
@@ -21825,6 +24834,48 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TCustomStreamer.GetTinyAnsiStringAtOffset(Offset: Int64; Advance: Boolean = True): AnsiString;
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_TNYSTR_ANSI,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetTinyUTF8StringAtOffset(Offset: Int64; Advance: Boolean = True): UTF8String;
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_TNYSTR_UTF8,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetTinyWideStringAtOffset(Offset: Int64; Advance: Boolean = True): WideString;
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_TNYSTR_WIDE,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetTinyUnicodeStringAtOffset(Offset: Int64; Advance: Boolean = True): UnicodeString;
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_TNYSTR_UNICODE,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetTinyUCS4StringAtOffset(Offset: Int64; Advance: Boolean = True): UCS4String;
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_TNYSTR_UCS4,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetTinyStringAtOffset(Offset: Int64; Advance: Boolean = True): String;
+begin
+ReadValueAtOffset(Offset,BS_VALTYPE_TNYSTR,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
 Function TCustomStreamer.GetVariantAtOffset(Offset: Int64; Advance: Boolean = True): Variant;
 begin
 ReadValueAtOffset(Offset,BS_VALTYPE_VARIANT,@Result,Advance);
@@ -22066,6 +25117,48 @@ end;
 Function TCustomStreamer.GetSmallStringFrom(ID: TBSBookmarkID; Advance: Boolean = True): String;
 begin
 ReadValueFrom(ID,BS_VALTYPE_SMLSTR,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetTinyAnsiStringFrom(ID: TBSBookmarkID; Advance: Boolean = True): AnsiString;
+begin
+ReadValueFrom(ID,BS_VALTYPE_TNYSTR_ANSI,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetTinyUTF8StringFrom(ID: TBSBookmarkID; Advance: Boolean = True): UTF8String;
+begin
+ReadValueFrom(ID,BS_VALTYPE_TNYSTR_UTF8,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetTinyWideStringFrom(ID: TBSBookmarkID; Advance: Boolean = True): WideString;
+begin
+ReadValueFrom(ID,BS_VALTYPE_TNYSTR_WIDE,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetTinyUnicodeStringFrom(ID: TBSBookmarkID; Advance: Boolean = True): UnicodeString;
+begin
+ReadValueFrom(ID,BS_VALTYPE_TNYSTR_UNICODE,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetTinyUCS4StringFrom(ID: TBSBookmarkID; Advance: Boolean = True): UCS4String;
+begin
+ReadValueFrom(ID,BS_VALTYPE_TNYSTR_UCS4,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetTinyStringFrom(ID: TBSBookmarkID; Advance: Boolean = True): String;
+begin
+ReadValueFrom(ID,BS_VALTYPE_TNYSTR,@Result,Advance);
 end;
 
 //------------------------------------------------------------------------------
@@ -22315,6 +25408,48 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TCustomStreamer.GetTinyAnsiStringFromIndex(Index: Integer; Advance: Boolean = True): AnsiString;
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_TNYSTR_ANSI,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetTinyUTF8StringFromIndex(Index: Integer; Advance: Boolean = True): UTF8String;
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_TNYSTR_UTF8,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetTinyWideStringFromIndex(Index: Integer; Advance: Boolean = True): WideString;
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_TNYSTR_WIDE,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetTinyUnicodeStringFromIndex(Index: Integer; Advance: Boolean = True): UnicodeString;
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_TNYSTR_UNICODE,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetTinyUCS4StringFromIndex(Index: Integer; Advance: Boolean = True): UCS4String;
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_TNYSTR_UCS4,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TCustomStreamer.GetTinyStringFromIndex(Index: Integer; Advance: Boolean = True): String;
+begin
+ReadValueFromIndex(Index,BS_VALTYPE_TNYSTR,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
 Function TCustomStreamer.GetVariantFromIndex(Index: Integer; Advance: Boolean = True): Variant;
 begin
 ReadValueFromIndex(Index,BS_VALTYPE_VARIANT,@Result,Advance);
@@ -22378,6 +25513,12 @@ case ValueType of
   BS_VALTYPE_SMLSTR_UNICODE:  Result := Ptr_WriteSmallUnicodeString(fPositionAddress,UnicodeString(ValuePtr^),Advance,fEndian);
   BS_VALTYPE_SMLSTR_UCS4:     Result := Ptr_WriteSmallUCS4String(fPositionAddress,UCS4String(ValuePtr^),Advance,fEndian);
   BS_VALTYPE_SMLSTR:          Result := Ptr_WriteSmallString(fPositionAddress,String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_TNYSTR_ANSI:     Result := Ptr_WriteTinyAnsiString(fPositionAddress,AnsiString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_TNYSTR_UTF8:     Result := Ptr_WriteTinyUTF8String(fPositionAddress,UTF8String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_TNYSTR_WIDE:     Result := Ptr_WriteTinyWideString(fPositionAddress,WideString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_TNYSTR_UNICODE:  Result := Ptr_WriteTinyUnicodeString(fPositionAddress,UnicodeString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_TNYSTR_UCS4:     Result := Ptr_WriteTinyUCS4String(fPositionAddress,UCS4String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_TNYSTR:          Result := Ptr_WriteTinyString(fPositionAddress,String(ValuePtr^),Advance,fEndian);
   BS_VALTYPE_BYTEARRAY:       Result := WriteOpenByteArray(ValuePtr,Integer(Size),Advance);
   BS_VALTYPE_FILL:            Result := Ptr_FillBytes(fPositionAddress,Size,UInt8(ValuePtr^),Advance,fEndian);
   BS_VALTYPE_VARIANT:         Result := Ptr_WriteVariant(fPositionAddress,Variant(ValuePtr^),Advance,fEndian);
@@ -22438,6 +25579,12 @@ case ValueType of
   BS_VALTYPE_SMLSTR_UNICODE:  Result := Ptr_ReadSmallUnicodeString(fPositionAddress,UnicodeString(ValuePtr^),Advance,fEndian);
   BS_VALTYPE_SMLSTR_UCS4:     Result := Ptr_ReadSmallUCS4String(fPositionAddress,UCS4String(ValuePtr^),Advance,fEndian);
   BS_VALTYPE_SMLSTR:          Result := Ptr_ReadSmallString(fPositionAddress,String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_TNYSTR_ANSI:     Result := Ptr_ReadTinyAnsiString(fPositionAddress,AnsiString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_TNYSTR_UTF8:     Result := Ptr_ReadTinyUTF8String(fPositionAddress,UTF8String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_TNYSTR_WIDE:     Result := Ptr_ReadTinyWideString(fPositionAddress,WideString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_TNYSTR_UNICODE:  Result := Ptr_ReadTinyUnicodeString(fPositionAddress,UnicodeString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_TNYSTR_UCS4:     Result := Ptr_ReadTinyUCS4String(fPositionAddress,UCS4String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_TNYSTR:          Result := Ptr_ReadTinyString(fPositionAddress,String(ValuePtr^),Advance,fEndian);
   BS_VALTYPE_VARIANT:         Result := Ptr_ReadVariant(fPositionAddress,Variant(ValuePtr^),Advance,fEndian);
 else
  {BS_VALTYPE_FILL,BS_VALTYPE_BUFFER}
@@ -22770,6 +25917,48 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TMemoryStreamer.WriteTinyAnsiStringAt(Address: Pointer; const Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_TNYSTR_ANSI,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteTinyUTF8StringAt(Address: Pointer; const Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_TNYSTR_UTF8,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteTinyWideStringAt(Address: Pointer; const Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_TNYSTR_WIDE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteTinyUnicodeStringAt(Address: Pointer; const Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_TNYSTR_UNICODE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteTinyUCS4StringAt(Address: Pointer; const Value: UCS4String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_TNYSTR_UCS4,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.WriteTinyStringAt(Address: Pointer; const Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := WriteValueAtAddr(Address,BS_VALTYPE_TNYSTR,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
 Function TMemoryStreamer.WriteBufferAt(Address: Pointer; const Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
 begin
 Result := WriteValueAtAddr(Address,BS_VALTYPE_BUFFER,@Buffer,Advance,Size);
@@ -23036,6 +26225,48 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TMemoryStreamer.ReadTinyAnsiStringAt(Address: Pointer; out Value: AnsiString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_TNYSTR_ANSI,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadTinyUTF8StringAt(Address: Pointer; out Value: UTF8String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_TNYSTR_UTF8,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadTinyWideStringAt(Address: Pointer; out Value: WideString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_TNYSTR_WIDE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadTinyUnicodeStringAt(Address: Pointer; out Value: UnicodeString; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_TNYSTR_UNICODE,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadTinyUCS4StringAt(Address: Pointer; out Value: UCS4String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_TNYSTR_UCS4,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.ReadTinyStringAt(Address: Pointer; out Value: String; Advance: Boolean = True): TMemSize;
+begin
+Result := ReadValueAtAddr(Address,BS_VALTYPE_TNYSTR,@Value,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
 Function TMemoryStreamer.ReadBufferAt(Address: Pointer; out Buffer; Size: TMemSize; Advance: Boolean = True): TMemSize;
 begin
 Result := ReadValueAtAddr(Address,BS_VALTYPE_BUFFER,@Buffer,Advance,Size);
@@ -23288,6 +26519,48 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TMemoryStreamer.GetTinyAnsiStringAt(Address: Pointer; Advance: Boolean = True): AnsiString;
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_TNYSTR_ANSI,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetTinyUTF8StringAt(Address: Pointer; Advance: Boolean = True): UTF8String;
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_TNYSTR_UTF8,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetTinyWideStringAt(Address: Pointer; Advance: Boolean = True): WideString;
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_TNYSTR_WIDE,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetTinyUnicodeStringAt(Address: Pointer; Advance: Boolean = True): UnicodeString;
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_TNYSTR_UNICODE,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetTinyUCS4StringAt(Address: Pointer; Advance: Boolean = True): UCS4String;
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_TNYSTR_UCS4,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TMemoryStreamer.GetTinyStringAt(Address: Pointer; Advance: Boolean = True): String;
+begin
+ReadValueAtAddr(Address,BS_VALTYPE_TNYSTR,@Result,Advance);
+end;
+
+//------------------------------------------------------------------------------
+
 Function TMemoryStreamer.GetVariantAt(Address: Pointer; Advance: Boolean = True): Variant;
 begin
 ReadValueAtAddr(Address,BS_VALTYPE_VARIANT,@Result,Advance);
@@ -23344,6 +26617,12 @@ case ValueType of
   BS_VALTYPE_SMLSTR_UNICODE:  Result := Stream_WriteSmallUnicodeString(fTarget,UnicodeString(ValuePtr^),Advance,fEndian);
   BS_VALTYPE_SMLSTR_UCS4:     Result := Stream_WriteSmallUCS4String(fTarget,UCS4String(ValuePtr^),Advance,fEndian);
   BS_VALTYPE_SMLSTR:          Result := Stream_WriteSmallString(fTarget,String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_TNYSTR_ANSI:     Result := Stream_WriteTinyAnsiString(fTarget,AnsiString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_TNYSTR_UTF8:     Result := Stream_WriteTinyUTF8String(fTarget,UTF8String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_TNYSTR_WIDE:     Result := Stream_WriteTinyWideString(fTarget,WideString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_TNYSTR_UNICODE:  Result := Stream_WriteTinyUnicodeString(fTarget,UnicodeString(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_TNYSTR_UCS4:     Result := Stream_WriteTinyUCS4String(fTarget,UCS4String(ValuePtr^),Advance,fEndian);
+  BS_VALTYPE_TNYSTR:          Result := Stream_WriteTinyString(fTarget,String(ValuePtr^),Advance,fEndian);
   BS_VALTYPE_BYTEARRAY:       Result := WriteOpenByteArray(ValuePtr,Integer(Size),Advance);
   BS_VALTYPE_FILL:            Result := Stream_FillBytes(fTarget,Size,UInt8(ValuePtr^),Advance,fEndian);
   BS_VALTYPE_VARIANT:         Result := Stream_WriteVariant(fTarget,Variant(ValuePtr^),Advance,fEndian);
@@ -23391,6 +26670,12 @@ case ValueType of
   BS_VALTYPE_SMLSTR_UNICODE:  Result := Stream_ReadSmallUnicodeString(fTarget,UnicodeString(ValuePtr^),Advance);
   BS_VALTYPE_SMLSTR_UCS4:     Result := Stream_ReadSmallUCS4String(fTarget,UCS4String(ValuePtr^),Advance);
   BS_VALTYPE_SMLSTR:          Result := Stream_ReadSmallString(fTarget,String(ValuePtr^),Advance);
+  BS_VALTYPE_TNYSTR_ANSI:     Result := Stream_ReadTinyAnsiString(fTarget,AnsiString(ValuePtr^),Advance);
+  BS_VALTYPE_TNYSTR_UTF8:     Result := Stream_ReadTinyUTF8String(fTarget,UTF8String(ValuePtr^),Advance);
+  BS_VALTYPE_TNYSTR_WIDE:     Result := Stream_ReadTinyWideString(fTarget,WideString(ValuePtr^),Advance);
+  BS_VALTYPE_TNYSTR_UNICODE:  Result := Stream_ReadTinyUnicodeString(fTarget,UnicodeString(ValuePtr^),Advance);
+  BS_VALTYPE_TNYSTR_UCS4:     Result := Stream_ReadTinyUCS4String(fTarget,UCS4String(ValuePtr^),Advance);
+  BS_VALTYPE_TNYSTR:          Result := Stream_ReadTinyString(fTarget,String(ValuePtr^),Advance);
   BS_VALTYPE_VARIANT:         Result := Stream_ReadVariant(fTarget,Variant(ValuePtr^),Advance);
 else
  {BS_VALTYPE_BUFFER,BS_VALTYPE_BYTEARRAY,BS_VALTYPE_FILL}
@@ -23440,7 +26725,7 @@ procedure UnitInitialize;
 begin
 OpenByteArrayStride := GetOBAStride([0,0]);
 // following should be always true, but the paranoia needs feeding...
-OpenByteArrayIsPacked := OpenByteArrayStride = 1;
+OpenByteArrayPacked := OpenByteArrayStride = 1;
 end;
 
 //==============================================================================
@@ -23453,4 +26738,3 @@ initialization
   {<lite-end-ln>}
 
 end.
-
